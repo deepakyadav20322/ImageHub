@@ -7,7 +7,7 @@
     "dev": "nodemon src/index.ts",
     "migration:generate": "npx drizzle-kit generate --config=drizzle.config.ts",
     "migration:run": "npx drizzle-kit migrate --config=drizzle.config.ts",
-    "migration:push": "npx drizzle-kit push:pg --config=drizzle.config.ts",
+    "migration:push": "npx drizzle-kit push --config=drizzle.config.ts",
     "migration:sync": "npx drizzle-kit sync:pg --config=drizzle.config.ts"
   },
   "keywords": [],
@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.40.0",
@@ -23,6 +24,7 @@
     "pg": "^8.13.3"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.9",

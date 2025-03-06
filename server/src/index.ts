@@ -3,6 +3,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 import cors from 'cors'
 import {pool,db} from './db/db_connect'
+import authRoute from './routes/auth.route'
+import userRoute from './routes/user.route'
+
+
 const app = express();
 const port = process.env.PORT || 4000;
 
@@ -10,10 +14,9 @@ const port = process.env.PORT || 4000;
 app.use(express.json());
 app.use(cors())
 
-// Simple route
-app.get('/', (req, res) => {
-    res.send('Hello, World!');
-});
+// routes middleware
+app.use('/api/v1/auth', authRoute);
+app.use('/api/v1/user', userRoute);
 
 // Start the server
 app.listen(port, () => {
@@ -25,3 +28,4 @@ app.listen(port, () => {
     })
   
 });
+
