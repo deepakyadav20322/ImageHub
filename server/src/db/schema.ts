@@ -6,9 +6,9 @@ import {
   timestamp,
   boolean,
   json,
-
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // 🔹 Roles Table (to normalize role names)
 export const roles = pgTable("roles", {
@@ -36,15 +36,26 @@ export const users = pgTable("users", {
   password: text("password"), // Optional for Google users
   emailVerified: boolean("email_verified").notNull().default(false),
   googleId: text("google_id").unique(), // Google OAuth users
+  refresh_token: text("refresh_token"),
+  accountId: uuid("account_id")
+    .references((): any => accounts.accountId, { onDelete: "cascade" })
+    .notNull(),
+  // 🚀 This ensures that when an account is deleted, the user is also deleted
+
   roleId: uuid("role_id") // Reference roles table
     .notNull()
-    .references(() => roles.roleId, { onDelete: "set null" }),
-  inviteStatus: text("invite_status", {
-    enum: ["pending", "accepted", "expired"],
-  }).default("pending"),
+    .references(() => roles.roleId, { onDelete: "set null" })
+    .notNull(),
   invitedBy: uuid("invited_by").references((): any => users.userId, {
     onDelete: "set null",
   }),
+  product_environments: text("product_environments").array(), // ??this have the environment value which is cloud name/cloud display name
+  userType: text("user_type", {
+    enum: ["orgnization", "inviteOnly"],
+  }).default("orgnization"), //?? when user directally signup then it is choosen as organization
+  userStatus: text("user_status", { enum: ["active", "suspended"] }).default(
+    "active"
+  ),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -59,22 +70,15 @@ export const users = pgTable("users", {
 // 🔹 Accounts Table
 export const accounts = pgTable("accounts", {
   accountId: uuid("account_id").primaryKey().defaultRandom(),
-  userId: uuid("user_id")
-    .notNull()
-    .references(() => users.userId, { onDelete: "cascade" }),
-  roleId: uuid("role_id")
-    .notNull()
-    .references(() => roles.roleId, { onDelete: "cascade" }),
-  accountType: text("account_type", { enum: ["personal", "organization"] })
-    .notNull()
-    .default("personal"),
   accountStatus: text("account_status", {
     enum: ["active", "inactive", "suspended"],
   })
     .notNull()
     .default("active"),
-  inviteToken: text("invite_token").unique(),
-  inviteExpiresAt: timestamp("invite_expires_at", { withTimezone: true }),
+  invitedIds: uuid("invited_ids")
+    .array()
+    .notNull()
+    .default(sql`ARRAY[]::uuid[]`),
   settings: json("settings")
     .notNull()
     .default({ theme: "light", language: "en" }),
