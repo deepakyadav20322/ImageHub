@@ -1,27 +1,22 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { getUserPermissions } from "../controlers/auth.controler";
 
 // here we extend the request object type and add user object // 👉 Todo: Better way handle it (requstType.d.ts)
 
-interface AuthRequest extends Request {
-  user?: any;
-}
-
-const authMiddleware = async (
-  req: AuthRequest,
+async function authMiddleware(req: Request,
   res: Response,
-  next: NextFunction
-):Promise<any> => {
+  next: NextFunction): Promise<any> {
   try {
     // Extract token from various sources
     const token = req.headers.authorization?.startsWith("Bearer ")
       ? req.headers.authorization.split(" ")[1]
       : req.headers.authorization ||
-        req.cookies?.token ||
-        req.query?.token ||
-        req.body?.token;
+      req.cookies?.token ||
+      req.query?.token ||
+      req.body?.token;
 
-        console.log("kuchh aaya hai in middleware...")
+    console.log("kuchh aaya hai in middleware...");
     // If no token, return unauthorized error
     if (!token) {
       return res
@@ -35,11 +30,16 @@ const authMiddleware = async (
       return res.status(500).json({ message: "Internal server error" });
     }
 
-    // Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload;
+    // Verify the token 
+    /* initially here we give any type but when you define all the aspect of user in token then you assign a proper type or interface*/
+    const decoded = await jwt.verify(token, process.env.JWT_SECRET as string) as any;
+    const userData = await getUserPermissions(decoded?.userId);
+    console.log(userData)
+
+    if (!userData) return res.status(401).json({ message: "User not found or no role assigned" });
 
     // Attach user data to request
-    req.user = decoded;
+    req.user = { ...decoded, permissions: userData.permissions };
 
     // Proceed to the next middleware
     next();
@@ -56,7 +56,7 @@ const authMiddleware = async (
       if (error.name === "JsonWebTokenError") {
         return res
           .status(401)
-          .json({ message: "Invalid token. Please log in again." });
+          .json({ message: "Unauthorized" });
       }
     }
 
@@ -65,6 +65,6 @@ const authMiddleware = async (
       .status(500)
       .json({ message: "Authentication failed due to server problem" });
   }
-};
+}
 
 export default authMiddleware;

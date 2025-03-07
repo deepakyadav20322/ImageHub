@@ -27,6 +27,7 @@ export const roles = pgTable("roles", {
     .notNull(),
 });
 
+
 // 🔹 Users Table
 export const users = pgTable("users", {
   userId: uuid("user_id").primaryKey().defaultRandom(),

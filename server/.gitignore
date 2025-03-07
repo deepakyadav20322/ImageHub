@@ -32,3 +32,6 @@ coverage/
 
 # Ignore migration files
 src/db/migrations/
+
+# query txt file
+query.txt

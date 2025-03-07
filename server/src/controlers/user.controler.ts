@@ -8,16 +8,16 @@ export const getAllUsers = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+):Promise<void> => {
   try {
     const allUsers = await db.select().from(users);
-    res.status(200).json({
+     res.status(200).json({
       success: true,
       count: allUsers.length,
       data: allUsers,
     });
   } catch (error) {
-   return next(new AppError("something went wrong in user getting",500));
+    next(new AppError("something went wrong in user getting",500));
   }
 };
 

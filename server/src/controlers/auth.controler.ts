@@ -1,6 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import AppError from "../utils/AppError";
-import { users, accounts, roles } from "../db/schema";
+import {
+  users,
+  accounts,
+  roles,
+  rolePermissions,
+  permissions,
+} from "../db/schema";
 import { db } from "../db/db_connect";
 import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -10,7 +16,7 @@ export const userLogin = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<any> => {
+): Promise<void> => {
   try {
     const { email, password } = req.body;
 
@@ -27,12 +33,11 @@ export const userLogin = async (
         lastName: users.lastName,
         email: users.email,
         password: users.password,
-        emailVerified:users.emailVerified,
+        emailVerified: users.emailVerified,
         googleId: users.googleId,
         accountId: users.accountId,
-        roleId: users.roleId,
-        invitedBy:users.invitedBy,
-        product_environment:users.product_environments,
+        invitedBy: users.invitedBy,
+        product_environment: users.product_environments,
         // refresh_token: users.refresh_token,
         userType: users.userType,
         userStatus: users.userStatus,
@@ -58,26 +63,28 @@ export const userLogin = async (
       return next(new AppError("Invalid email or password", 401));
     }
 
-    if( (user[0].emailVerified) ){
+    if (user[0].emailVerified) {
       return next(new AppError("Email not verified", 401));
     }
 
-    // Update last login timestamp
+    // token generation
+    const { password: _, googleId, ...safeUser } = user[0];
+    const accessToken = generateJWTtoken(safeUser);
+    const refreshToken = generateJWTtoken(safeUser);
+
+    // Update last login timestamp and store the user refresh token
 
     await db
       .update(users)
-      .set({ lastLogin: new Date() })
+      .set({ lastLogin: new Date(), refresh_token: refreshToken })
       .where(sql`${users.email} = ${email}`);
 
-    const { password: _, googleId, ...safeUser } = user[0];
-    const token = generateJWTtoken(safeUser);
-
-    return res.status(200).json({
+    res.status(200).json({
       status: "success",
       data: {
         message: "Login successful",
         user: safeUser,
-        token,
+        token: accessToken,
       },
     });
   } catch (error) {
@@ -120,15 +127,51 @@ export const userRegister = async (
         firstName,
         lastName,
         email,
-        password:hashPassword,
+        password: hashPassword,
         accountId, // Link user with account
         roleId: roleId, // Add default role id(super_admin) for new users with account(organization)
       })
       .returning();
-      
 
-    res.status(201).json({ success: true,message:"user register successfully", data: newUser[0] });
+    res
+      .status(201)
+      .json({
+        success: true,
+        message: "user register successfully",
+        data: newUser[0],
+      });
   } catch (error) {
     return next(new AppError("Something went wrong", 500));
   }
+};
+
+// it is used to return the role and permission for authenticate the all api routes
+export const getUserPermissions = async (userId: string) => {
+  const userWithRole = await db
+    .select({
+      roleId: users.roleId,
+      roleName: roles.name,
+    })
+    .from(users)
+    .innerJoin(roles, eq(users.roleId, roles.roleId))
+    .where(eq(users.userId, userId))
+    .limit(1);
+
+  if (!userWithRole.length) return null;
+
+  const { roleId, roleName } = userWithRole[0];
+
+  const userPermissions = await db
+    .select({ action: permissions.action, resource: permissions.resource })
+    .from(rolePermissions)
+    .innerJoin(
+      permissions,
+      eq(rolePermissions.permissionId, permissions.permissionId)
+    )
+    .where(eq(rolePermissions.roleId, roleId));
+
+  return {
+    role: roleName,
+    permissions: userPermissions.map((p) => `${p.resource}:${p.action}`), // e.g., ["product:create", "user:delete"]
+  };
 };
