@@ -1,16 +1,14 @@
-import React from 'react'
-import { Button } from '@/components/ui/button'
-import './App.css'
+
+import { Route, Routes } from 'react-router'
+import Home from './Pages/Home'
 
 function App() {
 
 
   return (
-    <>
-     Hello , React project for Image assets management system
-     <Button>Click me</Button>
-
-    </>
+   <Routes>
+    <Route path='/' index element={<Home/>}/>
+   </Routes>
   )
 }
 
