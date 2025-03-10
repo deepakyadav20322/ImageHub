@@ -1,11 +1,11 @@
-import { Button } from '@/components/ui/button'
-import React from 'react'
+
 
 const Home = () => {
   return (
    <>
-   <div className='text-center font-bold pt-6'>
+   <div className='font-bold text-3xl flex justify-center items-center h-screen'>
    Home Page, welcome 2025
+
    </div>
    </>
   )
