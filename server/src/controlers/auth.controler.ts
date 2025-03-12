@@ -18,6 +18,7 @@ export const userLogin = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    console.log("login controller me kuchh to aaya hai .....");
     const { email, password } = req.body;
 
     //👉 check that user login with google then it take as wok or not because when we login with google then password not come (??Todo:)
@@ -26,6 +27,35 @@ export const userLogin = async (
       return next(new AppError("Email and password required", 400));
     }
     // here user return as array => user[0]
+    // const user = await db
+    //   .select({
+    //     userId: users.userId,
+    //     firstName: users.firstName,
+    //     lastName: users.lastName,
+    //     email: users.email,
+    //     password: users.password,
+    //     emailVerified: users.emailVerified,
+    //     googleId: users.googleId,
+    //     accountId: users.accountId,
+    //     invitedBy: users.invitedBy,
+    //     product_environment: users.product_environments,
+    //     refresh_token: users.refresh_token,
+    //     userType: users.userType,
+    //     userStatus: users.userStatus,
+    //     createdAt: users.createdAt,
+    //     updatedAt: users.updatedAt,
+    //     lastLogin: users.lastLogin,
+    //     role: {
+    //       roleId: roles.roleId,
+    //       roleName: roles.name,
+    //       // roleDescription: roles.description,
+    //     },
+    //   })
+    //   .from(users)
+    //   .leftJoin(roles, eq(roles.roleId, users.roleId))
+    //   .where(sql`${users.email} = ${email}`)
+    //   .limit(1);
+
     const user = await db
       .select({
         userId: users.userId,
@@ -38,7 +68,7 @@ export const userLogin = async (
         accountId: users.accountId,
         invitedBy: users.invitedBy,
         product_environment: users.product_environments,
-        // refresh_token: users.refresh_token,
+        refresh_token: users.refresh_token,
         userType: users.userType,
         userStatus: users.userStatus,
         createdAt: users.createdAt,
@@ -47,13 +77,34 @@ export const userLogin = async (
         role: {
           roleId: roles.roleId,
           roleName: roles.name,
-          // roleDescription: roles.description,
+          roleDescription: roles.description, // Corrected: Added missing role description
         },
       })
       .from(users)
       .leftJoin(roles, eq(roles.roleId, users.roleId))
-      .where(sql`${users.email} = ${email}`)
+      .where(eq(users.email, email))
       .limit(1);
+
+    const rolePermissionsData = user[0]?.role?.roleId
+      ? await db
+          .select({
+            permission:
+              sql`${permissions.resource} || ':' || ${permissions.action}`.as(
+                "permission"
+              ),
+          })
+          .from(rolePermissions)
+          .leftJoin(
+            permissions,
+            eq(rolePermissions.permissionId, permissions.permissionId)
+          )
+          .where(eq(rolePermissions.roleId, user[0].role.roleId))
+      : [];
+
+    const formattedPermissions = rolePermissionsData.map(
+      (perm) => perm.permission
+    );
+    // ========================= Add query here ==================>
 
     if (!user || user.length === 0 || !user[0].password) {
       return next(new AppError("Invalid email or password", 401));
@@ -67,8 +118,9 @@ export const userLogin = async (
       return next(new AppError("Email not verified", 401));
     }
 
-    // token generation
+    // remove password from user object
     const { password: _, googleId, ...safeUser } = user[0];
+    // token generation
     const accessToken = generateJWTtoken(safeUser);
     const refreshToken = generateJWTtoken(safeUser);
 
@@ -85,9 +137,11 @@ export const userLogin = async (
         message: "Login successful",
         user: safeUser,
         token: accessToken,
+        permissions: formattedPermissions,
       },
     });
   } catch (error) {
+    console.log(error);
     return next(new AppError("Something went wrong", 500));
   }
 };
@@ -99,10 +153,12 @@ export const userRegister = async (
 ): Promise<any> => {
   try {
     //👉 when person login with google then not need of password and those logic handle in gogole login file(??Todo:)that request not come here-
-    // 👉 This controler wok  when user regiter form my website directally it is not for invited user(-----)
+    // 👉 This controler work  when user regiter form my website directally it is not for invited user(-----)
+    console.log(req.body);
+
     const { firstName, lastName, email, password } = req.body;
 
-    if (!firstName || !lastName || !email) {
+    if (!firstName || !lastName || !email || !password) {
       return next(new AppError("Missing required fields", 400));
     }
     const hashPassword = await bcrypt.hash(password, 10);
@@ -133,13 +189,11 @@ export const userRegister = async (
       })
       .returning();
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "user register successfully",
-        data: newUser[0],
-      });
+    res.status(201).json({
+      success: true,
+      message: "user register successfully",
+      data: newUser[0],
+    });
   } catch (error) {
     return next(new AppError("Something went wrong", 500));
   }
