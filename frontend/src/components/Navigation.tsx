@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Link } from "react-router";
-import { Menu, X, Search, LogIn } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -11,7 +11,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ModeToggle from "./mode-toggle";
 
@@ -42,10 +41,10 @@ const Navbar = () => {
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">A</span>
+              <span className="text-primary-foreground font-bold">I</span>
             </div>
             <span className="font-bold text-xl hidden sm:inline-block">
-              Acme Inc
+              Image Hub
             </span>
           </Link>
         </div>
@@ -118,19 +117,18 @@ const Navbar = () => {
             <>
               {/* Login/Signup buttons */}
               <div className="hidden sm:flex items-center gap-2">
-                <Link 
-                to={'/login'} 
-                className="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors dark:hover:bg-muted hover:bg-slate-100 bg-slate-50 dark:bg-black hover:border-gray-300 border-2"
+                <Link
+                  to={"/login"}
+                  className="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors dark:hover:bg-muted hover:bg-slate-100 bg-slate-50 dark:bg-black hover:border-gray-300 border-2"
                 >
-                Login
+                  Login
                 </Link>
                 <Link
-                to={'/signup'}
-                className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                  to={"/signup"}
+                  className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
-                Sign up
+                  Sign up
                 </Link>
-               
               </div>
 
               {/* Mobile login button */}
