@@ -35,3 +35,6 @@ src/db/migrations/
 
 # query txt file
 query.txt
+
+# commit log
+e

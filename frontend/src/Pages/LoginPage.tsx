@@ -17,7 +17,7 @@ const LoginPage = ()=> {
               className="h-6 w-6"
             />
           </div>
-          <h1 className="text-2xl font-bold">Welcome to Acme Inc.</h1>
+          <h1 className="text-2xl font-bold">Welcome to ImageHub.</h1>
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link to="/signup" className="font-medium text-primary underline underline-offset-4">

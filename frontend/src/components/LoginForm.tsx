@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
-
+import { loginSchema } from "@/lib/ZodSchema";
+import {z} from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -17,19 +16,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Icons } from "@/lib/Icons";
+import { useLoginMutation } from "@/redux/apiSlice/authApi";
+import { setAuth } from "@/redux/features/authSlice";
+import { useDispatch } from "react-redux";
 
-const loginSchema = z.object({
-  email: z
-    .string()
-    .min(1, { message: "Email is required" })
-    .email({ message: "Invalid email address" }),
-  password: z.string().min(1, { message: "Password is required" }),
-});
 
+// types
 type LoginFormValues = z.infer<typeof loginSchema>;
+
 
 const LoginForm = () => {
   const navigate = useNavigate();
+  const dispatch   = useDispatch()
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,20 +38,27 @@ const LoginForm = () => {
       password: "",
     },
   });
+  
+  const [login,{isSuccess}] = useLoginMutation()
 
-  async function onSubmit(data: LoginFormValues) {
+  const onSubmit = async(data: LoginFormValues)=> {
     setIsLoading(true);
     setError(null);
 
     try {
       // This is where you would call your authentication API
       console.log("Login data:", data);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      const response = await login(data).unwrap();
+      console.log("login data",response);
+      if(response && response.data){
+      dispatch(setAuth({
+        user: response.data.user,
+        token: response.data.token,
+        permissions:response.data.permissions
+      }));
+    }
       // On success, redirect to dashboard
-      navigate("/dashboard");
+      navigate("/welcome");
     } catch (error) {
       setError("Invalid email or password. Please try again.");
       console.error(error);
@@ -74,10 +79,11 @@ const LoginForm = () => {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // On success, redirect to dashboard
-      navigate("/dashboard");
-    } catch (error) {
+      navigate("/dashboard/welcome");
+    } catch (err) {
       setError("Failed to sign in with Google. Please try again.");
-      console.error(error);
+      console.error('❌ Login error:', err);
+      // console.error('❌ Login error:', err.message);
     } finally {
       setIsLoading(false);
     }

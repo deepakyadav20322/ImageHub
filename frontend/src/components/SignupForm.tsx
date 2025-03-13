@@ -11,6 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Icons } from "@/lib/Icons"
+import { useSignUpMutation } from "@/redux/apiSlice/authApi"
 
 const signUpSchema = z
   .object({
@@ -36,8 +37,11 @@ type SignUpFormValues = z.infer<typeof signUpSchema>
 
 const SignUpForm = ()=> {
   const navigate = useNavigate()
-  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [isSignupLoading, setIsSignupLoading] = useState<boolean>(false)
+  const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null)
+
+  const [signUp] = useSignUpMutation();
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -49,16 +53,21 @@ const SignUpForm = ()=> {
     },
   })
 
-  async function onSubmit(data: SignUpFormValues) {
-    setIsLoading(true)
+  const onSubmit = async (data: SignUpFormValues)=> {
+    setIsSignupLoading(true)
     setError(null)
 
     try {
       // This is where you would call your authentication API
       console.log("Sign up data:", data)
-
+      // remove confirm password from data
+      const { confirmPassword,name, ...newData } = data
+        const firstName = name.split(" ")[0];
+        const lastName = name.split(" ")[1];
+      const response = await signUp({firstName,lastName,...newData}).unwrap();
+       console.log(response);
       // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      
 
       // On success, redirect to dashboard
       navigate("/dashboard")
@@ -66,12 +75,12 @@ const SignUpForm = ()=> {
       setError("Failed to create account. Please try again.")
       console.error(error)
     } finally {
-      setIsLoading(false)
+      setIsSignupLoading(false)
     }
   }
 
-  async function handleGoogleSignIn() {
-    setIsLoading(true)
+  const handleGoogleSignIn = async()=> {
+    setIsGoogleLoading(true)
     setError(null)
 
     try {
@@ -87,7 +96,7 @@ const SignUpForm = ()=> {
       setError("Failed to sign in with Google. Please try again.")
       console.error(error)
     } finally {
-      setIsLoading(false)
+      setIsGoogleLoading(false)
     }
   }
 
@@ -104,7 +113,7 @@ const SignUpForm = ()=> {
               <FormItem>
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="John Doe" disabled={isLoading} {...field} />
+                  <Input placeholder="John Doe" disabled={isSignupLoading} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -121,7 +130,7 @@ const SignUpForm = ()=> {
                     placeholder="m@example.com"
                     type="email"
                     autoComplete="email"
-                    disabled={isLoading}
+                    disabled={isSignupLoading}
                     {...field}
                   />
                 </FormControl>
@@ -140,7 +149,7 @@ const SignUpForm = ()=> {
                     placeholder="••••••••"
                     type="password"
                     autoComplete="new-password"
-                    disabled={isLoading}
+                    disabled={isSignupLoading}
                     {...field}
                   />
                 </FormControl>
@@ -159,7 +168,7 @@ const SignUpForm = ()=> {
                     placeholder="••••••••"
                     type="password"
                     autoComplete="new-password"
-                    disabled={isLoading}
+                    disabled={isSignupLoading}
                     {...field}
                   />
                 </FormControl>
@@ -167,8 +176,8 @@ const SignUpForm = ()=> {
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? (
+          <Button type="submit" className="w-full" disabled={isSignupLoading}>
+            {isSignupLoading ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                 Creating account...
@@ -189,8 +198,8 @@ const SignUpForm = ()=> {
         </div>
       </div>
 
-      <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-        {isLoading ? (
+      <Button variant="outline" type="button" className="w-full" onClick={handleGoogleSignIn} disabled={isGoogleLoading}>
+        {isGoogleLoading ? (
           <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
         ) : (
           <Icons.google className="mr-2 h-4 w-4" />
