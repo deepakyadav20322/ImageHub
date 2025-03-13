@@ -16,7 +16,9 @@ const RootLayout = () => {
   const location = useLocation()
 
   // Hide Navbar on dashboard-related routes
-  const hideNavbarOnRoutes = location.pathname.startsWith('/dashboard')
+  const hideNavbarOnRoutes = ['/dashboard', '/welcome'].some(path => 
+    location.pathname.startsWith(path)
+  )
 
   return (
     <>
