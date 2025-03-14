@@ -1,11 +1,9 @@
+import { Link } from "react-router";
+import LoginForm from "@/components/LoginForm";
 
-import { Link } from "react-router"
-import LoginForm  from "@/components/LoginForm"
-
-
-const LoginPage = ()=> {
+const LoginPage = () => {
   return (
-    <div className="container flex h-screen w-full flex-col items-center justify-center px-4 mx-auto">
+    <div className="container flex h-[calc(100vh-65px)] w-full flex-col items-center justify-center px-4 mx-auto">
       <div className="w-full space-y-6 max-w-md">
         <div className="flex flex-col items-center space-y-2 text-center">
           <div className="rounded-full bg-gray-100 p-2">
@@ -20,7 +18,10 @@ const LoginPage = ()=> {
           <h1 className="text-2xl font-bold">Welcome to ImageHub.</h1>
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link to="/signup" className="font-medium text-primary underline underline-offset-4">
+            <Link
+              to="/signup"
+              className="font-medium text-primary underline underline-offset-4"
+            >
               Sign up
             </Link>
           </p>
@@ -28,7 +29,7 @@ const LoginPage = ()=> {
         <LoginForm />
       </div>
     </div>
-  )
-}
+  );
+};
 
 export default LoginPage;

@@ -57,7 +57,7 @@ const LoginForm = () => {
         permissions:response.data.permissions
       }));
     }
-      // On success, redirect to dashboard
+      // On success, redirect to welcome
       navigate("/welcome");
     } catch (error) {
       setError("Invalid email or password. Please try again.");
@@ -75,7 +75,7 @@ const LoginForm = () => {
       // This is where you would implement Google Sign In
       console.log("Google Sign In");
 
-      // Simulate API call
+
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // On success, redirect to dashboard
@@ -83,7 +83,7 @@ const LoginForm = () => {
     } catch (err) {
       setError("Failed to sign in with Google. Please try again.");
       console.error('❌ Login error:', err);
-      // console.error('❌ Login error:', err.message);
+    
     } finally {
       setIsLoading(false);
     }
