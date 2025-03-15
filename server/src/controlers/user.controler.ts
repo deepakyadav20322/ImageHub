@@ -1,23 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import { db } from "../db/db_connect";
-import { users } from "../db/schema";
+import { accounts, users } from "../db/schema";
 import AppError from "../utils/AppError";
 
 export const getAllUsers = async (
   req: Request,
   res: Response,
   next: NextFunction
-):Promise<void> => {
+): Promise<void> => {
   try {
     const allUsers = await db.select().from(users);
-     res.status(200).json({
+    res.status(200).json({
       success: true,
       count: allUsers.length,
       data: allUsers,
     });
   } catch (error) {
-    next(new AppError("something went wrong in user getting",500));
+    next(new AppError("something went wrong in user getting", 500));
   }
 };
 
@@ -51,9 +51,7 @@ export const inviteUserCreation = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
-
-};
+) => {};
 
 export const updateUser = async (
   req: Request,
@@ -85,7 +83,6 @@ export const updateUser = async (
   }
 };
 
-
 export const deleteUser = async (
   req: Request,
   res: Response,
@@ -112,5 +109,37 @@ export const deleteUser = async (
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const welcome = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+):Promise<void> => {
+  const { intrest, companyName, domain } = req.body;
+
+  // Validation
+  if (!intrest || !companyName || !domain) {
+     res.status(400).json({ error: "All fields are required." });
+     return;
+  }
+
+  try {
+    const result = await db
+      .insert(accounts)
+      .values({
+        preferences: {
+          intrest,
+          companyName,
+          domain,
+        },
+      })
+      .returning();
+
+    res.status(201).json({ message: "Data saved successfully", data: result });
+  } catch (error) {
+    console.error("Error saving data:", error);
+    res.status(500).json({ error: "Failed to save data." });
   }
 };

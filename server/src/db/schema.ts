@@ -83,6 +83,10 @@ export const accounts = pgTable("accounts", {
   settings: json("settings")
     .notNull()
     .default({ theme: "light", language: "en" }),
+  preferences: json("preferences")
+    .default({ intrest:"",
+      companyName:"",
+      domain:"" }),
   provider: text("provider"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
