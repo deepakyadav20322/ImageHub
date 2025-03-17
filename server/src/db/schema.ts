@@ -27,7 +27,6 @@ export const roles = pgTable("roles", {
     .notNull(),
 });
 
-
 // 🔹 Users Table
 export const users = pgTable("users", {
   userId: uuid("user_id").primaryKey().defaultRandom(),
@@ -83,10 +82,11 @@ export const accounts = pgTable("accounts", {
   settings: json("settings")
     .notNull()
     .default({ theme: "light", language: "en" }),
-  preferences: json("preferences")
-    .default({ intrest:"",
-      companyName:"",
-      domain:"" }),
+  preferences: json("preferences").default({
+    intrest: "",
+    companyName: "",
+    domain: "",
+  }),
   provider: text("provider"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
@@ -164,3 +164,114 @@ export const rolePermissions = pgTable(
     ),
   })
 );
+
+export const apiKeys = pgTable("api_keys", {
+  apiKeyId: uuid("api_key_id").primaryKey().defaultRandom(),
+  accountId: uuid("account_id")
+    .references(() => accounts.accountId, { onDelete: "cascade" })
+    .notNull(),
+  apiKey: text("api_key").notNull().unique(),
+  apiSecret: text("api_secret").notNull(), // Securely hashed
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const resources = pgTable("resources", {
+  resourceId: uuid("resource_id").primaryKey().defaultRandom(),
+
+  accountId: uuid("account_id")
+    .references(() => accounts.accountId, { onDelete: "cascade" })
+    .notNull(),
+
+  parentResourceId: uuid("parent_resource_id").references(
+    (): any => resources.resourceId,
+    { onDelete: "cascade" }
+  ),
+
+  type: text("type", { enum: ["bucket", "folder", "file"] }).notNull(),
+
+  name: text("name").notNull(),
+  displayNameL: text("displayName"), // it is only used for bucket , not for folder and files
+
+  path: text("path").notNull(), // Ensures correct hierarchy tracking
+
+  visibility: text("visibility", {
+    enum: ["private", "public", "restricted"],
+  })
+    .notNull()
+    .default("private"),
+
+  inheritPermissions: boolean("inherit_permissions").notNull().default(true), // NEW: Auto-propagates permissions
+  overridePermissions: boolean("override_permissions").default(false), // NEW: Allows specific overrides
+
+  metadata: json("metadata").default({}), // Flexible for size, format, etc.
+  resourceTypeDetails: json("resource_type_details").default({}), // NEW: E.g., file size, dimensions
+
+  versionId: text("version_id"),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+
+  status: text("status", { enum: ["active", "archived", "deleted"] }) // NEW: Helps manage lifecycle
+    .notNull()
+    .default("active"),
+
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+
+  // ✅(When useful: deletedAt) -> AWS S3 doesn’t automatically delete versions when you delete a file unless versioning is turned off. Soft deletion aligns well with S3’s lifecycle control.
+  // Accidental Deletion Protection,
+  //Audit & Logging
+  // Offering an “Undo” feature or a “Recycle Bin” for temporarily deleted files is easier with soft deletion.
+  deletedAt: timestamp("deleted_at", { withTimezone: true }), // NEW: Soft delete
+});
+
+// <<<===================Below thing use when we want to apply individula file/resource permission provide when it public =================>>>>
+
+// To grant private resource access to specific users while maintaining your efficient path-based permission system, you can introduce an access control table that defines granular permissions for users.
+
+// export const resourcePermissions = pgTable("resource_permissions", {
+//   permissionId: uuid("permission_id").primaryKey().defaultRandom(),
+//   resourceId: uuid("resource_id")
+//     .references(() => resources.resourceId, { onDelete: "cascade" })
+//     .notNull(),
+//   userId: uuid("user_id")
+//     .references(() => users.userId, { onDelete: "cascade" })
+//     .notNull(),
+//   accessLevel: text("access_level", { enum: ["read", "write", "admin"] }).notNull(),
+//   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+//   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+// });
+
+// --------------------------->>>>>>>>>>>>>>>>>>
+
+// await db.insert(resourcePermissions).values({
+//   resourceId: 'folder2-id', // The resource you want to grant access to
+//   userId: 'user-id-123',
+//   accessLevel: 'read' // 'read', 'write', or 'admin'
+// });
+
+// -------------------->>>>>>>
+
+// SELECT
+//     r.is_public,
+//     rp.access_level
+// FROM resources r
+// LEFT JOIN resource_permissions rp
+//     ON r.resource_id = rp.resource_id
+//     AND rp.user_id = 'user-id-123'
+// WHERE r.path ILIKE '/folder1/folder2/folder3/file3.jpg'
+//    OR r.path ILIKE '/folder1/folder2/folder3%'
+//    OR r.path ILIKE '/folder1/folder2%'
+//    OR r.path ILIKE '/folder1%'
+// ORDER BY LENGTH(r.path) DESC
+// LIMIT 1;
+
+// <<<<<<<<<<= =================== =======       ======== =======================>>>>
