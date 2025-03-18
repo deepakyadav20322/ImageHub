@@ -1,8 +1,10 @@
 import { Request, Response, NextFunction } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db/db_connect";
-import { accounts, users } from "../db/schema";
+import { accounts, resources, users } from "../db/schema";
 import AppError from "../utils/AppError";
+import { S3Client, ListObjectsV2Command, DeleteObjectCommand, DeleteBucketCommand } from "@aws-sdk/client-s3";
+
 
 export const getAllUsers = async (
   req: Request,
@@ -116,13 +118,13 @@ export const welcome = async (
   req: Request,
   res: Response,
   next: NextFunction
-):Promise<void> => {
+): Promise<void> => {
   const { intrest, companyName, domain } = req.body;
 
   // Validation
   if (!intrest || !companyName || !domain) {
-     res.status(400).json({ error: "All fields are required." });
-     return;
+    res.status(400).json({ error: "All fields are required." });
+    return;
   }
 
   try {
@@ -143,3 +145,84 @@ export const welcome = async (
     res.status(500).json({ error: "Failed to save data." });
   }
 };
+
+
+export const s3Client = new S3Client({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
+
+// here we delered the account whaere we delete the s3 bucket , for this first we must delete the all resoures from that bucket(it's rule);
+export const deleteAccount = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const accountId = req.user?.accountId;
+    if (!accountId) {
+      next(new AppError("AccountId is required", 400));
+      return;
+    }
+
+    // Step 1: Retrieve associated buckets from the database
+    const buckets = await db
+      .select({ name: resources.name })
+      .from(resources)
+      .where(
+        and(eq(resources.accountId, accountId), eq(resources.type, "bucket"))
+      );
+
+    // Step 2: Delete S3 Buckets
+    for (const bucket of buckets) {
+      const bucketName = bucket.name;
+
+      // Step 2.1: List and delete objects inside the bucket
+      const listObjects = await s3Client.send(
+        new ListObjectsV2Command({ Bucket: bucketName })
+      );
+
+      console.log("objectList:-> ", listObjects)
+
+      if (listObjects.Contents) {
+        await Promise.all(
+          listObjects.Contents.map(async (object) => {
+            await s3Client.send(
+              new DeleteObjectCommand({
+                Bucket: bucketName,
+                Key: object.Key!,
+              })
+            );
+          })
+        );
+      }
+
+      // Step 2.2: Delete the empty bucket
+      await s3Client.send(new DeleteBucketCommand({ Bucket: bucketName }));
+    }
+
+    // Step 3: Delete the account from the database
+    const accountDelete = await db
+      .delete(accounts)
+      .where(eq(accounts.accountId, accountId))
+      .returning();
+
+    if (!accountDelete.length) {
+      throw new AppError("Account not found", 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Account and associated S3 buckets deleted successfully",
+      data: accountDelete[0],
+    });
+  } catch (err) {
+    console.error("Account deletion error:-> ", err);
+    next(new AppError("Something went wrong during account deletion", 500));
+  }
+};
+
