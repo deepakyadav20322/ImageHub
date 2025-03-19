@@ -105,6 +105,10 @@ app.post('/upload', upload, async (req, res):Promise<any> => {
 
 // ================== checking the lambada ===========================
 
+// Basic health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ healthStatus: 'ok' });
+  });
 
 // 404 Not Found Handler
 app.use("*", notFoundHandler);
