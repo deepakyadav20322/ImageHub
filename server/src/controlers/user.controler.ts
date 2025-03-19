@@ -178,32 +178,32 @@ export const deleteAccount = async (
       );
 
     // Step 2: Delete S3 Buckets
-    for (const bucket of buckets) {
-      const bucketName = bucket.name;
+    // for (const bucket of buckets) {
+    //   const bucketName = bucket.name;
 
-      // Step 2.1: List and delete objects inside the bucket
-      const listObjects = await s3Client.send(
-        new ListObjectsV2Command({ Bucket: bucketName })
-      );
+    //   // Step 2.1: List and delete objects inside the bucket
+    //   const listObjects = await s3Client.send(
+    //     new ListObjectsV2Command({ Bucket: bucketName })
+    //   );
 
-      console.log("objectList:-> ", listObjects)
+    //   console.log("objectList:-> ", listObjects)
 
-      if (listObjects.Contents) {
-        await Promise.all(
-          listObjects.Contents.map(async (object) => {
-            await s3Client.send(
-              new DeleteObjectCommand({
-                Bucket: bucketName,
-                Key: object.Key!,
-              })
-            );
-          })
-        );
-      }
+    //   if (listObjects.Contents) {
+    //     await Promise.all(
+    //       listObjects.Contents.map(async (object) => {
+    //         await s3Client.send(
+    //           new DeleteObjectCommand({
+    //             Bucket: bucketName,
+    //             Key: object.Key!,
+    //           })
+    //         );
+    //       })
+    //     );
+    //   }
 
-      // Step 2.2: Delete the empty bucket
-      await s3Client.send(new DeleteBucketCommand({ Bucket: bucketName }));
-    }
+    //   // Step 2.2: Delete the empty bucket
+    //   await s3Client.send(new DeleteBucketCommand({ Bucket: bucketName }));
+    // }
 
     // Step 3: Delete the account from the database
     const accountDelete = await db

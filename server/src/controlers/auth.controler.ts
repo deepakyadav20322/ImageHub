@@ -137,7 +137,18 @@ export const userLogin = async (
     await db
       .update(users)
       .set({ lastLogin: new Date(), refresh_token: refreshToken })
-      .where(sql`${users.email} = ${email}`);
+      .where(sql`${users.email} = ${email}`); 
+
+ // 👉 Todo: try to minimize these multiple query into less query.(try to merge multiple simple query to one better query)
+   // Get all buckets for the user's account
+   const buckets = await db
+   .select({
+   bucketName: resources.name,
+   bucketType: resources.type,
+   bucketPath: resources.path
+   })
+   .from(resources)
+   .where(eq(resources.accountId, safeUser.accountId));
 
     res.status(200).json({
       status: "success",
@@ -146,6 +157,7 @@ export const userLogin = async (
         user: safeUser,
         token: accessToken,
         permissions: formattedPermissions,
+        resourcesEnvironment:buckets
       },
     });
   } catch (error) {
@@ -371,7 +383,7 @@ export const userRegister = async (
         .values({
           accountId,
           type: "bucket",
-          name: "public",
+          name: transformedBucketName,
           parentResourceId: null, // Top-level resource
           metadata: {}, // Additional metadata if needed,
           path: "/transformed/",
