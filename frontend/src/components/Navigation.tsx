@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Menu, X } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +12,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import ModeToggle from "./mode-toggle";
+import { RootState } from "@/redux/store";
+import { useDispatch, useSelector } from "react-redux";
+import { logout } from "@/redux/features/authSlice";
 
 const navLinks = [
   { href: "/", label: "Home" },
@@ -22,16 +24,20 @@ const navLinks = [
 ];
 
 const Navbar = () => {
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   //   const { theme, setTheme } = useTheme()
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const {user,isAuthenticated:isLoggedIn} = useSelector((state: RootState) => state.auth);
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
+  // const [isLoggedIn, setIsLoggedIn] = useState(isAuthenticated);  
+
+
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+
+    dispatch(logout());
+    navigate('/login',{ replace: true });
   };
 
   return (
@@ -100,7 +106,7 @@ const Navbar = () => {
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarImage src="/placeholder-user.jpg" alt="User" />
-                    <AvatarFallback>U</AvatarFallback>
+                    <AvatarFallback>{user?(user?.firstName).at(0):"U"}</AvatarFallback>
                   </Avatar>
                   <span className="sr-only">User account</span>
                 </Button>
@@ -187,10 +193,10 @@ const Navbar = () => {
             {/* Login/Signup buttons for mobile - Only show when not logged in */}
             {!isLoggedIn && (
               <div className="flex flex-col gap-2 pt-2 border-t">
-                <Button variant="outline" onClick={handleLogin}>
+                <Link to={'/login'} >
                   Login
-                </Button>
-                <Button>Sign up</Button>
+                </Link>
+                <Link to={'/signup'}>Sign up</Link>
               </div>
             )}
           </div>
