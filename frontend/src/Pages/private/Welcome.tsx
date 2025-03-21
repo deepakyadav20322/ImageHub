@@ -1,9 +1,32 @@
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { motion, AnimatePresence } from "framer-motion";
-import { Code, Image, User, Mail, Building, ChevronRight, CheckCircle } from "lucide-react";
+
+// import { Button } from "@/components/ui/button"
+// import { logout } from "@/redux/features/authSlice";
+// import { RootState } from "@/redux/store"
+// import { useDispatch, useSelector } from "react-redux"
+
+// const Welcome = () => {
+//   const {user} = useSelector((state:RootState)=>state.auth);
+//   const dispatch = useDispatch()
+//   return (
+//     <>
+//     <div className="pb-4">Welcome Page, {JSON.stringify(user,null,2)}</div>
+//        <Button onClick={()=>dispatch(logout())}>Logout</Button>
+//     </>
+//   )
+// }
+
+// export default Welcome
+
+
+
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { motion, AnimatePresence } from "framer-motion"
+import { Code, Image, User, Mail, Building, ChevronRight, CheckCircle } from "lucide-react"
+import { Link } from "react-router"
+
 
 // Form schemas
 const interestSchema = z.object({
@@ -330,9 +353,9 @@ export default function WelcomeForm() {
                     Your Cloudinary workspace is ready. We've tailored it based on your preferences.
                   </p>
 
-                  <button className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-md font-medium transition-colors duration-300">
+                  <Link to={'/dashboard'} className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-md font-medium transition-colors duration-300">
                     Go to Dashboard
-                  </button>
+                  </Link>
                 </motion.div>
               )}
             </AnimatePresence>
