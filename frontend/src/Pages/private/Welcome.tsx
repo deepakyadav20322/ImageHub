@@ -25,6 +25,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { motion, AnimatePresence } from "framer-motion"
 import { Code, Image, User, Mail, Building, ChevronRight, CheckCircle } from "lucide-react"
+import { Link } from "react-router"
 
 // Form schemas
 const interestSchema = z.object({
@@ -351,9 +352,9 @@ export default function WelcomeForm() {
                     Your Cloudinary workspace is ready. We've tailored it based on your preferences.
                   </p>
 
-                  <button className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-md font-medium transition-colors duration-300">
+                  <Link to={'/dashboard'} className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-md font-medium transition-colors duration-300">
                     Go to Dashboard
-                  </button>
+                  </Link>
                 </motion.div>
               )}
             </AnimatePresence>
