@@ -305,19 +305,7 @@ export const userRegister = async (
 
       const roleId = roleResult[0].roleId;
 
-      // Create the user with the generated accountId
-      const newUser = await tx
-        .insert(users)
-        .values({
-          firstName,
-          lastName,
-          email,
-          password: hashPassword,
-          accountId,
-          roleId,
-        })
-        .returning();
-   console.log('first step-',process.env.AWS_REGION);
+ 
       // ----------------------------
       // 🔹 Create S3 Buckets in AWS
       // ----------------------------
@@ -389,6 +377,32 @@ export const userRegister = async (
           path: "/transformed/",
         })
         .returning();
+
+     // Extract resource IDs from the inserted bucket records
+const originalBucketResourceId = OriginalBucket[0].resourceId;
+const transformedBucketResourceId = TransformedBucket[0].resourceId;
+
+// Define the cloud display names for product environments
+const productEnvironments = [
+  originalBucketResourceId, // Cloud Id / Cloud display name (original bucket)
+  transformedBucketResourceId, // Cloud Id / Cloud display name (transformed bucket)
+];
+   
+     // Create the user with the generated accountId
+     const newUser = await tx
+     .insert(users)
+     .values({
+       firstName,
+       lastName,
+       email,
+       password: hashPassword,
+       accountId,  
+       roleId,
+       product_environments:productEnvironments
+     })
+     .returning();
+
+
 
       // Create API key and secret for the account
       await tx.insert(apiKeys).values({
