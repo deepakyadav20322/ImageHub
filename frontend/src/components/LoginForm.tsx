@@ -59,8 +59,9 @@ const LoginForm = () => {
     }
       // On success, redirect to welcome
       navigate("/welcome");
-    } catch (error) {
-      setError("Invalid email or password. Please try again.");
+    } catch (error:any) {
+      // setError("Invalid email or password. Please try again.");
+      setError(error.message);
       console.error(error);
     } finally {
       setIsLoading(false);

@@ -16,12 +16,15 @@ const App = () => {
 
       {/* {here we define the sidebar layout for all dashboard pages} */}
       <Route element={<AuthLayout />}>
+     
+   
+     
         <Route path="/welcome" element={<Welcome />} />
-      </Route>
       <Route path="/dashboard" element={<SidebarLayout />}>
         <Route index element={<Settings />} />
         <Route path="getting-started" element={<GetStarted />} />
       </Route>
+    </Route>
     </Routes>
   );
 };
