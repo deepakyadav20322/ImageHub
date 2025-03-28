@@ -127,7 +127,7 @@ export const userLogin = async (
     }
 
     // remove password from user object
-    const { password: _, googleId, ...safeUser } = user[0];
+    const { password: _, googleId, refresh_token ,...safeUser } = user[0];
     // token generation
     const accessToken = generateJWTtoken(safeUser);
     const refreshToken = generateJWTtoken(safeUser);
@@ -312,8 +312,8 @@ export const userRegister = async (
 
       // const originalBucketName = `q455${Date.now()}s`;
       // const transformedBucketName = `r${545231321}t`;
-      const originalBucketName = `image-tool-${accountId}-original`;
-      const transformedBucketName = `image-tool-${accountId}-transformed`;
+      const originalBucketName = `${accountId}-original`;
+      const transformedBucketName = `${accountId}-transformed`;
       try {
         // Create the original bucket
         await s3Client.send(

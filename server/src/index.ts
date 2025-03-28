@@ -15,9 +15,11 @@ const app = express();
 const port = process.env.PORT || 4000;
 
 const corsOptions = {
+    // origin: ['*'], 
     origin: ['http://localhost:5174', 'http://localhost:5173'], 
     credentials: true, // Allow credentials for cookies and ....
 };
+
 
 // Middleware
 app.use(cors(corsOptions))
@@ -30,11 +32,23 @@ app.use('/api/v1/user', userRoute);
 app.use('/api/v1/resource', resourceRoute);
 
 
+// it is only for test purpose===============================================
+// app.get("/processed/:transforms/:image", (req, res) => {
+//     const transforms = req.params.transforms;
+//     const image = req.params.image;
+
+//     console.log("✅ Image Request Details:");
+//     console.log(`   - Transformations: ${transforms}`);
+//     console.log(`   - Image: ${image}`);
+
+//     res.json({ message: "Image request received 5", transforms, image });
+// });
 
 
 
 // Basic health check endpoint
 app.get('/health', (req, res) => {
+    console.log("health")
     res.status(200).json({ healthStatus: 'ok' });
   });
 

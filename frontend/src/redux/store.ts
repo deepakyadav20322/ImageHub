@@ -4,6 +4,7 @@ import { persistStore, persistReducer } from "redux-persist";
 import storage from "redux-persist/lib/storage"; // LocalStorage for web
 import authApi from "@/redux/apiSlice/authApi";
 import authSliceReducer from "@/redux/features/authSlice";
+import resourceReducer from '@/redux/features/resourceSlice'
 
 // Persist config for auth API reducer
 const persistConfig = {
@@ -17,9 +18,11 @@ const persistedAuthReducer = persistReducer(persistConfig, authSliceReducer);
 
 const store = configureStore({
   reducer: {
-
     [authApi.reducerPath]: authApi.reducer,
+   
     auth: persistedAuthReducer,
+    // regular slice reducers
+    resource: resourceReducer,
   },
 
   middleware: (getDefaultMiddleware) =>
