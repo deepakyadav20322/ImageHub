@@ -19,6 +19,7 @@ import {
   CreateBucketCommand,
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
+import { date } from "drizzle-orm/mysql-core";
 
 export const userLogin = async (
   req: Request,
@@ -382,10 +383,23 @@ export const userRegister = async (
 const originalBucketResourceId = OriginalBucket[0].resourceId;
 const transformedBucketResourceId = TransformedBucket[0].resourceId;
 
+ // 🔹 Insert 'default' folder inside the Original bucket in DB
+const defaultFolderOriginal = await tx
+.insert(resources)
+.values({
+  accountId,
+  type: "folder",
+  name: "default",
+  parentResourceId: originalBucketResourceId, // Inside Original bucket
+  path: "/original/default/",
+})
+.returning();
+
+
 // Define the cloud display names for product environments
 const productEnvironments = [
   originalBucketResourceId, // Cloud Id / Cloud display name (original bucket)
-  transformedBucketResourceId, // Cloud Id / Cloud display name (transformed bucket)
+  // transformedBucketResourceId, // Cloud Id / Cloud display name (transformed bucket)
 ];
    
      // Create the user with the generated accountId
@@ -427,6 +441,7 @@ const productEnvironments = [
           },
         },
       });
+    
     });
   } catch (error) {
     console.log(error);
