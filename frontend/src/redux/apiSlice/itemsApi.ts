@@ -1,25 +1,36 @@
 
-import authApi from "./authApi"; // Assuming this handles authentication
+
+import { Resource } from "@/lib/types";
+import authApi from "./authApi"; 
+import { useSelector } from "react-redux";
+import { RootState } from "../store";
 
 const folderApi = authApi.injectEndpoints({
   endpoints: (builder) => ({
     getFolders: builder.query({
-      query: (folderId) => ({
-        url: `folders/${folderId}`,
+      query: ({ folderId, token }: { folderId: string|''; token: string|'' }) => ({
+        url: `/resource/folders/${folderId}`,
         method: 'GET',
+        headers:{
+          Authorization:`${token}`
+        }
       }),
-      providesTags: (result, error, folderId) => [{ type: 'Folder', id: folderId }],
+      transformResponse:(response: { success: boolean; data:Resource[] }) => {
+              return response.data;
+      },
+      providesTags: (result, error, arg) => [{ type: 'Folder', id: arg.folderId }],
     }),
+    
     getSubfolders: builder.query({
       query: (folderId) => ({
-        url: `folders/subfolders?folderId=${folderId}`,
+        url: `/resource/folders/subfolders?folderId=${folderId}`,
         method: 'GET',
       }),
       providesTags: (result, error, folderId) => [{ type: 'Folder', id: folderId }],
     }),
     getAssets: builder.query({
       query: (folderId) => ({
-        url: `folders/${folderId}/assets`,
+        url: `/resource/folders/${folderId}/assets`,
         method: 'GET',
       }),
       providesTags: (result, error, folderId) => [{ type: 'Asset', id: folderId }],
