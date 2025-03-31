@@ -128,7 +128,7 @@ export const userLogin = async (
     }
 
     // remove password from user object
-    const { password: _, googleId, refresh_token ,...safeUser } = user[0];
+    const { password: _, googleId, refresh_token, ...safeUser } = user[0];
     // token generation
     const accessToken = generateJWTtoken(safeUser);
     const refreshToken = generateJWTtoken(safeUser);
@@ -138,18 +138,18 @@ export const userLogin = async (
     await db
       .update(users)
       .set({ lastLogin: new Date(), refresh_token: refreshToken })
-      .where(sql`${users.email} = ${email}`); 
+      .where(sql`${users.email} = ${email}`);
 
- // 👉 Todo: try to minimize these multiple query into less query.(try to merge multiple simple query to one better query)
-   // Get all buckets for the user's account
-   const buckets = await db
-   .select({
-   bucketName: resources.name,
-   bucketType: resources.type,
-   bucketPath: resources.path
-   })
-   .from(resources)
-   .where(eq(resources.accountId, safeUser.accountId));
+    // 👉 Todo: try to minimize these multiple query into less query.(try to merge multiple simple query to one better query)
+    // Get all buckets for the user's account
+    const buckets = await db
+      .select({
+        bucketName: resources.name,
+        bucketType: resources.type,
+        bucketPath: resources.path,
+      })
+      .from(resources)
+      .where(eq(resources.accountId, safeUser.accountId));
 
     res.status(200).json({
       status: "success",
@@ -158,7 +158,7 @@ export const userLogin = async (
         user: safeUser,
         token: accessToken,
         permissions: formattedPermissions,
-        resourcesEnvironment:buckets
+        resourcesEnvironment: buckets,
       },
     });
   } catch (error) {
@@ -268,7 +268,7 @@ export const s3Client = new S3Client({
   },
 });
 
-// 👉Todo: when we create user then in terminal it give:- 
+// 👉Todo: when we create user then in terminal it give:-
 // Are you using a Stream of unknown length as the Body of a PutObject request? Consider using Upload instead from @aws-sdk/lib-storage.
 
 export const userRegister = async (
@@ -306,7 +306,6 @@ export const userRegister = async (
 
       const roleId = roleResult[0].roleId;
 
- 
       // ----------------------------
       // 🔹 Create S3 Buckets in AWS
       // ----------------------------
@@ -354,7 +353,7 @@ export const userRegister = async (
         );
       }
 
-      // Create two buckets ib db which is created in s3 (original and transformed) for the new account
+      // Create two buckets in db which is created in s3 (original and transformed) for the new account
       const OriginalBucket = await tx
         .insert(resources)
         .values({
@@ -363,60 +362,57 @@ export const userRegister = async (
           name: originalBucketName,
           parentResourceId: null, // Top-level resource
           metadata: {}, // Additional metadata if needed
-          path: "/original/",
+          path: "/original",
         })
         .returning();
 
-      const TransformedBucket = await tx
+      // const TransformedBucket = await tx
+      //   .insert(resources)
+      //   .values({
+      //     accountId,
+      //     type: "bucket",
+      //     name: transformedBucketName,
+      //     parentResourceId: null, // Top-level resource
+      //     metadata: {}, // Additional metadata if needed,
+      //     path: "/transformed/",
+      //   })
+      //   .returning();
+
+      // Extract resource IDs from the inserted bucket records
+      const originalBucketResourceId = OriginalBucket[0].resourceId;
+      // const transformedBucketResourceId = TransformedBucket[0].resourceId;
+
+      // 🔹 Insert 'default' folder inside the Original bucket in DB
+      const defaultFolderOriginal = await tx
         .insert(resources)
         .values({
           accountId,
-          type: "bucket",
-          name: transformedBucketName,
-          parentResourceId: null, // Top-level resource
-          metadata: {}, // Additional metadata if needed,
-          path: "/transformed/",
+          type: "folder",
+          name: "default",
+          parentResourceId: originalBucketResourceId, // Inside Original bucket
+          path: "/original/default",
         })
         .returning();
 
-     // Extract resource IDs from the inserted bucket records
-const originalBucketResourceId = OriginalBucket[0].resourceId;
-const transformedBucketResourceId = TransformedBucket[0].resourceId;
+      // Define the cloud display names for product environments
+      const productEnvironments = [
+        originalBucketResourceId, // Cloud Id / Cloud display name (original bucket)
+        // transformedBucketResourceId, // Cloud Id / Cloud display name (transformed bucket)
+      ];
 
- // 🔹 Insert 'default' folder inside the Original bucket in DB
-const defaultFolderOriginal = await tx
-.insert(resources)
-.values({
-  accountId,
-  type: "folder",
-  name: "default",
-  parentResourceId: originalBucketResourceId, // Inside Original bucket
-  path: "/original/default/",
-})
-.returning();
-
-
-// Define the cloud display names for product environments
-const productEnvironments = [
-  originalBucketResourceId, // Cloud Id / Cloud display name (original bucket)
-  // transformedBucketResourceId, // Cloud Id / Cloud display name (transformed bucket)
-];
-   
-     // Create the user with the generated accountId
-     const newUser = await tx
-     .insert(users)
-     .values({
-       firstName,
-       lastName,
-       email,
-       password: hashPassword,
-       accountId,  
-       roleId,
-       product_environments:productEnvironments
-     })
-     .returning();
-
-
+      // Create the user with the generated accountId
+      const newUser = await tx
+        .insert(users)
+        .values({
+          firstName,
+          lastName,
+          email,
+          password: hashPassword,
+          accountId,
+          roleId,
+          product_environments: productEnvironments,
+        })
+        .returning();
 
       // Create API key and secret for the account
       await tx.insert(apiKeys).values({
@@ -433,7 +429,7 @@ const productEnvironments = [
           user: newUser[0],
           DBbuckets: {
             public: OriginalBucket[0],
-            private: TransformedBucket[0],
+            // private: TransformedBucket[0],
           },
           s3Buckets: {
             original: originalBucketName,
@@ -441,7 +437,6 @@ const productEnvironments = [
           },
         },
       });
-    
     });
   } catch (error) {
     console.log(error);

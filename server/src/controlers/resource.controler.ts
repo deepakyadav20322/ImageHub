@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { InvokeCommand, Lambda } from "@aws-sdk/client-lambda";
 import multer from "multer";
 import { resources } from "../db/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/db_connect";
 import AppError from "../utils/AppError";
 import path from "path";
@@ -95,20 +95,28 @@ export const uploadResources = async (
 
   try {
     const { bucket_name, resource_type } = req.params;
-    const { filePath,folderId } = req.body;
+
+    const { imagePath, folderId } = req.body;
+    // in req imagePath comes like /default/abc.png but it convert to default/abc.png because this type path support in s3
+    // 👇Todo:  💀💀💀💀 if we use get call from api dashboard then file path comes like /original/default/subhamPandeySir.png (you also need to convert to(remove /original/) default/subhamPandeySir.png)
+    const correctedImagePathForS3 = imagePath.split("/").slice(1).join("/");
+    const { t_addOn } = req.body;
     if (bucket_name.split("-").length == 2) {
       next(new AppError("your bucket name is wrong", 500));
       return;
     }
     const originalBucket = bucket_name;
-    const transformedBucket = bucket_name.split("-")[1];
 
     console.log("Bucket Name:", bucket_name);
     console.log("Resource Type:", resource_type);
 
     // we check that resourceType and given file type mached ?
+    console.log("file req outer", req.file);
     const file = req.file;
-
+    if (!req.file) {
+      console.log("file req", req.file);
+      return res.status(400).json({ mess: "file is not comming.." });
+    }
     // Validate if resource_type is supported
     if (!SUPPORTED_TYPES[resource_type]) {
       return res.status(400).json({
@@ -141,16 +149,19 @@ export const uploadResources = async (
       console.log("❌ No file uploaded");
       return res.status(400).json({ error: "Image file is required" });
     }
-
+    const fullPath = `${correctedImagePathForS3}/${req.file.originalname}`;
+    console.log("fullPath", fullPath);
+    console.log("o-bucket", originalBucket);
     //Todo: 👉👉 file path ke according , you make changes in lambda funciton code
     const params = {
-      FunctionName: "imageHub-processing-1",
+      FunctionName: "testFunction1",
       Payload: JSON.stringify({
         body: JSON.stringify({
           image: req.file.buffer.toString("base64"),
-          imagePath: filePath,
-          originalBucket,
-          transformedBucket,
+          imagePath: fullPath,
+          originalImageBucketName: originalBucket,
+          // transformedBucket,
+          t_addOn,
           contentType: req.file.mimetype,
         }),
       }), // ✅ Corrected: Wrapped in `body`
@@ -168,32 +179,41 @@ export const uploadResources = async (
 
     const payload = JSON.parse(payloadString);
 
+    // ✅ Check if Lambda returned an error
+    if (payload.statusCode !== 200) {
+      return res.status(payload.statusCode).json(JSON.parse(payload.body));
+    }
 
     // ---------------------------------
     // ✅ Save file info to PostgreSQL (resources table)
     const fileUrl = payload.fileUrl;
     const fileType = file.mimetype;
     const fileName = file.originalname;
+    const accountId =
+      req.user?.account_id || "36d46958-af66-4840-a421-481c8a7e459f";
 
-    const insertedResource = await db.insert(resources).values({
-      accountId:req.user.account_id,
-      parentResourceId: folderId || null,
-      type: "file",
-      name: fileName,
-      path: filePath,
-      visibility: "private",
-      inheritPermissions: true,
-      overridePermissions: false,
-      metadata: {
-        size: file.size,
-        mimetype: fileType,
-      },
-      resourceTypeDetails: {
-        format: fileType,
-        dimensions: payload.dimensions || null, // Assuming Lambda provides this
-      },
-      status: "active",
-    }).returning();
+    const insertedResource = await db
+      .insert(resources)
+      .values({
+        accountId,
+        parentResourceId: folderId || null,
+        type: "file",
+        name: fileName,
+        path: `/original/${fullPath}`, // We save path with including bucket(to mentain the parent child relationship hirirechi)
+        visibility: "private",
+        inheritPermissions: true,
+        overridePermissions: false,
+        metadata: {
+          size: file.size,
+          mimetype: fileType,
+        },
+        resourceTypeDetails: {
+          format: fileType,
+          dimensions: payload.dimensions || null, // Assuming Lambda provides this
+        },
+        status: "active",
+      })
+      .returning();
 
     if (!res.headersSent) {
       // ✅ **FIXED: Prevents "Cannot set headers after they are sent" issue**
@@ -368,3 +388,143 @@ export const getAllBucketsForAccount = async (
       .json({ success: false, message: "Internal Server Error" });
   }
 };
+
+// export const getCurrentFoldersWithAllParents = async(req:Request,res:Response,next:NextFunction)=>{
+//   try {
+//     const folderId = req.params ;
+//     if (!folderId) {
+//       return res.status(400).json({ message: "Folder ID is required" });
+//     }
+
+//     // Get the current folder and its parents recursively
+//     const getFolderWithParents = async (currentFolderId: string): Promise<any[]> => {
+//       const folder = await db
+//         .select()
+//         .from(resources)
+//         .where(and(
+//           eq(resources.resourceId, currentFolderId),
+//           eq(resources.type, "folder")
+//         ))
+//         .limit(1);
+
+//       if (!folder || folder.length === 0) {
+//         return [];
+//       }
+
+//       const current = folder[0];
+//       if (!current.parentResourceId) {
+//         return [current];
+//       }
+
+//       const parents = await getFolderWithParents(current.parentResourceId);
+//       return [...parents, current];
+//     };
+
+//     const folderHierarchy = await getFolderWithParents(folderId.id);
+//     return res.status(200).json({
+//       success: true,
+//       data: folderHierarchy
+//     });
+//   } catch (error) {
+    
+//   }
+// }
+
+export const getCurrentFoldersWithAllParents = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { folderId } = req.params;
+console.log("fId",folderId)
+console.log(req.params)
+    if (!folderId) {
+       res.status(400).json({ success: false, message: "Folder ID is required" });
+       return
+    }
+
+    // Function to fetch current folder and parents recursively
+    const getFolderWithParents = async (currentFolderId: string): Promise<any[]> => {
+      const [folder] = await db
+        .select()
+        .from(resources)
+        .where(
+          and(eq(resources.resourceId, currentFolderId), eq(resources.type, "folder"))
+        )
+        .limit(1);
+
+      // Return empty if folder not found
+      if (!folder) return [];
+
+      // Recursively fetch parent folders
+      if (!folder.parentResourceId) return [folder];
+      
+      const parents = await getFolderWithParents(folder.parentResourceId);
+      return [...parents, folder];
+    };
+
+    const folderHierarchy = await getFolderWithParents(folderId);
+
+     res.status(200).json({
+      success: true,
+      data: folderHierarchy,
+    });
+    return
+  } catch (error: Error | any) {
+    console.error("Error fetching folder hierarchy:", error);
+     res.status(500).json({
+      success: false,
+      message: "An unexpected error occurred",
+      error: error?.message,
+    });
+    return
+  }
+};
+
+export const getAssetsOfParticularFolder = async (req:Request,res:Response,next:NextFunction):Promise<any> => { 
+
+    try {
+      const folderId = req.params.folderId;
+      if (!folderId) {
+         res.status(400).json({ message: "Folder ID is required" });
+         return
+      }
+  
+      // 🟢 Recursive Query to Fetch All Files
+      const query = sql`
+      WITH RECURSIVE folder_hierarchy AS (
+          -- Start with the target folder, selecting all fields
+          SELECT 
+              *
+          FROM resources
+          WHERE resource_id = ${folderId} AND type = 'folder'
+    
+          UNION ALL
+    
+          -- Recursively fetch subfolders, selecting all fields
+          SELECT 
+              r.*
+          FROM resources r
+          INNER JOIN folder_hierarchy fh ON r.parent_resource_id = fh.resource_id
+          WHERE r.type = 'folder'
+      )
+      -- Retrieve all files in the folder hierarchy, selecting all fields
+      SELECT 
+          r.*
+      FROM resources r
+      WHERE r.type = 'file' AND r.parent_resource_id IN (SELECT resource_id FROM folder_hierarchy);
+    `;
+    
+  
+      //  Execute Query
+      const filesInFolder = await db.execute(query);
+  
+      return res.status(200).json({
+        success: true,
+        data: filesInFolder.rows,
+      });
+    } catch (error) {
+      next(new AppError("Something wentwrong during getting asets of folder",500));
+    }
+  };
