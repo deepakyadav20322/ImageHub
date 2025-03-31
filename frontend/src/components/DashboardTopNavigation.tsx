@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router";
-
+import { Link } from "react-router";
 const tabs = ["home", "assets", "folders", "collections", "moderation"];
 
 const Navbar = () => {
@@ -48,7 +48,7 @@ const Navbar = () => {
 
       {/* Search & Upload */}
       <div className="ml-auto flex items-end gap-4">
-       
+        <Link to={ `http://localhost:5173/dashboard/media/folders/2e79bc82-6434-43a6-bd3e-6e7046e1d562`}>Folder2</Link>
         <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white">
           <UploadIcon className="w-4 h-4" /> Upload
         </Button>

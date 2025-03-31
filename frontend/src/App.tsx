@@ -10,6 +10,7 @@ import AuthLayout from "./Layouts/AuthLayout";
 import MediaHome from "./Pages/private/Media/Home";
 import MediaTopNavLayout from "./Layouts/MediaTopNavLayout";
 import Folders from "./Pages/private/Media/Folders";
+import Folders2 from "./Pages/private/Media/Folders2";
 const App = () => {
   return (
     <Routes>
@@ -27,7 +28,8 @@ const App = () => {
           <Route path="media" element={<MediaTopNavLayout />}>
             <Route index element={<Navigate to="home" replace />} />
             <Route path="home" element={<MediaHome />} />
-            <Route path="folders/*" element={<Folders />} />
+            <Route path="folders" element={<Folders2/>} />
+            <Route path="folders/:folderId" element={<Folders />} />
             <Route index path="*" element={<GetStarted />} />
           </Route>
         </Route>
