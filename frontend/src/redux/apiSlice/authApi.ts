@@ -15,7 +15,7 @@ export const authApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ['Auth'], // For cache invalidation
+  tagTypes: ['Auth','Resources','Folder', 'Asset'], // For cache invalidation
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginCredentials>({
       query: (credentials) => ({

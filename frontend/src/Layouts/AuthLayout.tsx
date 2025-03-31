@@ -5,6 +5,7 @@ import { RootState } from "@/redux/store";
 
 const AuthLayout = () => {
   const { user, loading } = useSelector((state: RootState) => state.auth);
+  // console.log(user)
 
   const isAuthPage = location.pathname === "/login" || location.pathname === "/signup";
   
@@ -18,7 +19,7 @@ const AuthLayout = () => {
   }
 
   if (user && isAuthPage) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard/media" replace />;
   }
 
   // If authenticated and authorized, render the nested routes
