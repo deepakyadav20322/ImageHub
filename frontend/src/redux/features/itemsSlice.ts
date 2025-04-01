@@ -5,7 +5,7 @@ import { string } from "zod";
 // Redux Slice
 const itemsSlice = createSlice({
     name: 'items',
-    initialState: { expandedFolders: [] as string[],folders:[] },
+    initialState: { expandedFolders: [] as string[],folders:[],assets:[] },
     reducers: {
       toggleFolder: (state, action) => {
         const folderId = action.payload;
@@ -16,11 +16,15 @@ const itemsSlice = createSlice({
 
        setFoldersDataWithParent:(state,action)=>{
         state.folders = action.payload;
+       },
+
+       setAssetsOfParticularFolder:(state,action)=>{
+         state.assets = action.payload
        }
 
     },
   });
 
-  export const { toggleFolder ,setFoldersDataWithParent} = itemsSlice.actions;
+  export const { toggleFolder ,setFoldersDataWithParent,setAssetsOfParticularFolder} = itemsSlice.actions;
 
   export default itemsSlice.reducer;

@@ -68,8 +68,6 @@
 //   // const [newEnvironmentName, setNewEnvironmentName] = useState(null);
 //   const { user } = useSelector((state: any) => state.auth);
 
-
-
 //   let {resources} = useSelector((state:RootState)=>state.resource)
 
 //   // useEffect(() => {
@@ -99,19 +97,19 @@
 //         ...resource,
 //         isSelected: false // Default selection state
 //       }));
-      
+
 //       setEnvironments(mappedResources);
-  
+
 //       console.log("First resource ID:", mappedResources[0].resourceId);
-      
+
 //       // Auto-select first environment if none selected
 //       if (!environments.some(env => env.isSelected)) {
 //         const firstResource = mappedResources[0];
 //         selectEnvironment(firstResource.resourceId);
-        
+
 //         // Update the environments state with the selected resource
-//         setEnvironments(prev => prev.map(env => 
-//           env.resourceId === firstResource.resourceId 
+//         setEnvironments(prev => prev.map(env =>
+//           env.resourceId === firstResource.resourceId
 //             ? { ...env, isSelected: true }
 //             : env
 //         ));
@@ -140,8 +138,7 @@
 //   //   //   setFormError("Environment name is required");
 //   //   //   return;
 //   //   // }
-  
- 
+
 //   //   // Generate a random ID
 //   //   const newId = Math.random().toString(36).substring(2, 10);
 
@@ -194,15 +191,15 @@
 
 //       <aside
 //         className={`
-//           fixed top-0 left-0 z-40 h-full bg-white dark:bg-black border-r dark:border-r-slate-400 border-gray-200 dark:border-black transition-transform duration-200 
-//           ${mobileOpen ? "translate-x-0" : "-translate-x-full"} 
-//           ${collapsed ? "w-16" : "w-64"} 
+//           fixed top-0 left-0 z-40 h-full bg-white dark:bg-black border-r dark:border-r-slate-400 border-gray-200 dark:border-black transition-transform duration-200
+//           ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+//           ${collapsed ? "w-16" : "w-64"}
 //           lg:translate-x-0
-          
+
 //         `}
 //       >
 //         <button
-//           className="absolute -right-3 top-20 bg-white dark:bg-black border border-gray-200  dark:border-gray-100 
+//           className="absolute -right-3 top-20 bg-white dark:bg-black border border-gray-200  dark:border-gray-100
 //                     rounded-full p-1 shadow-md  lg:flex"
 //           onClick={toggleSidebar}
 //           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -315,7 +312,7 @@
 //               <li key={index}>
 //                 <Link
 //                   to={item.path} // ✅ Ensures the 'to' prop is present
-//                   className="flex items-center p-2 text-gray-700 dark:text-gray-300 rounded-md 
+//                   className="flex items-center p-2 text-gray-700 dark:text-gray-300 rounded-md
 //                      hover:bg-gray-100 dark:hover:bg-gray-800"
 //                 >
 //                   <item.icon className="w-5 h-5 min-w-5" />
@@ -328,14 +325,14 @@
 
 //         <div
 //           className={`absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-black
-//                      bg-white dark:bg-black 
+//                      bg-white dark:bg-black
 //                      ${collapsed ? "items-center justify-center" : ""}`}
 //         >
 //           <div className="flex items-center">
 //             <div className="flex-shrink-0">
 //               <button
-  
-//                 className="w-8 h-8 rounded-full bg-gray-900 dark:bg-gray-700 text-white 
+
+//                 className="w-8 h-8 rounded-full bg-gray-900 dark:bg-gray-700 text-white
 //                             flex items-center justify-center text-sm font-medium"
 //               >
 //                 {(user.firstName.charAt(0)).toUpperCase()}{(user?.lastName.charAt(0)).toUpperCase()}
@@ -447,8 +444,6 @@
 //           </div>
 //         </div>
 //       )}
-    
-
 
 //     </>
 //   );
@@ -456,13 +451,25 @@
 
 // export default Sidebar;
 
-
-
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
-  Mail, Image, Radio, Users, BarChart2, Globe, FileText, Code, Settings,
-  ChevronRight, ChevronDown, Check, Plus, Crown, X, Menu
+  Mail,
+  Image,
+  Radio,
+  Users,
+  BarChart2,
+  Globe,
+  FileText,
+  Code,
+  Settings,
+  ChevronRight,
+  ChevronDown,
+  Check,
+  Plus,
+  Crown,
+  X,
+  Menu,
 } from "lucide-react";
 import ModeToggle from "./mode-toggle";
 import { useDispatch, useSelector } from "react-redux";
@@ -497,34 +504,35 @@ import {
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import { logout } from "@/redux/features/authSlice";
-
-
-
 
 interface ISidebarProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
-  onBucketSwitch :(bucketId:string)=> void;
+  onBucketSwitch: (bucketId: string) => void;
 }
 
-const Sidebar = ({ collapsed, setCollapsed,onBucketSwitch }: ISidebarProps) => {
+const Sidebar = ({
+  collapsed,
+  setCollapsed,
+  onBucketSwitch,
+}: ISidebarProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [environmentDropdownOpen, setEnvironmentDropdownOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [environments, setEnvironments] = useState<Environment[]>([]);
   const [formError, setFormError] = useState("");
   const dispatch = useDispatch();
-const navigate = useNavigate();
+  const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
-// This should match your resourceSlice state structure
-const resources = useSelector((state: RootState) => (state.resource.bucket));
+  // This should match your resourceSlice state structure
+  const resources = useSelector((state: RootState) => state.resource.bucket);
 
-const handleLogout = ()=>{
-  dispatch(logout());
-  navigate('/login');
- }
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login");
+  };
 
   // Initialize environments when resources load
   useEffect(() => {
@@ -532,16 +540,17 @@ const handleLogout = ()=>{
       // Map resources to environments with isSelected property
       const mappedEnvironments = resources.map((resource, index) => ({
         ...resource,
-        isSelected: index === 0 // Select first environment by default
+        isSelected: index === 0, // Select first environment by default
       }));
-      
+
       setEnvironments(mappedEnvironments);
     }
   }, [resources]);
 
   const toggleSidebar = () => setCollapsed(!collapsed);
   const toggleMobileSidebar = () => setMobileOpen(!mobileOpen);
-  const toggleEnvironmentDropdown = () => setEnvironmentDropdownOpen(!environmentDropdownOpen);
+  const toggleEnvironmentDropdown = () =>
+    setEnvironmentDropdownOpen(!environmentDropdownOpen);
 
   const openCreateModal = () => {
     setCreateModalOpen(true);
@@ -554,19 +563,19 @@ const handleLogout = ()=>{
   };
 
   const selectEnvironment = (bucketId: string) => {
-    setEnvironments(prevEnvironments => 
-      prevEnvironments.map(env => ({
+    setEnvironments((prevEnvironments) =>
+      prevEnvironments.map((env) => ({
         ...env,
-        isSelected: env.resourceId === bucketId
+        isSelected: env.resourceId === bucketId,
       }))
     );
-     // this can change the active bucket Id value in redux store ersorces (to track which bucket is active)
-      onBucketSwitch(bucketId);
-  
+    // this can change the active bucket Id value in redux store ersorces (to track which bucket is active)
+    onBucketSwitch(bucketId);
+
     setEnvironmentDropdownOpen(false);
   };
 
-  const selectedEnvironment = environments.find(env => env.isSelected);
+  const selectedEnvironment = environments.find((env) => env.isSelected);
 
   // if (resourcesLoading) {
   //   return <div className="fixed top-0 left-0 z-40 h-full w-16 lg:w-64 bg-white dark:bg-black flex items-center justify-center">
@@ -639,10 +648,11 @@ const handleLogout = ()=>{
               >
                 <div className="flex items-center">
                   <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs font-medium rounded-md mr-2">
-                    {selectedEnvironment?.name?.charAt(0) || 'E'}
+                    {selectedEnvironment?.name?.charAt(0) || "E"}
                   </span>
                   <span className="font-medium">
-                    {selectedEnvironment?.name.split('-').pop() || "No environments"}
+                    {selectedEnvironment?.name.split("-").pop() ||
+                      "No environments"}
                   </span>
                 </div>
                 <ChevronDown
@@ -671,8 +681,10 @@ const handleLogout = ()=>{
                             <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs font-medium rounded-md mr-2">
                               {env.name.charAt(0)}
                             </span>
-                           
-                            <span className="font-medium">{env.name.split('-').pop()}</span>
+
+                            <span className="font-medium">
+                              {env.name.split("-").pop()}
+                            </span>
                           </div>
                           {env.isSelected && (
                             <Check size={16} className="text-blue-600" />
@@ -703,7 +715,7 @@ const handleLogout = ()=>{
               onClick={toggleEnvironmentDropdown}
             >
               <span className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white text-xs font-medium rounded-md">
-                {selectedEnvironment?.name?.charAt(0) || 'E'}
+                {selectedEnvironment?.name?.charAt(0) || "E"}
               </span>
             </button>
           )}
@@ -742,48 +754,51 @@ const handleLogout = ()=>{
               </button> */}
               {/* ------------------ */}
               <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button className=" flex  text-sm items-center cursor-pointer"  >
-          <span className=" rounded-full w-8 h-8 bg-gray-900 dark:bg-gray-700 text-white 
-                            flex items-center justify-center text-sm font-medium">
-        {user?.firstName?.charAt(0)?.toUpperCase()}
-        {user?.lastName?.charAt(0)?.toUpperCase()}
-        </span>
-        {!collapsed && (
-              <div className="ml-3 bg-white dark:bg-black">
-                <p className="text-sm font-medium  text-gray-800 dark:text-gray-200">
-                  {user?.email}
-                </p>
-                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                  <span>Storage</span>
-                  <span className="ml-2">{teamData.storage}</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-1">
-                  <div className="bg-gray-800 dark:bg-gray-400 h-1 rounded-full w-1/4"></div>
-                </div>
-              </div>
-            )}
-       
-        </button>
-        
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56 ml-2 dark:border-gray-300">
-        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+                <DropdownMenuTrigger asChild>
+                  <button className=" flex  text-sm items-center cursor-pointer">
+                    <span
+                      className=" rounded-full w-8 h-8 bg-gray-900 dark:bg-gray-700 text-white 
+                            flex items-center justify-center text-sm font-medium"
+                    >
+                      {user?.firstName?.charAt(0)?.toUpperCase()}
+                      {user?.lastName?.charAt(0)?.toUpperCase()}
+                    </span>
+                    {!collapsed && (
+                      <div className="ml-3 bg-white dark:bg-black">
+                        <p className="text-sm font-medium  text-gray-800 dark:text-gray-200">
+                          {user?.email}
+                        </p>
+                        <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                          <span>Storage</span>
+                          <span className="ml-2">{teamData.storage}</span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1 mt-1">
+                          <div className="bg-gray-800 dark:bg-gray-400 h-1 rounded-full w-1/4"></div>
+                        </div>
+                      </div>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56 ml-2 dark:border-gray-300">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
 
-        <DropdownMenuItem>GitHub</DropdownMenuItem>
-        <DropdownMenuItem>Support</DropdownMenuItem>
-        <DropdownMenuItem disabled>API</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer">
-         <button className="text-red-500 font-medium w-full text-start flex justify-between items-center cursor-pointer" onClick={handleLogout}>
-          Logout
-          <span>⇧⌘Q</span>
-          </button>
-          {/* <DropdownMenuShortcut className="text-red-400">⇧⌘Q</DropdownMenuShortcut> */}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+                  <DropdownMenuItem>GitHub</DropdownMenuItem>
+                  <DropdownMenuItem>Support</DropdownMenuItem>
+                  <DropdownMenuItem disabled>API</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer">
+                    <button
+                      className="text-red-500 font-medium w-full text-start flex justify-between items-center cursor-pointer"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                      <span>⇧⌘Q</span>
+                    </button>
+                    {/* <DropdownMenuShortcut className="text-red-400">⇧⌘Q</DropdownMenuShortcut> */}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             {/* {!collapsed && (
               <div className="ml-3">
