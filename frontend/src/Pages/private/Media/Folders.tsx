@@ -1,45 +1,50 @@
-import { useGetFoldersQuery } from '@/redux/apiSlice/itemsApi';
-import { setFoldersDataWithParent } from '@/redux/features/itemsSlice';
-import { RootState } from '@/redux/store';
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux';
-import { useParams } from 'react-router';
-import FolderTree from './FolderTree';
+import { useGetFoldersQuery } from "@/redux/apiSlice/itemsApi";
+import { setFoldersDataWithParent } from "@/redux/features/itemsSlice";
+import { RootState } from "@/redux/store";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useParams } from "react-router";
+import FolderTree from "../../../components/FolderTree";
+import AssetsOfFolder from "../../../components/AssetsOfFolder";
+import AssetManager from "@/components/AssetsManager";
+import { buildFolderTree } from "@/lib/utils";
 
 const Folders = () => {
     const { activeBucket } = useSelector((state: RootState) => state.resource);
-    const { folderId } = useParams(); // Get folderId from URL
-    const dispatch = useDispatch();
-    const token= useSelector((state:RootState)=>state.auth.token)
-console.log(folderId)
-   const { data, error, isLoading } = useGetFoldersQuery({ folderId: folderId || '', token: token || '' });
-console.log(data)
-   // 🟢 Store Data in Redux
-   useEffect(() => {
-     if (data) {
-       dispatch(setFoldersDataWithParent(data));
-     }
-   }, [data, dispatch]);
- 
-   // 🟢 Get Data from Redux
-   const folderData = useSelector((state:RootState) => state.items.folders);
- 
-   if (isLoading) return <div>Loading...</div>;
-   if (error) return <div>Error: {`folder page`} </div>;
- 
+  const { folderId } = useParams(); // Get folderId from URL
+  const dispatch = useDispatch();
+  const token = useSelector((state: RootState) => state.auth.token);
+  console.log(folderId);
+  const { data, error, isLoading } = useGetFoldersQuery({
+    folderId: folderId || "",
+    token: token || "",
+  });
+  console.log(data);
+  // 🟢 Store Data in Redux
+  useEffect(() => {
+    if (data) {
+      dispatch(setFoldersDataWithParent(data));
+    }
+  }, [data, dispatch]);
+
+  // 🟢 Get Data from Redux
+  const folderData = useSelector((state: RootState) => state.items.folders);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {`folder page`} </div>;
 
   return (
     <div>
-        This is folder page and current working bucket : " " {activeBucket}
-        <div className='border-2 p-4'>{JSON.stringify(folderData)}</div>
-        <FolderTree folders={folderData}/>
+      This is folder page and current working bucket : " " {activeBucket}
+      {/* <div className="border-2 p-4">{JSON.stringify(folderData)}</div> */}
+      {/* <FolderTree folders={folderData} /> */}
+      {/* <AssetsOfFolder folderId={folderId || ''}/> */}
+      <AssetManager folders={buildFolderTree(folderData)} />
     </div>
-  )
-}
+  );
+};
 
-export default Folders
-
-
+export default Folders;
 
 // const datas = [
 //   {
