@@ -5,7 +5,7 @@ import { CheckCircle, Shield, UploadCloud, Users, BarChart, Globe, Settings } fr
 
 const Home = () => {
   return (
-    <div className="w-full min-h-screen flex flex-col items-center">
+    <div className="w-full flex flex-col items-center">
       {/* Hero Section */}
       
       <header className="w-full py-16 text-center bg-gray-100">

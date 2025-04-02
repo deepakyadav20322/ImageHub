@@ -23,8 +23,8 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions))
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 // routes middleware
 app.use('/api/v1/auth', authRoute);

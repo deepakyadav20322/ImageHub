@@ -6,6 +6,9 @@ import {
   FolderOpen,
   File,
 } from "lucide-react";
+import { useGetAssetsOfFolderQuery, useGetSubfoldersQuery } from "@/redux/apiSlice/itemsApi";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
 
 export interface FolderTreeData {
   resourceId: string;
@@ -35,17 +38,63 @@ interface FolderTreeProps {
 }
 
 const FolderTree = ({ folders }: FolderTreeProps) => {
-  const [expandedFolders, setExpandedFolders] = useState<
-    Record<string, boolean>
-  >({});
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   console.log("folders", folders);
-
+const navigate = useNavigate();
   const toggleFolder = (folderId: string) => {
     setExpandedFolders((prev) => ({
       ...prev,
       [folderId]: !prev[folderId],
     }));
+  
   };
+
+  const handleFolderClick = (folderId:string):void=>{
+    setExpandedFolders((prev) => ({
+      ...prev,
+      [folderId]: !prev[folderId],
+    }));
+     // if (folderId !== folderId) {
+      navigate(`/dashboard/media/folders/${folderId}`);
+    // }
+  }
+
+
+
+// --------------------------------------
+// const dispatch = useDispatch();
+//  // here we pass folderId
+  
+//   const handleFolderClick = async (folderId: string) => {
+//     if (expandedFolders[folderId]) {
+//       setExpandedFolders((prev) => ({
+//         ...prev,
+//         [folderId]: false,
+//       }));
+//       return;
+//     }
+
+//     // Fetch only if not already loaded
+//     if (!fetchedFolders[folderId]) {
+//       setFetchedFolders((prev) => ({
+//         ...prev,
+//         [folderId]: true,
+//       }));
+//     }
+
+//     setExpandedFolders((prev) => ({
+//       ...prev,
+//       [folderId]: true,
+//     }));
+//   };
+
+//   const handleAssetFetch = (folderId: string) => {
+//     dispatch(useGetAssetsOfFolderQuery(folderId));
+//   };
+
+// --------------------------------------
+
+
 
   const renderResources = (items: FolderTreeData[], level = 0) => {
     return items.map((item) => (
@@ -81,7 +130,7 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
             <File size={18} className="mr-2 text-gray-400" />
           )}
 
-          <span className="text-sm">{item.displayName || item.name}</span>
+          <span onClick={() => handleFolderClick(item.resourceId)} className="text-sm">{item.displayName || item.name}</span>
         </div>
 
         {item.type === "folder" &&
@@ -96,10 +145,12 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
   };
 
   return (
-    <div className="p-4 border-r h-full overflow-y-auto w-56 bg-white">
+    <div className="p-4 overflow-y-auto w-56 bg-white">
       {renderResources(folders)}
     </div>
   );
 };
 
 export default FolderTree;
+
+

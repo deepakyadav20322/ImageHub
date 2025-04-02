@@ -1,15 +1,23 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate, useOutletContext } from "react-router";
 import { Link } from "react-router";
 const tabs = ["home", "assets", "folders", "collections", "moderation"];
+
+// Type for context
+interface SidebarContext {
+  collapsed: boolean;
+}
 
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  
+    // Access collapsed state from Outlet context
+   
+       const { collapsed } = useOutletContext<SidebarContext>(); 
+
   // Extract current tab from URL (default to 'home')
   const activeTab = location.pathname.split('/')[3] || 'home';
 
@@ -18,7 +26,10 @@ const Navbar = () => {
   };
 
   return (
-    <div className="bg-white border-b shadow-sm px-6 py-4 flex items-center gap-6 ">
+
+<div className={` transition-all duration-200 bg-white border-b shadow-sm px-6 py-3 fixed top-0 z-50 overflow-y-auto ${collapsed ? 'w-[calc(100%-5rem)]' : 'w-[calc(100%-18rem)]'} mb-1 `}>
+
+<div className="flex justify-between items-center w-full">
        
       {/* Title */}
       <h1 className="text-lg font-semibold">Media_Library</h1>
@@ -48,11 +59,13 @@ const Navbar = () => {
 
       {/* Search & Upload */}
       <div className="ml-auto flex items-end gap-4">
-        <Link to={ `http://localhost:5173/dashboard/media/folders/2e79bc82-6434-43a6-bd3e-6e7046e1d562`}>Folder2</Link>
+        <Link to={ `http://localhost:5173/dashboard/media/folders/2e79bc82-6434-43a6-bd3e-6e7046e1d562`}>Folder2(cust)</Link>
         <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white">
           <UploadIcon className="w-4 h-4" /> Upload
         </Button>
       </div>
+      </div>
+      
       </div>
     </div>
    

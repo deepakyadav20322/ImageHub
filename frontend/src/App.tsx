@@ -7,7 +7,7 @@ import Settings from "./Pages/private/Settings";
 import GetStarted from "./Pages/private/GetStarted";
 import Welcome from "./Pages/private/Welcome";
 import AuthLayout from "./Layouts/AuthLayout";
-import MediaHome from "./Pages/private/Media/Home";
+import MediaHome from "./Pages/private/Media/MediaHome";
 import MediaTopNavLayout from "./Layouts/MediaTopNavLayout";
 import Folders from "./Pages/private/Media/Folders";
 import Folders2 from "./Pages/private/Media/Folders2";
@@ -25,13 +25,15 @@ const App = () => {
           <Route index element={<Settings />} />
           <Route path="getting-started" element={<GetStarted />} />
 
-          <Route path="media" element={<MediaTopNavLayout />}>
-            <Route index element={<Navigate to="home" replace />} />
-            <Route path="home" element={<MediaHome />} />
-            <Route path="folders" element={<Folders2/>} />
-            <Route path="folders/:folderId" element={<Folders />} />
-            <Route index path="*" element={<GetStarted />} />
-          </Route>
+          <Route element={<MediaTopNavLayout />}>
+      <Route path="media">
+      <Route index element={<Navigate to="home" replace />} />
+        <Route path="home" element={<MediaHome />} />
+        <Route path="folders" element={<Folders2 />} />
+        <Route path="folders/:folderId" element={<Folders />} />
+        <Route path="*" element={<GetStarted />} />
+      </Route>
+    </Route>
         </Route>
       </Route>
     </Routes>

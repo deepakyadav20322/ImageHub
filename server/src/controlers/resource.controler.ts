@@ -394,105 +394,65 @@ export const getAllBucketsForAccount = async (
   }
 };
 
-// export const getCurrentFoldersWithAllParents = async(req:Request,res:Response,next:NextFunction)=>{
+
+// export const getCurrentFoldersWithAllParents = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ) => {
 //   try {
-//     const folderId = req.params ;
+//     const { folderId } = req.params;
+//     console.log("fId", folderId);
+//     console.log(req.params);
 //     if (!folderId) {
-//       return res.status(400).json({ message: "Folder ID is required" });
+//       res
+//         .status(400)
+//         .json({ success: false, message: "Folder ID is required" });
+//       return;
 //     }
 
-//     // Get the current folder and its parents recursively
-//     const getFolderWithParents = async (currentFolderId: string): Promise<any[]> => {
-//       const folder = await db
+//     // Function to fetch current folder and parents recursively
+//     const getFolderWithParents = async (
+//       currentFolderId: string
+//     ): Promise<any[]> => {
+//       const [folder] = await db
 //         .select()
 //         .from(resources)
-//         .where(and(
-//           eq(resources.resourceId, currentFolderId),
-//           eq(resources.type, "folder")
-//         ))
+//         .where(
+//           and(
+//             eq(resources.resourceId, currentFolderId),
+//             eq(resources.type, "folder")
+//           )
+//         )
 //         .limit(1);
 
-//       if (!folder || folder.length === 0) {
-//         return [];
-//       }
+//       // Return empty if folder not found
+//       if (!folder) return [];
 
-//       const current = folder[0];
-//       if (!current.parentResourceId) {
-//         return [current];
-//       }
+//       // Recursively fetch parent folders
+//       if (!folder.parentResourceId) return [folder];
 
-//       const parents = await getFolderWithParents(current.parentResourceId);
-//       return [...parents, current];
+//       const parents = await getFolderWithParents(folder.parentResourceId);
+//       return [...parents, folder];
 //     };
 
-//     const folderHierarchy = await getFolderWithParents(folderId.id);
-//     return res.status(200).json({
+//     const folderHierarchy = await getFolderWithParents(folderId);
+
+//     res.status(200).json({
 //       success: true,
-//       data: folderHierarchy
+//       data: folderHierarchy,
 //     });
-//   } catch (error) {
-
+//     return;
+//   } catch (error: Error | any) {
+//     console.error("Error fetching folder hierarchy:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An unexpected error occurred",
+//       error: error?.message,
+//     });
+//     return;
 //   }
-// }
-
-export const getCurrentFoldersWithAllParents = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const { folderId } = req.params;
-    console.log("fId", folderId);
-    console.log(req.params);
-    if (!folderId) {
-      res
-        .status(400)
-        .json({ success: false, message: "Folder ID is required" });
-      return;
-    }
-
-    // Function to fetch current folder and parents recursively
-    const getFolderWithParents = async (
-      currentFolderId: string
-    ): Promise<any[]> => {
-      const [folder] = await db
-        .select()
-        .from(resources)
-        .where(
-          and(
-            eq(resources.resourceId, currentFolderId),
-            eq(resources.type, "folder")
-          )
-        )
-        .limit(1);
-
-      // Return empty if folder not found
-      if (!folder) return [];
-
-      // Recursively fetch parent folders
-      if (!folder.parentResourceId) return [folder];
-
-      const parents = await getFolderWithParents(folder.parentResourceId);
-      return [...parents, folder];
-    };
-
-    const folderHierarchy = await getFolderWithParents(folderId);
-
-    res.status(200).json({
-      success: true,
-      data: folderHierarchy,
-    });
-    return;
-  } catch (error: Error | any) {
-    console.error("Error fetching folder hierarchy:", error);
-    res.status(500).json({
-      success: false,
-      message: "An unexpected error occurred",
-      error: error?.message,
-    });
-    return;
-  }
-};
+// };
 
 // export const getAssetsOfParticularFolder = async (
 //   req: Request,
@@ -510,22 +470,22 @@ export const getCurrentFoldersWithAllParents = async (
 //     const query = sql`
 //       WITH RECURSIVE folder_hierarchy AS (
 //           -- Start with the target folder, selecting all fields
-//           SELECT 
+//           SELECT
 //               *
 //           FROM resources
 //           WHERE resource_id = ${folderId} AND type = 'folder'
-    
+
 //           UNION ALL
-    
+
 //           -- Recursively fetch subfolders, selecting all fields
-//           SELECT 
+//           SELECT
 //               r.*
 //           FROM resources r
 //           INNER JOIN folder_hierarchy fh ON r.parent_resource_id = fh.resource_id
 //           WHERE r.type = 'folder'
 //       )
 //       -- Retrieve all files in the folder hierarchy, selecting all fields
-//       SELECT 
+//       SELECT
 //           r.*
 //       FROM resources r
 //       WHERE r.type = 'file' AND r.parent_resource_id IN (SELECT resource_id FROM folder_hierarchy);
@@ -544,6 +504,82 @@ export const getCurrentFoldersWithAllParents = async (
 //     );
 //   }
 // };
+
+// it send folders with one level subfolders
+export const getCurrentFoldersWithAllParents = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { folderId } = req.params;
+
+    if (!folderId) {
+      res
+        .status(400)
+        .json({ success: false, message: "Folder ID is required" });
+      return;
+    }
+
+    // Recursive function to fetch the current folder and all parents
+    const getFolderWithParents = async (
+      currentFolderId: string
+    ): Promise<any[]> => {
+      const [folder] = await db
+        .select()
+        .from(resources)
+        .where(
+          and(
+            eq(resources.resourceId, currentFolderId),
+            eq(resources.type, "folder")
+          )
+        )
+        .limit(1);
+
+      // Return empty if folder not found
+      if (!folder) return [];
+
+      // Recursively get parent folders
+      if (!folder.parentResourceId) return [folder];
+
+      const parents = await getFolderWithParents(folder.parentResourceId);
+      return [...parents, folder];
+    };
+
+    // Get all parent folders including the current folder
+    const folderHierarchy = await getFolderWithParents(folderId);
+
+    // Get immediate subfolders of the current folder
+    const subfolders = await db
+      .select()
+      .from(resources)
+      .where(
+        and(
+          eq(resources.parentResourceId, folderId),
+          eq(resources.type, "folder")
+        )
+      );
+
+    // Combine parent hierarchy and subfolders into a flat array
+    const flatResult = [...folderHierarchy, ...subfolders];
+
+    res.status(200).json({
+      success: true,
+      data: flatResult,
+    });
+    return;
+  } catch (error: Error | any) {
+    console.error("Error fetching folder hierarchy:", error);
+    res.status(500).json({
+      success: false,
+      message: "An unexpected error occurred",
+      error: error?.message,
+    });
+    return;
+  }
+};
+
+
 
 export const getAssetsOfParticularFolder = async (
   req: Request,
@@ -621,3 +657,79 @@ export const getAssetsOfParticularFolder = async (
     );
   }
 };
+
+export const createFolder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    // we always have one folder which is default and all folders comes under this it means always folderId comes for creating folder;
+
+    const {
+      folderId: parentResourceId,
+      newFolderName: name,
+      visibility = "private",
+    } = req.body;
+    // // console.log(parentResourceId,name,visibility);
+    // res.status(200).json({mes:"succ",parentResourceId,name,visibility})
+    // return
+    // Validate input
+    if (!parentResourceId || !name) {
+      return res
+        .status(400)
+        .json({ message: "Parent Folder ID and Name are required." });
+    }
+
+    const accountId = req.user?.accountId ?? '06d5fb0f-6d5d-4427-8caf-fc767d09497f'// Assuming user info is available on req.user
+
+    // Set the path for the new folder
+    const [parentFolder] = await db
+      .select()
+      .from(resources)
+      .where(eq(resources.resourceId, parentResourceId))
+      .limit(1);
+
+    if (!parentFolder) {
+      return res.status(404).json({ message: "Parent folder not found." });
+    }
+
+    // Build the folder path
+    const path = `${parentFolder.path}/${name}`;
+
+    // Insert the new folder
+    const [newFolder] = await db
+      .insert(resources)
+      .values({
+        accountId: accountId,
+        parentResourceId: parentResourceId,
+        type: "folder",
+        name,
+        displayName: name,
+        path,
+        visibility,
+        inheritPermissions: true,
+        overridePermissions: false,
+        metadata: null,
+        resourceTypeDetails: null,
+        versionId: null,
+        expiresAt: null,
+        status: "active",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      })
+      .returning();
+
+    // Send response
+    res.status(201).json({
+      message: "Folder created successfully.",
+      folder: newFolder,
+    });
+  } catch (error) {
+    console.log(error);
+    next(new AppError("Something went wrong in folder creation", 400));
+  }
+};
+
+export default createFolder;

@@ -62,20 +62,23 @@ console.log("from bucket layout: ",data)
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching data</p>;
   return (
-    <div className="flex">
+<div className="flex h-[1200px]">
       {/* Sidebar */}
-      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed}   onBucketSwitch={handleBucketSwitch} />
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} onBucketSwitch={handleBucketSwitch} />
 
-      {/* Main Content - Add margin based on sidebar state */}
+      {/* Main Content with Context */}
       <main
-        className={`flex-1 overflow-x-hidden transition-all duration-300 p-4
-    ml-16 ${collapsed ? "lg:ml-16" : "lg:ml-64"}
-  `}
+        className={`flex-1 overflow-x-hidden transition-all duration-200 p-4
+          ml-16 ${collapsed ? "lg:ml-16" : "lg:ml-64"}
+        `}
       >
-        <Outlet />
+    
+          {/* Pass collapsed state to children */}
+          <Outlet context={{ collapsed }} />
+     
       </main>
     </div>
-  );
+);
 };
 
 export default SidebarLayout;

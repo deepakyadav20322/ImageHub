@@ -4,8 +4,7 @@ import { RootState } from "@/redux/store";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router";
-import FolderTree from "../../../components/FolderTree";
-import AssetsOfFolder from "../../../components/AssetsOfFolder";
+
 import AssetManager from "@/components/AssetsManager";
 import { buildFolderTree } from "@/lib/utils";
 
@@ -35,11 +34,14 @@ const Folders = () => {
 
   return (
     <div>
-      This is folder page and current working bucket : " " {activeBucket}
+      {/* This is folder page and current working bucket : " " {activeBucket} */}
       {/* <div className="border-2 p-4">{JSON.stringify(folderData)}</div> */}
       {/* <FolderTree folders={folderData} /> */}
       {/* <AssetsOfFolder folderId={folderId || ''}/> */}
+      <div className="my-11">
       <AssetManager folders={buildFolderTree(folderData)} />
+      </div>
+
     </div>
   );
 };

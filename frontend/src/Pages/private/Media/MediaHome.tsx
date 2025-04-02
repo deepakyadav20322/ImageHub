@@ -235,4 +235,3 @@ const featureItems = [
     category: "product",
   },
 ]
-
