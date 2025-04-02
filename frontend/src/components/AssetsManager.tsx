@@ -21,7 +21,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { buildFolderTree, cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose
+} from "@/components/ui/dialog"
+
 
 import AssetCard from "./Assets-Card-View";
 import AssetList from "./Assets-List-View";
@@ -33,6 +43,8 @@ import { RootState } from "@/redux/store";
 import { useGetAssetsOfFolderQuery } from "@/redux/apiSlice/itemsApi";
 import { setAssetsOfParticularFolder } from "@/redux/features/itemsSlice";
 import { useParams } from "react-router";
+import { cn } from "@/lib/utils";
+import { Label } from "@radix-ui/react-label";
 // import { AssetCard } from "./asset-card"
 // import { AssetList } from "./asset-list"
 
@@ -120,8 +132,56 @@ const {folderId} = useParams();
     setSearchQuery("");
   };
 
+  const handleFolderCreate = (e: React.FormEvent<HTMLFormElement>)=>
+  {
+  e.preventDefault();
+  const formData = new FormData(e.currentTarget);
+  console.log(formData.get('name'));
+  }
+
   return (
-    <div className="flex flex-col h-screen">
+    <div className="">
+      {/*  Create folder dialog----------*/}
+      <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" className="mt-2">
+          Create 📁
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[450px]">
+        <DialogHeader className="pb-2">
+          <DialogTitle className="text-xl font-bold">Create New Folder</DialogTitle>
+          <DialogDescription className="text-base text-gray-500">
+            Create folder here. Click save when you're done.
+          </DialogDescription>
+        </DialogHeader>
+     
+        <form onSubmit={handleFolderCreate}>
+          <div className="pb-3">
+            <div className="flex flex-col items-start gap-y-2">
+              <Label htmlFor="name" className="text-left font-medium">
+                Name
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="Enter folder name"
+                className="w-full"
+                autoComplete="off"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white">
+              Save
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+
+<div className="flex flex-col ">
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex items-center justify-between p-4">
@@ -222,7 +282,7 @@ const {folderId} = useParams();
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* folder section Sidebar */}
+        {/* folder section Sidebar view-------------*/}
         <AnimatePresence initial={false}>
           {showSidebar && (
             <motion.div
@@ -230,16 +290,16 @@ const {folderId} = useParams();
               animate={{ width: 220, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
               transition={{ duration: 0.2 }}
-              className="border-r bg-background h-full overflow-hidden"
+              className="bg-background"
             >
               {/* This is for folder view --------------------------------- */}
-              <ScrollArea className="">
-                <div className="">
+                <ScrollArea className="h-[calc(100vh-13rem)] border-r">
+                <div className="h-full ">
                   <FolderTree
-                    folders={(folders)}
+                  folders={(folders)}
                   />
                 </div>
-              </ScrollArea>
+                </ScrollArea>
             </motion.div>
           )}
         </AnimatePresence>
@@ -272,6 +332,7 @@ const {folderId} = useParams();
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };
