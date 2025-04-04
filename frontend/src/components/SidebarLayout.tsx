@@ -5,6 +5,8 @@ import { useGetResourcesBucketByAccountQuery } from "@/redux/apiSlice/resourceAp
 import { setResourceError, setResourceLoading, setResources, setActiveBucket } from "@/redux/features/resourceSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import { useGetRootFolderOfBucketQuery } from "@/redux/apiSlice/itemsApi";
+import { setBucketRoootFolder } from "@/redux/features/itemsSlice";
 
 const SidebarLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -19,6 +21,13 @@ const SidebarLayout = () => {
     accountId: user?.accountId || '', 
     access_token: token || '' 
   });
+
+  // we get the root folder of specsfic bucket----
+  const { data: rootFolderData } = useGetRootFolderOfBucketQuery(
+    {
+      bucketId: activeBucket ,
+      token: token || ''}
+  );
   // console.log(token)
 console.log("from bucket layout: ",data)
   // useEffect(() => {
@@ -38,22 +47,23 @@ console.log("from bucket layout: ",data)
   //   dispatch(setActiveBucket(bucketId));
   // };
 
-
-
   useEffect(() => {
-    if (isLoading) {
+    if (isLoading){
       dispatch(setResourceLoading(isLoading));
     } else if (error) {
       dispatch(setResourceError("Failed to fetch resources"));
     } else if (data && data.length > 0) {
       dispatch(setResources(data));
+     
 
       // Set the first bucket as active by default, but only if no bucket is selected
       if (!activeBucket && data[0]?.resourceId) {
         dispatch(setActiveBucket(data[0].resourceId));
       }
+      // here we set root folder Data of current active bucket
+      dispatch(setBucketRoootFolder(rootFolderData));
     }
-  }, [data, isLoading, error, dispatch, activeBucket]);
+  }, [data, isLoading, error, dispatch, activeBucket,rootFolderData]);
 
   const handleBucketSwitch = (bucketId: string) => {
     dispatch(setActiveBucket(bucketId));
@@ -62,13 +72,13 @@ console.log("from bucket layout: ",data)
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Error fetching data</p>;
   return (
-<div className="flex h-[1200px]">
+<div className="flex">
       {/* Sidebar */}
       <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} onBucketSwitch={handleBucketSwitch} />
 
       {/* Main Content with Context */}
       <main
-        className={`flex-1 overflow-x-hidden transition-all duration-200 p-4
+        className={`flex-1 overflow-x-hidden transition-all duration-200
           ml-16 ${collapsed ? "lg:ml-16" : "lg:ml-64"}
         `}
       >

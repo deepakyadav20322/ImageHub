@@ -2,64 +2,39 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { FolderTreeData } from "@/components/FolderTree"
 
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-
-// export const buildFolderTree = (flatData: FolderTreeData[] ): FolderTreeData[] => {
-//   const idToNodeMap: { [key: string]: FolderTreeData } = {};
-//   const tree: FolderTreeData[] = [];
-
-//   flatData.forEach(item => {
-//     idToNodeMap[item.resourceId] = {
-//       ...item,
-//       overridePermissions: item.overridePermissions ?? false, // Set default
-//       children: [],
-//     };
-//   });
-
-//   flatData.forEach(item => {
-//     if (item.parentResourceId) {
-//       const parent = idToNodeMap[item.parentResourceId];
-//       if (parent) {
-//         parent.children?.push(idToNodeMap[item.resourceId]);
-//       }
-//     } else {
-//       tree.push(idToNodeMap[item.resourceId]);
-//     }
-//   });
-
-//   return tree;
-// }
-
 export const buildFolderTree = (flatData: FolderTreeData[]): FolderTreeData[] => {
-  const idToNodeMap: Record<string, FolderTreeData> = {};
-  const tree: FolderTreeData[] = [];
+  if (!flatData || !Array.isArray(flatData) || flatData.length === 0) {
+    console.error("Invalid or empty data provided to buildFolderTree:", flatData);
+    return [];
+  }
+  console.log("BEGIN",flatData)
+  const lookup: Record<string, FolderTreeData> = {};
+  const roots: FolderTreeData[] = [];
 
-  // Step 1: Initialize Nodes
-  flatData.forEach(item => {
-    idToNodeMap[item.resourceId] = {
-      ...item,
-      overridePermissions: item.overridePermissions ?? false,
-      children: [],
-    };
+  // Build lookup map
+  flatData.forEach((item) => {
+    lookup[item.resourceId] = { ...item, children: [] };
   });
 
-  // Step 2: Build Tree
-  flatData.forEach(item => {
-    if (item.parentResourceId) {
-      const parent = idToNodeMap[item.parentResourceId];
-      if (parent && parent.children) {
-        parent.children.push(idToNodeMap[item.resourceId]);
-      } else {
-        console.warn(`Parent not found for: ${item.resourceId}. Treating as top-level.`);
-        tree.push(idToNodeMap[item.resourceId]); // Consider as top-level
-      }
+  // Link children to parents
+  flatData.forEach((item) => {
+    const parentId = item.parentResourceId;
+    if (parentId && lookup[parentId]) {
+      lookup[parentId].children!.push(lookup[item.resourceId]);
     } else {
-      tree.push(idToNodeMap[item.resourceId]); // Root level folder
+      // Parent not found => root
+      roots.push(lookup[item.resourceId]);
     }
   });
-
-  return tree;
+  console.log("last",roots);
+  
+  return roots;
 };
+
+
+
