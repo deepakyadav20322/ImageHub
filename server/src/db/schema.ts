@@ -196,7 +196,7 @@ export const resources = pgTable("resources", {
   type: text("type", { enum: ["bucket", "folder", "file"] }).notNull(),
 
   name: text("name").notNull(),
-  displayName: text("displayName"), // it is only used for bucket , not for folder and files
+  displayName: text("display_name"), // it is only used for bucket , not for folder and files
 
   path: text("path").notNull(), // Ensures correct hierarchy tracking
 

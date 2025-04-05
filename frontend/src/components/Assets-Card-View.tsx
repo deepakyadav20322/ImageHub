@@ -1,33 +1,33 @@
 "use client"
 
-import { useState } from "react"
-import { MoreHorizontal, Globe, Lock, ImageIcon, FileText } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { MoreHorizontal, Globe, Lock, ImageIcon, FileText } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Checkbox } from "@/components/ui/checkbox"
-import { motion } from "framer-motion"
-
-interface Asset {
-  id: number
-  name: string
-  folder: string
-  type: string
-  format: string
-  size: string
-  dimensions: string
-  thumbnail: string
-  isPublic: boolean
-}
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
+import { Resource } from "@/lib/types"
 
 interface AssetCardProps {
-  assets: Asset[]
+  assets: Resource[]
 }
 
- const AssetCard = ({ assets }: AssetCardProps)=> {
-  const [selectedAssets, setSelectedAssets] = useState<number[]>([])
+const AssetCard = ({ assets }: AssetCardProps) => {
+  const [selectedAssets, setSelectedAssets] = useState<string[]>([])
+  const prevAssetsRef = useRef<Resource[]>([])
+  
+  // Track previous assets to optimize rendering
+  useEffect(() => {
+    prevAssetsRef.current = assets
+  }, [assets])
 
-  const toggleAsset = (id: number) => {
+  const toggleAsset = (id: string) => {
     if (selectedAssets.includes(id)) {
       setSelectedAssets(selectedAssets.filter((assetId) => assetId !== id))
     } else {
@@ -35,41 +35,64 @@ interface AssetCardProps {
     }
   }
 
+  const toggleAllAssets = (checked: boolean) => {
+    if (checked) {
+      setSelectedAssets(assets.map((asset) => asset.resourceId))
+    } else {
+      setSelectedAssets([])
+    }
+  }
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {assets.map((asset, index) => (
+<LayoutGroup>
+  <div className="flex flex-wrap gap-x-4 gap-y-6 w-full">
+    <AnimatePresence mode="popLayout" initial={false}>
+      {assets.map((asset) => (
         <motion.div
-          key={asset.id}
+          key={asset.resourceId}
+          layout
+          className="flex-shrink-0 min-w-[250px]  w-full sm:w-[50%] md:w-[34%] lg:w-[30%]"
           initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2, delay: index * 0.05 }}
+          animate={{
+            opacity: 1,
+            scale: 1,
+            transition: { type: "spring", stiffness: 300, damping: 25 },
+          }}
+          exit={{
+            opacity: 0,
+            scale: 0.95,
+            transition: { duration: 0.15 },
+          }}
+          transition={{
+            layout: { type: "spring", stiffness: 300, damping: 25 },
+          }}
         >
-          <Card className="group overflow-hidden">
-            <div className="relative aspect-video overflow-hidden bg-muted">
-              <img
-                src={asset.thumbnail || "/placeholder.svg"}
+          <Card className="group overflow-hidden flex flex-col">
+            <div className="relative aspect-video bg-muted">
+              <motion.img
+                layoutId={`image-${asset.resourceId}`}
+                src={asset.path || "/placeholder.svg?height=200&width=300"}
                 alt={asset.name}
-                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
-              <div className="absolute top-2 left-2">
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+              <div className="absolute top-2 left-2 z-10">
                 <Checkbox
-                  checked={selectedAssets.includes(asset.id)}
-                  onCheckedChange={() => toggleAsset(asset.id)}
+                  checked={selectedAssets.includes(asset.resourceId)}
+                  onCheckedChange={() => toggleAsset(asset.resourceId)}
                   aria-label={`Select ${asset.name}`}
-                  className="h-5 w-5 border-white bg-black/20 data-[state=checked]:bg-primary"
+                  className="bg-white/90 border-transparent transition-transform duration-200 hover:scale-110"
                 />
               </div>
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 right-2 z-10">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                      className="bg-white/90 hover:bg-white transition-transform duration-200 hover:scale-110"
                     >
                       <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Open menu</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -81,33 +104,35 @@ interface AssetCardProps {
                 </DropdownMenu>
               </div>
             </div>
-            <CardContent className="p-3">
-              <div className="flex items-center gap-2">
-                {asset.type === "Image" ? (
-                  <ImageIcon className="h-4 w-4 text-blue-500 shrink-0" />
+            <CardContent className="flex-grow">
+              <motion.div className="flex items-center gap-2 mt-2" layoutId={`title-${asset.resourceId}`}>
+                {asset.resourceTypeDetails ? (
+                  <ImageIcon className="text-blue-500 h-4 w-4 flex-shrink-0" />
                 ) : (
-                  <FileText className="h-4 w-4 text-orange-500 shrink-0" />
+                  <FileText className="text-orange-500 h-4 w-4 flex-shrink-0" />
                 )}
                 <p className="text-sm font-medium truncate">{asset.name}</p>
-              </div>
+              </motion.div>
             </CardContent>
-            <CardFooter className="p-3 pt-0 flex justify-between items-center">
-              <div className="text-xs text-muted-foreground">
-                {asset.format} • {asset.size}
-              </div>
-              <div className="flex items-center">
-                {asset.isPublic ? (
-                  <Globe className="h-4 w-4 text-green-500" />
+            <CardFooter className="pt-0 flex justify-between items-center text-xs text-muted-foreground">
+              <div>{asset.metadata?.mimetype || "-"} • {asset.metadata?.size || "-"} bits</div>
+              <div>
+                {asset.visibility ? (
+                  <Globe className="text-green-500 h-4 w-4" />
                 ) : (
-                  <Lock className="h-4 w-4 text-amber-500" />
+                  <Lock className="text-amber-500 h-4 w-4" />
                 )}
               </div>
             </CardFooter>
           </Card>
         </motion.div>
       ))}
-    </div>
+    </AnimatePresence>
+  </div>
+</LayoutGroup>
+
   )
 }
 
 export default AssetCard
+

@@ -1,36 +1,44 @@
 import { useGetFoldersQuery } from "@/redux/apiSlice/itemsApi";
 import { setFoldersDataWithParent } from "@/redux/features/itemsSlice";
 import { RootState } from "@/redux/store";
-import React, { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router";
 
 import AssetManager from "@/components/AssetsManager";
 import { buildFolderTree } from "@/lib/utils";
 
+
 const Folders = () => {
-    const { activeBucket } = useSelector((state: RootState) => state.resource);
+  const { activeBucket } = useSelector((state: RootState) => state.resource);
   const { folderId } = useParams(); // Get folderId from URL
   const dispatch = useDispatch();
   const token = useSelector((state: RootState) => state.auth.token);
   console.log(folderId);
-  const { data, error, isLoading } = useGetFoldersQuery({
+  const { currentData:data, error, isLoading } = useGetFoldersQuery({
     folderId: folderId || "",
     token: token || "",
-  });
-  console.log(data);
-  // 🟢 Store Data in Redux
+  },{refetchOnMountOrArgChange:true});
+
+  // Only update Redux when data changes and is fresh
   useEffect(() => {
-    if (data) {
+    if (data && !isLoading && !error) {
       dispatch(setFoldersDataWithParent(data));
     }
-  }, [data, dispatch]);
+  }, [data, isLoading, error]);
 
-  // 🟢 Get Data from Redux
+  // Use the Redux data
   const folderData = useSelector((state: RootState) => state.items.folders);
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error: {`folder page`} </div>;
+  // Add loading/error states for Redux data too
+  const reduxIsLoading = isLoading || !folderData;
+  const reduxError = error;
+
+  if (reduxIsLoading) return <div>Loading...</div>;
+  if (reduxError) return <div>Error</div>;
+
+  // if (isLoading) return <div>Loading...</div>;
+  // if (error) return <div>Error: {`folder page`} </div>;
 
   return (
     <div>
@@ -38,10 +46,9 @@ const Folders = () => {
       {/* <div className="border-2 p-4">{JSON.stringify(folderData)}</div> */}
       {/* <FolderTree folders={folderData} /> */}
       {/* <AssetsOfFolder folderId={folderId || ''}/> */}
-      <div className="my-11">
-      <AssetManager folders={buildFolderTree(folderData)} />
+      <div className=" mt-14 lg:mt-[3.7rem]">
+        <AssetManager folders={buildFolderTree(folderData)} />
       </div>
-
     </div>
   );
 };

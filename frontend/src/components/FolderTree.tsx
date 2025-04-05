@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   ChevronRight,
   ChevronDown,
@@ -6,9 +6,10 @@ import {
   FolderOpen,
   File,
 } from "lucide-react";
-import { useGetAssetsOfFolderQuery, useGetSubfoldersQuery } from "@/redux/apiSlice/itemsApi";
-import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { Resource } from "@/lib/types";
 
 export interface FolderTreeData {
   resourceId: string;
@@ -38,7 +39,11 @@ interface FolderTreeProps {
 }
 
 const FolderTree = ({ folders }: FolderTreeProps) => {
+  console.log("tree folder",folders)
+  const { folderId } = useParams();
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
+
+  const rootFolder = useSelector((state:RootState)=>state.items.bucketRootFolder) as Resource | null;
   console.log("folders", folders);
 const navigate = useNavigate();
   const toggleFolder = (folderId: string) => {
@@ -96,57 +101,68 @@ const navigate = useNavigate();
 
 
 
-  const renderResources = (items: FolderTreeData[], level = 0) => {
-    return items.map((item) => (
-      <div key={item.resourceId} className="w-full">
-        <div
-          className={`flex items-center py-1 hover:bg-gray-100 rounded ${
-            item.type === "file" ? "pl-8" : ""
-          }`}
-          style={{
-            paddingLeft: `${level * 16 + (item.type === "folder" ? 8 : 24)}px`,
-          }}
-        >
-          {item.type === "folder" && item.children && (
-            <button
-              onClick={() => toggleFolder(item.resourceId)}
-              className="mr-1 text-gray-500 hover:text-gray-700 cursor-pointer"
-            >
-              {expandedFolders[item.resourceId] ? (
-                <ChevronDown size={16} />
-              ) : (
-                <ChevronRight size={16} />
-              )}
-            </button>
-          )}
-
-          {item.type === "folder" ? (
-            expandedFolders[item.resourceId] ? (
-              <FolderOpen size={18} className="mr-2 text-blue-500" />
+const renderResources = (items: FolderTreeData[], level = 0) => {
+  console.log("folders items",items)
+  return items.map((item) => (
+    <div key={item.resourceId} className="w-full">
+      <div
+        className={`flex items-center py-1 my-1 rounded ${
+          item.type === "file" ? "pl-8" : ""
+        } ${folderId === item.resourceId ? "bg-blue-100 hover:bg-blue-200" : "hover:bg-gray-100"}`}
+        style={{
+          paddingLeft: `${level * 16 + (item.type === "folder" ? 8 : 24)}px`,
+        }}
+      >
+        {item.type === "folder" && item.children && (
+          <button
+            onClick={() => toggleFolder(item.resourceId)}
+            className="mr-1 text-gray-500 hover:text-gray-700 cursor-pointer"
+          >
+            {expandedFolders[item.resourceId] ? (
+              <ChevronDown size={16} />
             ) : (
-              <Folder size={18} className="mr-2 text-blue-500" />
-            )
+              <ChevronRight size={16} />
+            )}
+          </button>
+        )}
+
+        {item.type === "folder" ? (
+          expandedFolders[item.resourceId] ? (
+            <FolderOpen size={18} className="mr-2 text-blue-500" />
           ) : (
-            <File size={18} className="mr-2 text-gray-400" />
-          )}
+            <Folder size={18} className="mr-2 text-blue-500" />
+          )
+        ) : (
+          <File size={18} className="mr-2 text-gray-400" />
+        )}
 
-          <span onClick={() => handleFolderClick(item.resourceId)} className="text-sm">{item.displayName || item.name}</span>
-        </div>
-
-        {item.type === "folder" &&
-          item.children &&
-          expandedFolders[item.resourceId] && (
-            <div className="w-full">
-              {renderResources(item.children, level + 1)}
-            </div>
-          )}
+        <span onClick={() => handleFolderClick(item.resourceId)} className="text-sm">{item.displayName || item.name}</span>
       </div>
-    ));
-  };
+
+      {item.type === "folder" &&
+        item.children &&
+        expandedFolders[item.resourceId] && (
+          <div className="w-full">
+            {renderResources(item.children, level + 1)}
+          </div>
+        )}
+    </div>
+  ));
+};
 
   return (
-    <div className="p-4 overflow-y-auto w-56 bg-white">
-      {renderResources(folders)}
+    <div className="p-2 overflow-y-auto w-60 bg-white">
+      {
+
+      folders.length===0?
+      <button onClick={() => rootFolder && handleFolderClick(rootFolder.resourceId)} className="mr-1 text-gray-500 hover:text-gray-700 cursor-pointer flex items-center">
+          <ChevronRight size={16} />
+      <Folder size={18} className="mr-2 text-blue-500" /><span>Default</span>
+      </button>
+      :
+
+      <>{
+      renderResources(folders)}</>}
     </div>
   );
 };

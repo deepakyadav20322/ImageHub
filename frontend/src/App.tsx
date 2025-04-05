@@ -11,6 +11,7 @@ import MediaHome from "./Pages/private/Media/MediaHome";
 import MediaTopNavLayout from "./Layouts/MediaTopNavLayout";
 import Folders from "./Pages/private/Media/Folders";
 import Folders2 from "./Pages/private/Media/Folders2";
+import {Toaster} from 'react-hot-toast'
 const App = () => {
   return (
     <Routes>
@@ -36,6 +37,7 @@ const App = () => {
     </Route>
         </Route>
       </Route>
+ 
     </Routes>
   );
 };

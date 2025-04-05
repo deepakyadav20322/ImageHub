@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express'
 
-import  {findAndOptimizeReourse, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder} from '../controlers/resource.controler'
+import  {findAndOptimizeReourse, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount} from '../controlers/resource.controler'
 import authMiddleware from '../middlewares/auth.middleware';
 import { authenticateApiKey } from '../middlewares/authenticateApiKey.middleware';
 import multer from 'multer';
@@ -18,9 +18,20 @@ const upload = multer({
 router.post('/:bucket_name/:resource_type/upload',upload,uploadResources);
 router.get('/image/*',determineAuthType,authMiddleware,authenticateApiKey,findAndOptimizeReourse);
 router.get('/get-all-environments/:accountId',authMiddleware,getAllBucketsForAccount);
-router.get('/folders/:folderId',authMiddleware,getCurrentFoldersWithAllParents); 
+router.get('/folders/:folderId',authMiddleware,getAllFoldersDataByAccountId); 
 router.get('/folders/:folderId/assets',authMiddleware,getAssetsOfParticularFolder); 
-router.post('/folders/create-folder',createFolder);
+router.post('/folders/create-folder',authMiddleware,createFolder);
+router.get('/folders/getfolderAId/:accountId',authMiddleware,getAllFoldersDataByAccountId);
+router.get('/folders/root-folder/:bucketId',authMiddleware,getRootFolderOfBucketOfAccount);
+// router.post('/folders/create-folder',async(req,res)=>{
+//     try{
+//         const body = req.body
+//         res.json({data:body,success:true})
+
+//     }catch(error){
+// console.log("create folder error");
+//     }
+// });
 
 
 
