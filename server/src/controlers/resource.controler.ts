@@ -6,6 +6,10 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/db_connect";
 import AppError from "../utils/AppError";
 import path from "path";
+
+
+
+
 export const getAllResources = async (
   req: Request,
   res: Response,
@@ -95,6 +99,17 @@ export const uploadResources = async (
 
   try {
     const { bucket_name, resource_type } = req.params;
+    let  {accountId: userAccountId} = req.user
+    // here we check that bucket present or not?(if it in db then must it is s3)
+    const [existingBucket] = await db.select().from(resources).where(and(
+      eq(resources.name, bucket_name),
+      eq(resources.accountId,userAccountId)))
+      .limit(1);
+    
+      if(!existingBucket){
+       return res.status(400).json({message:"Your environment not exist!",success:false})
+      }
+
 
     if (resource_type !== "image") {
       res.status(400).json({ message: "In present only image support!" });
@@ -102,6 +117,26 @@ export const uploadResources = async (
     }
 
     const { imagePath, folderId } = req.body;
+    // here we check that folder present or not in db
+
+        const [folder] = await db
+          .select()
+          .from(resources)
+          .where(and(
+            eq(resources.resourceId, folderId),
+            eq(resources.type, "folder")
+          ))
+          .limit(1);
+
+        if (!folder) {
+          return res.status(400).json({ message: "Folder not exist!", success: false });
+        }
+     
+        
+    
+       
+       
+
     // in req imagePath comes like /default/abc.png but it convert to default/abc.png because this type path support in s3
     // 👇Todo:  💀💀💀💀 if we use get call from api dashboard then file path comes like /original/default/subhamPandeySir.png (you also need to convert to(remove /original/) default/subhamPandeySir.png)
     const correctedImagePathForS3 = imagePath.split("/").slice(1).join("/");
@@ -110,7 +145,7 @@ export const uploadResources = async (
       next(new AppError("your bucket name is wrong", 500));
       return;
     }
-    const originalBucket = bucket_name;
+    const originalBucket = bucket_name;                               
 
     console.log("Bucket Name:", bucket_name);
     console.log("Resource Type:", resource_type);
@@ -195,7 +230,7 @@ export const uploadResources = async (
     const fileType = file.mimetype;
     const fileName = file.originalname;
     const accountId =
-      req.user?.account_id || "36d46958-af66-4840-a421-481c8a7e459f";
+      req.user.accountId ;
 
     const insertedResource = await db
       .insert(resources)
@@ -856,7 +891,7 @@ export const createFolder = async (
         .json({ message: "Parent Folder ID and Name are required." });
     }
 
-    const accountId = req.user?.accountId ?? '06d5fb0f-6d5d-4427-8caf-fc767d09497f'// Assuming user info is available on req.user
+    const accountId = req.user.accountId // Assuming user info is available on req.user
 
     // Set the path for the new folder
     const [parentFolder] = await db
