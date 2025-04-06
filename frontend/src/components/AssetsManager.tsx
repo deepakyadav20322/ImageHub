@@ -59,7 +59,7 @@ import {
 } from "@/redux/apiSlice/itemsApi";
 import { setAssetsOfParticularFolder } from "@/redux/features/itemsSlice";
 import { useParams } from "react-router";
-import { buildFolderTree, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Label } from "@radix-ui/react-label";
 import toast from "react-hot-toast";
 import Breadcrumb from "./BreadCrumbFolder";

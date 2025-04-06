@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useGetRootFolderOfBucketQuery } from "@/redux/apiSlice/itemsApi";
 import { setBucketRoootFolder } from "@/redux/features/itemsSlice";
-
+import BrandLoadingScreen from '@/components/BrandLoadingScreen'
 const SidebarLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
  const { user,token } = useSelector((state: RootState) => state.auth);
@@ -17,7 +17,7 @@ const SidebarLayout = () => {
   const { activeBucket } = useSelector((state: RootState) => state.resource);
 
   // Fetch bucket resources when the component mounts
-  const { data, isLoading, error } = useGetResourcesBucketByAccountQuery({ 
+  const { data, isLoading,isFetching, error } = useGetResourcesBucketByAccountQuery({ 
     accountId: user?.accountId || '', 
     access_token: token || '' 
   });
@@ -69,7 +69,7 @@ console.log("from bucket layout: ",data)
     dispatch(setActiveBucket(bucketId));
   };
   
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading || isFetching) return <BrandLoadingScreen/>;
   if (error) return <p>Error fetching data</p>;
   return (
 <div className="flex">
