@@ -470,6 +470,7 @@ import {
   Crown,
   X,
   Menu,
+  Key,
 } from "lucide-react";
 import ModeToggle from "./mode-toggle";
 import { useDispatch, useSelector } from "react-redux";
@@ -487,7 +488,8 @@ const navItems = [
   { icon: Image, label: "Assets", path: "dashboard/assets" },
   { icon: Radio, label: "Broadcasts", path: "/broadcasts" },
   { icon: Radio, label: "Media", path: "/dashboard/media/home" },
-  // { icon: Users, label: "Audiences", path: "/audiences" },
+  { icon: Key, label: "API M", path: "settings/" },
+
   // { icon: BarChart2, label: "Metrics", path: "/metrics" },
   // { icon: Globe, label: "Domains", path: "/domains" },
   // { icon: FileText, label: "Logs", path: "/logs" },

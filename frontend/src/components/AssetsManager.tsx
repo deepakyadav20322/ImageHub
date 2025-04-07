@@ -387,7 +387,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
           <motion.div
             key="sidebar"
             initial={{ width: 0, opacity: 0 }}
-            animate={{ width: 220, opacity: 1 }}
+            animate={{ width: 240, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className="bg-background"

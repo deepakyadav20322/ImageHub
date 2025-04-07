@@ -1,9 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate, useOutletContext } from "react-router";
 import { Link } from "react-router";
+import UploadDialog from "./UploadDialog";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { Resource } from "@/lib/types";
 const tabs = ["home", "assets", "folders", "collections", "moderation"];
 
 // Type for context
@@ -11,18 +15,20 @@ interface SidebarContext {
   collapsed: boolean;
 }
 
+
 const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const bucketRootFolder = useSelector((state:RootState)=>state.items.bucketRootFolder) as Resource
   // Access collapsed state from Outlet context
-
+  const [uploadOpen, setUploadOpen] = useState(false);
   const { collapsed } = useOutletContext<SidebarContext>();
 
   // Extract current tab from URL (default to 'home')
   const activeTab = location.pathname.split("/")[3] || "home";
 
   const handleTabChange = (tab: string) => {
-    navigate(`/dashboard/media/${tab.toLowerCase()}`);
+    navigate(`/dashboard/media/${tab.toLowerCase()}/${tab.toLowerCase()==="folders"?bucketRootFolder.resourceId:""}`);
   };
 
   return (
@@ -67,17 +73,28 @@ const Navbar = () => {
 
           {/* Search & Upload */}
           <div className="ml-auto flex items-end gap-4">
-            <Link
-              to={`http://localhost:5173/dashboard/media/folders/2e79bc82-6434-43a6-bd3e-6e7046e1d562`}
-            >
-              Folder2(cust)
-            </Link>
-            <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white">
+           
+            <Button onClick={()=>setUploadOpen(!uploadOpen)} className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white">
               <UploadIcon className="w-4 h-4" /> Upload
             </Button>
           </div>
+        
         </div>
       </div>
+      <UploadDialog
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        availableFolders={[
+          { id: "root", name: "Root Folder" },
+          { id: "project-assets", name: "Project Assets" },
+        ]}
+        defaultFolderId="root"
+        onUpload={(files, folderId) => {
+          console.log("Uploading to:", folderId);
+          console.log("Files:", files);
+          // Call your API here to upload
+        }}
+      />
     </div>
   );
 };

@@ -8,7 +8,6 @@
 //   folders: FolderTreeData[];
 // }
 
-
 // const Breadcrumb = ({ folders }: BreadcrumbProps) => {
 //   const { folderId } = useParams();
 //   const navigate = useNavigate();
@@ -22,15 +21,15 @@
 //   const getBreadcrumbPath = (resourceId: string | undefined): FolderTreeData[] => {
 //     const path: FolderTreeData[] = [];
 //     let currentId = resourceId;
-    
+
 //     while (currentId) {
 //       const folder = folderMap.get(currentId);
 //       if (!folder) break;
-      
+
 //       path.unshift(folder);
 //       currentId = folder.parentResourceId;
 //     }
-    
+
 //     return path;
 //   };
 
@@ -49,18 +48,18 @@
 //   }
 
 //   return (
-//     <div 
+//     <div
 //       className="flex items-center space-x-2 p-2 bg-gray-100 rounded mb-2 w-full"
 //       aria-label="Breadcrumb"
 //     >
-//       <span 
+//       <span
 //         className="text-blue-600 hover:underline cursor-pointer"
 //         onClick={() => navigate('/dashboard/media/folders')}
 //       >
 //         Root
 //       </span>
 //       {breadcrumbPath.length > 0 && <ChevronRight size={16} />}
-      
+
 //       {breadcrumbPath.map((folder, index) => (
 //         <React.Fragment key={folder.resourceId}>
 //           <span
@@ -81,22 +80,103 @@
 
 // export default Breadcrumb;
 
+// import React, { useMemo } from "react";
+// import { FolderTreeData } from "./FolderTree";
+// import { Link } from "react-router";
+
+// type Props = {
+//   data: FolderTreeData[];
+//   currentFolderId: string;
+//   // onNavigate?: (folderId: string) => void;
+// };
+
+// const Breadcrumb: React.FC<Props> = ({ data, currentFolderId }) => {
+//   const findBreadcrumbPath = (
+//     nodes: FolderTreeData[],
+//     targetId: string
+//   ): { name: string; resourceId: string }[] => {
+//     const path: { name: string; resourceId: string }[] = [];
+
+//     const dfs = (
+//       node: FolderTreeData,
+//       trail: { name: string; resourceId: string }[]
+//     ): boolean => {
+//       const newTrail = [
+//         ...trail,
+//         { name: node.displayName || node.name, resourceId: node.resourceId },
+//       ];
+//       if (node.resourceId === targetId) {
+//         path.push(...newTrail);
+//         return true;
+//       }
+//       for (const child of node.children || []) {
+//         if (dfs(child, newTrail)) return true;
+//       }
+//       return false;
+//     };
+
+//     for (const root of nodes) {
+//       if (dfs(root, [])) break;
+//     }
+
+//     return path;
+//   };
+
+//   const breadcrumb = useMemo(
+//     () => findBreadcrumbPath(data, currentFolderId),
+//     [data, currentFolderId]
+//   );
+
+//   return (
+//     <div className="text-sm text-gray-800 space-x-2 p-2 bg-gray-100 rounded mb-2  dark:text-white flex items-center gap-1 w-full">
+//       {breadcrumb.map((item, idx) => (
+//         <div key={item.resourceId} className="flex items-center gap-1">
+//           <Link
+//             to={`/dashboard/media/folders/${item.resourceId}`}
+//             className={` ${
+//               item.resourceId === currentFolderId
+//                 ? "text-blue-400 dark:text-blue-600"
+//                 : ""
+//             } hover:underline cursor-pointer`}
+//           >
+//             {item.name}
+//           </Link>
+//           {idx < breadcrumb.length - 1 && (
+//             <span className="text-gray-500 dark:text-gray-400">{"->"}</span>
+//           )}
+//         </div>
+//       ))}
+//     </div>
+//   );
+// };
+
+// export default Breadcrumb;
+
 
 import React, { useMemo } from "react";
 import { FolderTreeData } from "./FolderTree";
+import { Link } from "react-router";
 
 type Props = {
   data: FolderTreeData[];
   currentFolderId: string;
-  // onNavigate?: (folderId: string) => void;
 };
 
 const Breadcrumb: React.FC<Props> = ({ data, currentFolderId }) => {
-  const findBreadcrumbPath = (nodes: FolderTreeData[], targetId: string): { name: string; resourceId: string }[] => {
+  const findBreadcrumbPath = (
+    nodes: FolderTreeData[],
+    targetId: string
+  ): { name: string; resourceId: string }[] => {
     const path: { name: string; resourceId: string }[] = [];
 
-    const dfs = (node: FolderTreeData, trail: { name: string; resourceId: string }[]): boolean => {
-      const newTrail = [...trail, { name: node.displayName || node.name, resourceId: node.resourceId }];
+    const dfs = (
+      node: FolderTreeData,
+      trail: { name: string; resourceId: string }[]
+    ): boolean => {
+      const newTrail = [
+        ...trail,
+        { name: node.displayName || node.name, resourceId: node.resourceId },
+      ];
       if (node.resourceId === targetId) {
         path.push(...newTrail);
         return true;
@@ -114,15 +194,40 @@ const Breadcrumb: React.FC<Props> = ({ data, currentFolderId }) => {
     return path;
   };
 
-  const breadcrumb = useMemo(() => findBreadcrumbPath(data, currentFolderId), [data, currentFolderId]);
+  const breadcrumb = useMemo(
+    () => findBreadcrumbPath(data, currentFolderId),
+    [data, currentFolderId]
+  );
+
+  const visibleBreadcrumb = () => {
+    if (breadcrumb.length <= 3) return breadcrumb;
+    const start = breadcrumb[0];
+    const end = breadcrumb.slice(-2); // last two
+    return [start, { name: "...", resourceId: "ellipsis" }, ...end];
+  };
+
+  const items = visibleBreadcrumb();
 
   return (
-    <div className="text-sm text-gray-800 space-x-2 p-2 bg-gray-100 rounded mb-2  dark:text-white flex items-center gap-1 w-full">
-      {breadcrumb.map((item, idx) => (
-        <div key={item.resourceId} className="flex items-center gap-1">
-          <span className={` ${item.resourceId=== currentFolderId?'text-blue-400 dark:text-blue-600':""} hover:underline cursor-pointer`}>{item.name}</span>
-          {idx < breadcrumb.length - 1 && (
-            <span className="text-gray-500 dark:text-gray-400">{"->"}</span>
+    <div className="text-sm text-gray-800 space-x-2 p-2 bg-gray-100 rounded mb-2 dark:text-white flex items-center gap-1 w-full">
+      {items.map((item, idx) => (
+        <div key={item.resourceId + idx} className="flex items-center gap-1">
+          {item.resourceId === "ellipsis" ? (
+            <span className="text-gray-400">…</span>
+          ) : (
+            <Link
+              to={`/dashboard/media/folders/${item.resourceId}`}
+              className={`${
+                item.resourceId === currentFolderId
+                  ? "text-[#0057FF] font-semibold"
+                  : ""
+              } hover:underline cursor-pointer`}
+            >
+              {item.name}
+            </Link>
+          )}
+          {idx < items.length - 1 && (
+            <span className="text-gray-500 dark:text-gray-400">{">"}</span>
           )}
         </div>
       ))}
