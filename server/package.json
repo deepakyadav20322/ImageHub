@@ -5,10 +5,10 @@
   "scripts": {
     "start": "tsc && node dist/index.js",
     "dev": "nodemon src/index.ts",
-    "migration:generate": "npx drizzle-kit generate --config=drizzle.config.ts",
-    "migration:run": "npx drizzle-kit migrate --config=drizzle.config.ts",
-    "migration:push": "npx drizzle-kit push --config=drizzle.config.ts",
-    "migration:sync": "npx drizzle-kit sync:pg --config=drizzle.config.ts"
+    "migration:generate": "npx drizzle-kit generate --config=src/drizzle.config.ts",
+    "migration:run": "npx drizzle-kit migrate --config=src/drizzle.config.ts",
+    "migration:push": "npx drizzle-kit push --config=src/drizzle.config.ts",
+    "migration:sync": "npx drizzle-kit sync:pg --config=src/drizzle.config.ts"
   },
   "keywords": [],
   "author": "",
@@ -35,7 +35,7 @@
     "@types/express": "^5.0.0",
     "@types/jsonwebtoken": "^9.0.9",
     "@types/multer": "^1.4.12",
-    "@types/node": "^22.13.9",
+    "@types/node": "^22.14.0",
     "@types/pg": "^8.11.11",
     "drizzle-kit": "^0.30.5",
     "ngrok": "^5.0.0-beta.2",
