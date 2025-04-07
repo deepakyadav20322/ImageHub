@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express'
 
-import  {findAndOptimizeReourse, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount} from '../controlers/resource.controler'
+import  {findAndOptimizeReourse, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, deleteFolderOfBucketWhithAllChildItems} from '../controlers/resource.controler'
 import authMiddleware from '../middlewares/auth.middleware';
 import { authenticateApiKey } from '../middlewares/authenticateApiKey.middleware';
 import multer from 'multer';
@@ -23,6 +23,10 @@ router.get('/folders/:folderId/assets',authMiddleware,getAssetsOfParticularFolde
 router.post('/folders/create-folder',authMiddleware,createFolder);
 router.get('/folders/getfolderAId/:accountId',authMiddleware,getAllFoldersDataByAccountId);
 router.get('/folders/root-folder/:bucketId',authMiddleware,getRootFolderOfBucketOfAccount);
+router.delete('/folders/delete-folder/:bucketId/:folderId',authMiddleware, deleteFolderOfBucketWhithAllChildItems);
+
+
+
 // router.post('/folders/create-folder',async(req,res)=>{
 //     try{
 //         const body = req.body

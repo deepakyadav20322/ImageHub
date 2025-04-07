@@ -14,7 +14,7 @@ export const getAllResources = async (
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> => {};
+): Promise<void> => { };
 
 // ================== checking the lambada ===========================
 
@@ -89,7 +89,7 @@ const SUPPORTED_TYPES: Record<string, string[]> = {
   video: ["mp4", "avi", "mov", "mkv", "webm"],
   audio: ["mp3", "wav", "aac", "flac", "ogg"],
 };
-
+ 
 export const uploadResources = async (
   req: Request,
   res: Response,
@@ -99,16 +99,16 @@ export const uploadResources = async (
 
   try {
     const { bucket_name, resource_type } = req.params;
-    let  {accountId: userAccountId} = req.user
+    let { accountId: userAccountId } = req.user
     // here we check that bucket present or not?(if it in db then must it is s3)
     const [existingBucket] = await db.select().from(resources).where(and(
       eq(resources.name, bucket_name),
-      eq(resources.accountId,userAccountId)))
+      eq(resources.accountId, userAccountId)))
       .limit(1);
-    
-      if(!existingBucket){
-       return res.status(400).json({message:"Your environment not exist!",success:false})
-      }
+
+    if (!existingBucket) {
+      return res.status(400).json({ message: "Your environment not exist!", success: false })
+    }
 
 
     if (resource_type !== "image") {
@@ -119,23 +119,19 @@ export const uploadResources = async (
     const { imagePath, folderId } = req.body;
     // here we check that folder present or not in db
 
-        const [folder] = await db
-          .select()
-          .from(resources)
-          .where(and(
-            eq(resources.resourceId, folderId),
-            eq(resources.type, "folder")
-          ))
-          .limit(1);
+    const [folder] = await db
+      .select()
+      .from(resources)
+      .where(and(
+        eq(resources.resourceId, folderId),
+        eq(resources.type, "folder")
+      ))
+      .limit(1);
 
-        if (!folder) {
-          return res.status(400).json({ message: "Folder not exist!", success: false });
-        }
-     
-        
-    
-       
-       
+    if (!folder) {
+      return res.status(400).json({ message: "Folder not exist!", success: false });
+    }
+
 
     // in req imagePath comes like /default/abc.png but it convert to default/abc.png because this type path support in s3
     // 👇Todo:  💀💀💀💀 if we use get call from api dashboard then file path comes like /original/default/subhamPandeySir.png (you also need to convert to(remove /original/) default/subhamPandeySir.png)
@@ -145,7 +141,7 @@ export const uploadResources = async (
       next(new AppError("your bucket name is wrong", 500));
       return;
     }
-    const originalBucket = bucket_name;                               
+    const originalBucket = bucket_name;
 
     console.log("Bucket Name:", bucket_name);
     console.log("Resource Type:", resource_type);
@@ -230,7 +226,7 @@ export const uploadResources = async (
     const fileType = file.mimetype;
     const fileName = file.originalname;
     const accountId =
-      req.user.accountId ;
+      req.user.accountId;
 
     const insertedResource = await db
       .insert(resources)
@@ -619,7 +615,7 @@ export const getCurrentFoldersWithAllParents = async (
   req: Request,
   res: Response,
   next: NextFunction
-):Promise<any> => {
+): Promise<any> => {
   try {
     const { folderId } = req.params;
 
@@ -656,19 +652,19 @@ export const getCurrentFoldersWithAllParents = async (
       WITH RECURSIVE folder_ancestors AS (
         SELECT * FROM ${resources}
         WHERE ${and(
-          eq(resources.resourceId, sql`${folderId}`),
-          eq(resources.type, 'folder'),
-          eq(resources.status, 'active')
-        )}
+      eq(resources.resourceId, sql`${folderId}`),
+      eq(resources.type, 'folder'),
+      eq(resources.status, 'active')
+    )}
         
         UNION ALL
         
         SELECT resources.* FROM ${resources}
         JOIN folder_ancestors fa ON resources.resource_id = fa.parent_resource_id
         WHERE ${and(
-            eq(resources.type, 'folder'),
-            eq(resources.status, 'active')
-          )}
+      eq(resources.type, 'folder'),
+      eq(resources.status, 'active')
+    )}
       ),
       
       target_folder AS (
@@ -680,20 +676,20 @@ export const getCurrentFoldersWithAllParents = async (
       folder_siblings AS (
         SELECT resources.* FROM ${resources}
         WHERE ${and(
-            eq(resources.parentResourceId, sql`(SELECT parent_resource_id FROM target_folder)`),
-            eq(resources.type, 'folder'),
-            eq(resources.status, 'active'),
-            sql`resources.resource_id != ${folderId}`
-          )}
+      eq(resources.parentResourceId, sql`(SELECT parent_resource_id FROM target_folder)`),
+      eq(resources.type, 'folder'),
+      eq(resources.status, 'active'),
+      sql`resources.resource_id != ${folderId}`
+    )}
       ),
       
       folder_children AS (
         SELECT resources.* FROM ${resources}
         WHERE ${and(
-            eq(resources.parentResourceId, sql`${folderId}`),
-            eq(resources.type, 'folder'),
-            eq(resources.status, 'active')
-          )}
+      eq(resources.parentResourceId, sql`${folderId}`),
+      eq(resources.type, 'folder'),
+      eq(resources.status, 'active')
+    )}
       )
       
       SELECT * FROM folder_ancestors
@@ -736,54 +732,54 @@ export const getCurrentFoldersWithAllParents = async (
 };
 
 // ---------------------------------------------------------------
-export const getAllFoldersDataByAccountId = async(req:Request,res:Response,next:NextFunction):Promise<any>=>{
-try {
-  const { accountId } = req.user;
-  
-  // // Validate accountId format (basic UUID check)
-  // if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(accountId)) {
-  //   return res.status(400).json({ error: 'Invalid account ID format' });
-  // }
+export const getAllFoldersDataByAccountId = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    const { accountId } = req.user;
+
+    // // Validate accountId format (basic UUID check)
+    // if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(accountId)) {
+    //   return res.status(400).json({ error: 'Invalid account ID format' });
+    // }
 
 
 
-  const folders = await db
-    .select({
-      resourceId: resources.resourceId,
-      accountId: resources.accountId,
-      parentResourceId: resources.parentResourceId,
-      type: resources.type,
-      name: resources.name,
-      displayName: resources.displayName,
-      path: resources.path,
-      visibility: resources.visibility,
-      inheritPermissions: resources.inheritPermissions,
-      overridePermissions: resources.overridePermissions,
-      metadata: resources.metadata,
-      resourceTypeDetails: resources.resourceTypeDetails,
-      versionId: resources.versionId,
-      expiresAt: resources.expiresAt,
-      status: resources.status,
-      createdAt: resources.createdAt,
-      updatedAt: resources.updatedAt,
-      deletedAt: resources.deletedAt
-    })
-    .from(resources)
-    .where(
-      and(
-        eq(resources.accountId, accountId),
-        eq(resources.type, 'folder'),
-        // isNull(resources.deletedAt),
-        eq(resources.status, 'active')
+    const folders = await db
+      .select({
+        resourceId: resources.resourceId,
+        accountId: resources.accountId,
+        parentResourceId: resources.parentResourceId,
+        type: resources.type,
+        name: resources.name,
+        displayName: resources.displayName,
+        path: resources.path,
+        visibility: resources.visibility,
+        inheritPermissions: resources.inheritPermissions,
+        overridePermissions: resources.overridePermissions,
+        metadata: resources.metadata,
+        resourceTypeDetails: resources.resourceTypeDetails,
+        versionId: resources.versionId,
+        expiresAt: resources.expiresAt,
+        status: resources.status,
+        createdAt: resources.createdAt,
+        updatedAt: resources.updatedAt,
+        deletedAt: resources.deletedAt
+      })
+      .from(resources)
+      .where(
+        and(
+          eq(resources.accountId, accountId),
+          eq(resources.type, 'folder'),
+          // isNull(resources.deletedAt),
+          eq(resources.status, 'active')
+        )
       )
-    )
-    .orderBy(resources.path);
+      .orderBy(resources.path);
 
-  res.json({data:folders,success:true});
-} catch (error) {
-  console.error('Error fetching folders:', error);
-  res.status(500).json({ error: 'Internal server error' });
-}
+    res.json({ data: folders, success: true });
+  } catch (error) {
+    console.error('Error fetching folders:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 
 }
 
@@ -942,31 +938,31 @@ export const createFolder = async (
   }
 };
 
-export const getRootFolderOfBucketOfAccount =async (req:Request,res:Response,next:NextFunction):Promise<any>=>{
+export const getRootFolderOfBucketOfAccount = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
 
   try {
     let accountId;
-    if(req.body.accountId){
-     accountId = req.body.accountId;
-    }else{
-       accountId = req.user.accountId;
+    if (req.body.accountId) {
+      accountId = req.body.accountId;
+    } else {
+      accountId = req.user.accountId;
     }
-    const {bucketId} = req.params;  
-       console.log(accountId,bucketId)
-    if(!accountId || !bucketId){
-       res.status(400).json({message:"Account or bucket not exist"});
-       return;
+    const { bucketId } = req.params;
+    console.log(accountId, bucketId)
+    if (!accountId || !bucketId) {
+      res.status(400).json({ message: "Account or bucket not exist" });
+      return;
     }
     const data = await db
       .select()
       .from(resources)
       .where(
-      and(
-        eq(resources.accountId, accountId),
-        eq(resources.name, "default"),
-        eq(resources.type, "folder"),
-        eq(resources.parentResourceId, bucketId)
-      )
+        and(
+          eq(resources.accountId, accountId),
+          eq(resources.name, "default"),
+          eq(resources.type, "folder"),
+          eq(resources.parentResourceId, bucketId)
+        )
       )
       .limit(1);
 
@@ -978,9 +974,54 @@ export const getRootFolderOfBucketOfAccount =async (req:Request,res:Response,nex
       success: true,
       data: data[0]
     });
-    
+
   } catch (error) {
     console.log(error);
-    next(new AppError("Error during fetching root-folder of given bucket",400))
+    next(new AppError("Error during fetching root-folder of given bucket", 400))
+  }
+}
+
+export const deleteFolderOfBucketWhithAllChildItems = async (req:Request, res:Response, next:NextFunction):Promise<any>=>{
+  try {
+          
+    const {folderId,bucketId} = req.params;
+    if(!folderId || !bucketId){
+      return res.status(400).json({message:'folderId and bucketId required'});
+    }
+    const {accountId} = req.user;
+    // Check if folder exists and belongs to the given bucket
+    const [folder] = await db
+      .select()
+      .from(resources)
+      .where(and(
+      eq(resources.resourceId, folderId),
+      eq(resources.type, "folder"),
+      eq(resources.accountId, accountId) // ownership check
+      ))
+      .limit(1);
+
+    if (!folder) {
+      return res.status(404).json({ message: "Folder not found or access denied" });
+    }
+
+
+
+     // We also have an option for soft delete.
+   
+     // if we use where clouse then cascade feature not work 
+   const ress =   await db
+     .delete(resources)
+     .where(and(eq(resources.resourceId, folderId)
+    ));
+   
+  
+
+    return res.status(200).json({
+      success: true, 
+      message: "Folder and all contents permanently deleted",
+      ress
+    });
+  } catch (error) {
+    
   }
 }
