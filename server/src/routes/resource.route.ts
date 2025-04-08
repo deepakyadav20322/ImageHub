@@ -15,7 +15,7 @@ const upload = multer({
 // router.get('/',getAllResources);
 
 // router.post('/:bucket_name/:resource_type/upload',determineAuthType,authMiddleware,authenticateApiKey,upload,uploadResources);
-router.post('/:bucket_name/:resource_type/upload',upload,uploadResources);
+router.post('/:bucket_name/:resource_type/upload',upload,authMiddleware,authenticateApiKey,uploadResources);
 router.get('/image/*',determineAuthType,authMiddleware,authenticateApiKey,findAndOptimizeReourse);
 router.get('/get-all-environments/:accountId',authMiddleware,getAllBucketsForAccount);
 router.get('/folders/:folderId',authMiddleware,getAllFoldersDataByAccountId); 

@@ -95,11 +95,12 @@ export const uploadResources = async (
   res: Response,
   next: NextFunction
 ): Promise<any> => {
-  console.log("Incoming Request Data:", req.body);
+  console.log("Incomming Request Data:", req.body);
 
   try {
     const { bucket_name, resource_type } = req.params;
     let { accountId: userAccountId } = req.user
+    console.log(bucket_name,"bucketName");
     // here we check that bucket present or not?(if it in db then must it is s3)
     const [existingBucket] = await db.select().from(resources).where(and(
       eq(resources.name, bucket_name),
@@ -116,7 +117,7 @@ export const uploadResources = async (
       return;
     }
 
-    const { imagePath, folderId } = req.body;
+    const { folderId } = req.body;
     // here we check that folder present or not in db
 
     const [folder] = await db
@@ -127,6 +128,7 @@ export const uploadResources = async (
         eq(resources.type, "folder")
       ))
       .limit(1);
+      
 
     if (!folder) {
       return res.status(400).json({ message: "Folder not exist!", success: false });
@@ -135,7 +137,7 @@ export const uploadResources = async (
 
     // in req imagePath comes like /default/abc.png but it convert to default/abc.png because this type path support in s3
     // 👇Todo:  💀💀💀💀 if we use get call from api dashboard then file path comes like /original/default/subhamPandeySir.png (you also need to convert to(remove /original/) default/subhamPandeySir.png)
-    const correctedImagePathForS3 = imagePath.split("/").slice(1).join("/");
+    const correctedImagePathForS3 = (folder.path).split("/").slice(1).join("/");
     const { t_addOn } = req.body;
     if (bucket_name.split("-").length == 2) {
       next(new AppError("your bucket name is wrong", 500));
@@ -185,10 +187,11 @@ export const uploadResources = async (
       console.log("❌ No file uploaded");
       return res.status(400).json({ error: "Image file is required" });
     }
-    const fullPath = `${correctedImagePathForS3}/${req.file.originalname}`;
-    console.log("fullPath", fullPath);
-    console.log("o-bucket", originalBucket);
+    const fullPath = `${correctedImagePathForS3}/${(req.file.originalname).replace(/\s/g, "")}`;
+ 
     //Todo: 👉👉 file path ke according , you make changes in lambda funciton code
+
+  
     const params = {
       FunctionName: "testFunction1",
       Payload: JSON.stringify({
@@ -224,7 +227,7 @@ export const uploadResources = async (
     // ✅ Save file info to PostgreSQL (resources table)
     const fileUrl = payload.fileUrl;
     const fileType = file.mimetype;
-    const fileName = file.originalname;
+    const fileName = (file.originalname).replace(/\s/g, "");
     const accountId =
       req.user.accountId;
 
