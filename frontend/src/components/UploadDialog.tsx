@@ -360,7 +360,7 @@ const UploadDialog = ({
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !uploading && !isOpen && onClose()}>
       <DialogContent
-        className="w-[95vw] max-w-3xl p-4 sm:p-6 [&>button:last-child]:hidden"
+        className="w-[98vw] !max-w-3xl p-4 sm:p-6 [&>button:last-child]:hidden"
         onInteractOutside={(e) => uploading && e.preventDefault()}
       >
         <DialogHeader className="space-y-3">
@@ -378,24 +378,36 @@ const UploadDialog = ({
         </DialogHeader>
 
         <Tabs defaultValue="my-files" className="w-full" value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 mb-4">
-            <TabsTrigger value="my-files" className="flex items-center gap-1.5">
-              <HardDrive className="h-4 w-4" />
-              <span>My Files</span>
-            </TabsTrigger>
-            <TabsTrigger value="google-drive" className="flex items-center gap-1.5">
-              <GoogleDrive className="h-4 w-4" />
-              <span>Google Drive</span>
-            </TabsTrigger>
-            <TabsTrigger value="dropbox" className="flex items-center gap-1.5">
-              <Dropbox className="h-4 w-4" />
-              <span>Dropbox</span>
-            </TabsTrigger>
-            <TabsTrigger value="url" className="flex items-center gap-1.5">
-              <ExternalLink className="h-4 w-4" />
-              <span>URL</span>
-            </TabsTrigger>
-          </TabsList>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 mb-8 sm:mb-4">
+  <TabsTrigger 
+    value="my-files" 
+    className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer"
+  >
+    <HardDrive className="h-4 w-4" />
+    <span>My Files</span>
+  </TabsTrigger>
+  <TabsTrigger 
+    value="google-drive" 
+    className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer"
+  >
+    <GoogleDrive className="h-4 w-4" />
+    <span>Google Drive</span>
+  </TabsTrigger>
+  <TabsTrigger 
+    value="dropbox" 
+    className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer"
+  >
+    <Dropbox className="h-4 w-4" />
+    <span>Dropbox</span>
+  </TabsTrigger>
+  <TabsTrigger 
+    value="url" 
+    className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer"
+  >
+    <ExternalLink className="h-4 w-4" />
+    <span>URL</span>
+  </TabsTrigger>
+</TabsList>
 
           <TabsContent value="my-files" className="space-y-4">
             {files.length === 0 ? (
@@ -403,10 +415,10 @@ const UploadDialog = ({
                 initial={{ opacity: 0.9, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(
-                  "relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-all duration-200",
+                  "relative flex min-h-[300px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-all duration-200",
                   isDragging
                     ? "border-blue-500 bg-blue-50"
-                    : "border-gray-300 bg-gray-50 hover:bg-gray-100 hover:border-gray-400",
+                    : "border-gray-300 bg-gray-50 hover:bg-slte-50 hover:border-blue-300",
                 )}
                 onClick={() => inputRef.current?.click()}
                 onDrop={handleDrop}
