@@ -3,7 +3,7 @@ import Home from "./Pages/Home";
 import LoginPage from "@/Pages/LoginPage";
 import SignUpPage from "./Pages/Signup";
 import SidebarLayout from "./components/SidebarLayout";
-import Settings from "./Pages/private/Settings";
+import ProductEnvironmentSetting from "./Pages/private/ProductEnvironmentSetting";
 import GetStarted from "./Pages/private/GetStarted";
 import Welcome from "./Pages/private/Welcome";
 import AuthLayout from "./Layouts/AuthLayout";
@@ -11,7 +11,8 @@ import MediaHome from "./Pages/private/Media/MediaHome";
 import MediaTopNavLayout from "./Layouts/MediaTopNavLayout";
 import Folders from "./Pages/private/Media/Folders";
 import Folders2 from "./Pages/private/Media/Folders2";
-import {Toaster} from 'react-hot-toast'
+import AccountSetting from "./Pages/private/AccountSetting";
+
 const App = () => {
   return (
     <Routes>
@@ -23,7 +24,9 @@ const App = () => {
       <Route element={<AuthLayout />}>
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/dashboard" element={<SidebarLayout />}>
-          <Route index element={<Settings />} />
+        <Route index element={<Navigate to="media" replace />} />
+          <Route path="settings/user" element={<ProductEnvironmentSetting />} />
+          <Route path="settings/account" element={<AccountSetting />} />
           <Route path="getting-started" element={<GetStarted />} />
 
           <Route element={<MediaTopNavLayout />}>

@@ -485,10 +485,11 @@ const teamData = {
 
 const navItems = [
   { icon: Mail, label: "Getting Started", path: "/dashboard/getting-started" },
-  { icon: Image, label: "Assets", path: "dashboard/assets" },
+  { icon: Image, label: "Media", path: "media" },
   { icon: Radio, label: "Broadcasts", path: "/broadcasts" },
-  { icon: Radio, label: "Media", path: "/dashboard/media/home" },
-  { icon: Key, label: "API M", path: "settings/" },
+  { icon: Radio, label: "Media", path: "/media/home" },
+  { icon: Key, label: "Product Setting", path: "settings/product-environment" },
+  { icon: Key, label: "Account Setting", path: "settings/account" },
 
   // { icon: BarChart2, label: "Metrics", path: "/metrics" },
   // { icon: Globe, label: "Domains", path: "/domains" },
