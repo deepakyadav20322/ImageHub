@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express'
 
-import  {findAndOptimizeReourse, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, deleteFolderOfBucketWhithAllChildItems} from '../controlers/resource.controler'
+import  {findAndOptimizeResource, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, deleteFolderOfBucketWhithAllChildItems} from '../controlers/resource.controler'
 import authMiddleware from '../middlewares/auth.middleware';
 import { authenticateApiKey } from '../middlewares/authenticateApiKey.middleware';
 import multer from 'multer';
@@ -15,8 +15,14 @@ const upload = multer({
 // router.get('/',getAllResources);
 
 // router.post('/:bucket_name/:resource_type/upload',determineAuthType,authMiddleware,authenticateApiKey,upload,uploadResources);
+<<<<<<< Updated upstream
 router.post('/:bucket_name/:resource_type/upload',upload,authMiddleware,authenticateApiKey,uploadResources);
 router.get('/image/*',determineAuthType,authMiddleware,authenticateApiKey,findAndOptimizeReourse);
+=======
+router.post('/:bucket_name/:resource_type/upload',authMiddleware,upload,uploadResources);
+router.get('/:bucket/image/upload/:transformations/:path(*)',findAndOptimizeResource);
+// router.get('/:bucket/image/upload/:transformations/:path(*)',determineAuthType,authMiddleware,authenticateApiKey,findAndOptimizeResource);
+>>>>>>> Stashed changes
 router.get('/get-all-environments/:accountId',authMiddleware,getAllBucketsForAccount);
 router.get('/folders/:folderId',authMiddleware,getAllFoldersDataByAccountId); 
 router.get('/folders/:folderId/assets',authMiddleware,getAssetsOfParticularFolder); 

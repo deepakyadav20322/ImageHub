@@ -85,7 +85,7 @@ const lambda = new Lambda({
 // };
 
 const SUPPORTED_TYPES: Record<string, string[]> = {
-  image: ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "tiff", "ico"],
+  image: ["auto","jpg", "jpeg", "png", "gif", "webp", "svg"],
   video: ["mp4", "avi", "mov", "mkv", "webm"],
   audio: ["mp3", "wav", "aac", "flac", "ogg"],
 };
@@ -326,80 +326,220 @@ export const uploadResources = async (
 
 // ================== checking the lambada ===========================
 
-export const findAndOptimizeReourse = async (
-  req: Request<{ 0: string }>,
+// export const findAndOptimizeReourse = async (
+//   req: Request<{ 0: string }>,
+//   res: Response,
+//   next: NextFunction
+// ): Promise<any> => {
+ 
+
+//   // Extract the image path
+//   const imagePath = req.params[0]; // Captures everything after `/image/`
+
+//   // Extract query parameters
+//   const { width, height, quality, format } = req.query;
+
+//   // Construct the queryParams string only if parameters exist
+//   const queryParams = [];
+//   if (width) queryParams.push(`width=${width}`);
+//   if (height) queryParams.push(`height=${height}`);
+//   if (quality) queryParams.push(`quality=${quality}`);
+//   if (format) queryParams.push(`format=${format}`);
+
+//   // Combine query parameters string (only if there are valid params)
+//   const queryParamsString = queryParams.length ? queryParams.join(",") : "";
+//   console.log(queryParamsString);
+//   console.log("imagePat", imagePath);
+//   // Prepare Lambda parameters
+//   const params = {
+//     // originalImageBucketName: originalBucket,
+//     transformedImageCacheTTL: "max-age=31536000",
+//     imagePath: imagePath,
+//     queryParams: queryParamsString,
+//   };
+
+//   const command = new InvokeCommand({
+//     FunctionName: "testFunction1",
+//     Payload: JSON.stringify(params),
+//   });
+
+//   try {
+//     const result = await lambda.send(command);
+
+//     const payloadString = result.Payload
+//       ? new TextDecoder().decode(result.Payload)
+//       : "{}";
+
+//     let payload;
+//     try {
+//       payload = JSON.parse(payloadString);
+//       if (payload.body) {
+//         payload.body = JSON.parse(payload.body); // Parse inner JSON body
+//       }
+//     } catch (parseError) {
+//       console.error("Error parsing Lambda response:", parseError);
+//       return res.status(500).json({ error: "Invalid Lambda response format." });
+//     }
+
+//     if (payload.statusCode === 200) {
+//       return res.status(200).json(payload);
+//     } else {
+//       const statusCode = payload.statusCode || 500;
+//       return res.status(statusCode).json({
+//         error: payload.body?.error || "Unknown error occurred",
+//         details: payload.body?.details || "",
+//         suggestion: payload.body?.suggestion || "",
+//       });
+//     }
+//   } catch (error) {
+//     console.error("Error invoking Lambda function:", error);
+//     res.status(500).send("Internal Server Error");
+//   }
+// };
+
+export const findAndOptimizeResource = async (
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<any> => {
-  const originalBucket =
-    "image-tool-36d46958-af66-4840-a421-481c8a7e459f-original";
-  const transformedBucket =
-    "image-tool-36d46958-af66-4840-a421-481c8a7e459f-transformed";
+  const { bucket, transformations, path } = req.params;
 
-  // Extract the image path
-  const imagePath = req.params[0]; // Captures everything after `/image/`
-
-  // Extract query parameters
-  const { width, height, quality, format } = req.query;
-
-  // Construct the queryParams string only if parameters exist
-  const queryParams = [];
-  if (width) queryParams.push(`width=${width}`);
-  if (height) queryParams.push(`height=${height}`);
-  if (quality) queryParams.push(`quality=${quality}`);
-  if (format) queryParams.push(`format=${format}`);
-
-  // Combine query parameters string (only if there are valid params)
-  const queryParamsString = queryParams.length ? queryParams.join(",") : "";
-  console.log(queryParamsString);
-  console.log("imagePat", imagePath);
-  // Prepare Lambda parameters
-  const params = {
-    originalImageBucketName: originalBucket,
-    transformedImageBucketName: transformedBucket,
-    transformedImageCacheTTL: "max-age=31536000",
-    imagePath: imagePath,
-    queryParams: queryParamsString,
-  };
-
-  const command = new InvokeCommand({
-    FunctionName: "testFunction1",
-    Payload: JSON.stringify(params),
-  });
 
   try {
-    const result = await lambda.send(command);
+    // 1. Validate Bucket
+    const [existingBucket] = await db
+      .select()
+      .from(resources)
+      .where(
+        and(eq(resources.name, bucket), eq(resources.type, "bucket"))
+      )
+      .limit(1);
 
-    const payloadString = result.Payload
-      ? new TextDecoder().decode(result.Payload)
-      : "{}";
-
-    let payload;
-    try {
-      payload = JSON.parse(payloadString);
-      if (payload.body) {
-        payload.body = JSON.parse(payload.body); // Parse inner JSON body
-      }
-    } catch (parseError) {
-      console.error("Error parsing Lambda response:", parseError);
-      return res.status(500).json({ error: "Invalid Lambda response format." });
+    if (!existingBucket) {
+      return res.status(400).json({ error: "Invalid bucket environment" });
     }
 
-    if (payload.statusCode === 200) {
-      return res.status(200).json(payload);
-    } else {
-      const statusCode = payload.statusCode || 500;
-      return res.status(statusCode).json({
-        error: payload.body?.error || "Unknown error occurred",
-        details: payload.body?.details || "",
-        suggestion: payload.body?.suggestion || "",
+    // 2. Validate transformations if present
+    if (transformations && transformations !== 'original') {
+      const { valid, error } = validateTransformations(transformations);
+      if (!valid) {
+        return res.status(400).json({ error });
+      }
+    }
+console.log(`default/${path}`)
+    // 3. Prepare Lambda payload
+    const lambdaPayload = {
+      bucket,
+      path: `default/${path}`,
+      transformations,
+      headers: req.headers,
+      query: req.query,
+    };
+
+    // 4. Invoke Lambda
+    const lambdaResponse = await lambda.send(new InvokeCommand({
+      FunctionName: process.env.IMAGE_PROCESSOR_LAMBDA!,
+      InvocationType: "RequestResponse",
+      Payload: Buffer.from(JSON.stringify(lambdaPayload)),
+    }));
+
+    // 5. Process Lambda response
+    const responseText = new TextDecoder().decode(lambdaResponse.Payload);
+    const parsedResponse = JSON.parse(responseText);
+
+    if (!parsedResponse.statusCode) {
+      throw new Error('Lambda response missing statusCode');
+    }
+
+    // Handle different response types
+    if (parsedResponse.isBase64Encoded) {
+      return res
+        .status(parsedResponse.statusCode)
+        .set(parsedResponse.headers || {})
+        .send(Buffer.from(parsedResponse.body, 'base64'));
+    }
+
+    return res
+      .status(parsedResponse.statusCode)
+      .set(parsedResponse.headers || {})
+      .json(parsedResponse.body);
+
+  } catch (err) {
+    console.error('Image processing error:', err);
+    
+    // Handle specific Lambda invocation errors
+    if (err && typeof err === 'object' && 'name' in err && err.name === 'InvocationError') {
+      return res.status(502).json({ 
+        error: "Image processor service unavailable",
+        details: (err as Error).message 
       });
     }
-  } catch (error) {
-    console.error("Error invoking Lambda function:", error);
-    res.status(500).send("Internal Server Error");
+
+    // Handle JSON parse errors
+    if (err instanceof SyntaxError) {
+      return res.status(502).json({ 
+        error: "Invalid response from image processor" 
+      });
+    }
+
+    return res.status(500).json({ 
+      error: "Image processing failed",
+      ...(process.env.NODE_ENV === 'development' && { details: err instanceof Error ? err.message : 'Unknown error' })
+    });
   }
 };
+
+// Extracted validation function
+function validateTransformations(transformStr: string) {
+  type SupportedConfig = {
+    c: string[];
+    w: { min: number; max: number };
+    h: { min: number; max: number };
+    q: { min: number; max: number };
+    f: string[];
+  };
+
+  const SUPPORTED: SupportedConfig = {
+    c: ["fill", "fit", "limit", "pad", "scale", "thumb", "crop"],
+    w: { min: 1, max: 5000 },
+    h: { min: 1, max: 5000 },
+    q: { min: 1, max: 100 },
+    f: ["auto", "jpg", "jpeg", "webp", "avif", "png"],
+  };
+
+  const transformations = transformStr.split(',');
+
+  for (const t of transformations) {
+    const [key, value] = t.split('_');
+
+    if (!SUPPORTED[key as keyof SupportedConfig]) {
+      return { valid: false, error: `Unsupported transformation: ${key}` };
+    }
+
+    const config = SUPPORTED[key as keyof SupportedConfig];
+
+    if (Array.isArray(config)) {
+      if (!config.includes(value)) {
+        return {
+          valid: false,
+          error: `Invalid value for ${key}: ${value}`,
+          allowedValues: config
+        };
+      }
+    } else {
+      const num = parseInt(value, 10);
+      if (isNaN(num) || num < config.min || num > config.max) {
+        return {
+          valid: false,
+          error: `${key} must be between ${config.min}-${config.max}`,
+          received: value
+        };
+      }
+    }
+  }
+
+  return { valid: true };
+}
 
 export const getAllBucketsForAccount = async (
   req: Request,
