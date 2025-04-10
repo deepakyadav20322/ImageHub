@@ -8,6 +8,7 @@ import UploadDialog from "./UploadDialog";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { Resource } from "@/lib/types";
+import { useUploadAssetsMutation } from "@/redux/apiSlice/itemsApi";
 const tabs = ["home", "assets", "folders", "collections", "moderation"];
 
 // Type for context
@@ -20,9 +21,11 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const bucketRootFolder = useSelector((state:RootState)=>state.items.bucketRootFolder) as Resource
+  const {token,user} = useSelector((state:RootState)=>state.auth)
   // Access collapsed state from Outlet context
   const [uploadOpen, setUploadOpen] = useState(false);
   const { collapsed } = useOutletContext<SidebarContext>();
+  const [uploadAssets,{isError}] = useUploadAssetsMutation()
 
   // Extract current tab from URL (default to 'home')
   const activeTab = location.pathname.split("/")[3] || "home";
@@ -31,6 +34,34 @@ const Navbar = () => {
     navigate(`/dashboard/media/${tab.toLowerCase()}/${tab.toLowerCase()==="folders"?bucketRootFolder.resourceId:""}`);
   };
 
+  const handleUpload = async (files: File[]) => {
+    console.log("Files to upload:", files);
+    const formData = new FormData();
+  
+    // Append each file - use 'files[]' if backend expects array
+    files.forEach(file => formData.append('files', file)); // or 'files[]' based on backend
+  
+    // For debugging - this won't show in console but is correct
+    for (let [key, value] of formData.entries()) {
+      console.log(`${key}:`, value);
+    }
+  
+    try {
+      const response = await uploadAssets({
+        bucketName: (user?.accountId + "-original"),
+        resourceType: "image",
+        files: formData,
+        token: token || ""
+      }).unwrap(); // unwrap() is important for error handling
+      
+      console.log("Upload success:", response);
+    } catch (error) {
+      console.error("Upload failed:", error);
+      throw error;
+    }
+  }
+  
+console.log("iserror",isError);
   return (
     <div
       className={` transition-all duration-200 bg-white border-b shadow-sm px-6 py-2 fixed top-0 z-50 overflow-y-auto ${
@@ -84,16 +115,11 @@ const Navbar = () => {
       <UploadDialog
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        availableFolders={[
-          { id: "root", name: "Root Folder" },
-          { id: "project-assets", name: "Project Assets" },
-        ]}
-        defaultFolderId="root"
-        onUpload={(files, folderId) => {
-          console.log("Uploading to:", folderId);
-          console.log("Files:", files);
-          // Call your API here to upload
-        }}
+        onUpload={handleUpload}
+        maxSizeMB={5}
+        allowedTypes={["image/jpeg", "image/png"]}
+        multiple={true}
+        maxFiles={5}
       />
     </div>
   );

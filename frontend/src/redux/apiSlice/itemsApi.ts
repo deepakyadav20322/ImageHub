@@ -104,17 +104,39 @@ const folderApi = authApi.injectEndpoints({
           Authorization: token,
         },
       }),
+
     }),
+    uploadAssets: builder.mutation<
+      Resource[],
+      { bucketName: string; resourceType: string; files: FormData; token: string }
+    >({
+      query: ({ bucketName, resourceType, files, token }) => ({
+        url: `/resource/${bucketName}/${resourceType}/upload`,
+        method: 'POST',
+        body: files,
+        headers: {
+          Authorization: `Bearer ${token}`,
+      
+        }
+      }),
+      transformResponse: (response: { success: boolean; data: Resource[] }) => response.data,
+      invalidatesTags: (result, error, arg) => [
+        { type: 'Asset', id: 'LIST' }
+      ]
+    })
+
   }),
 });
 
 export const {
+  useUploadAssetsMutation,
   useCreateNewFolderMutation,
   useGetFoldersQuery,
   useGetSubfoldersQuery,
   useGetAssetsOfFolderQuery,
   useGetRootFolderOfBucketQuery,
   useDeleteFolderMutation,
+
 } = folderApi;
 
 export default folderApi;

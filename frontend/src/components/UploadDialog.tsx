@@ -215,9 +215,9 @@ const UploadDialog = ({
       const contentType = response.headers.get("content-type") || ""
 
       // Check if content type is allowed
-      if (!allowedTypes.some((type) => contentType.includes(type.split("/")[1]))) {
+      if (!allowedTypes.some((type) => contentType.includes(type?.split("/")[1]))) {
         throw new Error(
-          `File type not allowed. Only ${allowedTypes.map((type) => type.split("/")[1].toUpperCase()).join(", ")} are supported.`,
+          `File type not allowed. Only ${allowedTypes.map((type) => type?.split("/")[1].toUpperCase()).join(", ")} are supported.`,
         )
       }
 
@@ -313,7 +313,7 @@ const UploadDialog = ({
       setTimeout(() => {
         onClose()
         reset()
-      }, 1500)
+      }, 1000)
     } catch (error) {
       setUploadStatus("error")
 
@@ -344,9 +344,9 @@ const UploadDialog = ({
   }
 
   const getFileIcon = (fileType: string) => {
-    if (fileType.startsWith("image/")) {
+    if (fileType?.startsWith("image/")) {
       return <ImageIcon className="h-6 w-6 text-blue-500" />
-    } else if (fileType.startsWith("text/")) {
+    } else if (fileType?.startsWith("text/")) {
       return <FileText className="h-6 w-6 text-orange-500" />
     } else {
       return <FileImage className="h-6 w-6 text-purple-500" />
@@ -354,7 +354,7 @@ const UploadDialog = ({
   }
 
   const getFileTypeLabel = (fileType: string) => {
-    return fileType.split("/")[1].toUpperCase()
+    return fileType?.split("/")[1].toUpperCase()
   }
 
   return (
