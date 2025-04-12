@@ -10,7 +10,6 @@ export const  generateApiSecret = ()=> {
 }
 
 
-
 export const hashSecret = async (secret: string): Promise<string> => {
     return await bcrypt.hash(secret, 10);
 }

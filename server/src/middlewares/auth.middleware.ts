@@ -13,6 +13,7 @@ async function authMiddleware(
     next();
   }
   console.log("auth midd run")
+  // console.log(req)
   try {
     // Extract token from various sources
     const token = req.headers.authorization?.startsWith("Bearer ")

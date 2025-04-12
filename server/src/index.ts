@@ -15,9 +15,10 @@ const app = express();
 const port = process.env.PORT || 4000;
 
 const corsOptions = {
-    // origin: ['*'], 
     origin: ['http://localhost:5174', 'http://localhost:5173'], 
-    credentials: true, // Allow credentials for cookies and ....
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    // allowedHeaders: '*',  // Allow all headers
+    credentials: true,    // Allow credentials for cookies and ....
 };
 
 
@@ -27,9 +28,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // routes middleware
+app.use('/api/v1/resource', resourceRoute);
 app.use('/api/v1/auth', authRoute);
 app.use('/api/v1/user', userRoute);
-app.use('/api/v1/resource', resourceRoute);
 
 
 // it is only for test purpose===============================================

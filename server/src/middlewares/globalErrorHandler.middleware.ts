@@ -22,6 +22,7 @@ const globalErrorHandler = (
   res.status(500).json({
     status: "error",
     message: "Something went wrong! Please try again later. Server error",
+  stack: err.stack 
   });
 };
 

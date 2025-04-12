@@ -6,9 +6,7 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/db_connect";
 import AppError from "../utils/AppError";
 import path from "path";
-
-
-
+import { validateTransformations } from "../utils/transformations";
 
 export const getAllResources = async (
   req: Request,
@@ -95,7 +93,6 @@ export const uploadResources = async (
   res: Response,
   next: NextFunction
 ): Promise<any> => {
-  console.log("Incomming Request Data:", req.body);
 
   try {
     const { bucket_name, resource_type } = req.params;
@@ -137,7 +134,18 @@ export const uploadResources = async (
 
     // in req imagePath comes like /default/abc.png but it convert to default/abc.png because this type path support in s3
     // 👇Todo:  💀💀💀💀 if we use get call from api dashboard then file path comes like /original/default/subhamPandeySir.png (you also need to convert to(remove /original/) default/subhamPandeySir.png)
-    const correctedImagePathForS3 = (folder.path).split("/").slice(1).join("/");
+    const normalizeImagePath = (originalPath:string) => {
+      // Remove leading/trailing slashes
+      let path = originalPath.replace(/^\/+|\/+$/g, '');
+      
+      // Remove 'original/' prefix if present
+      if (path.startsWith('original/')) {
+      path = path.substring('original/'.length);
+      }
+      
+      return path 
+    };
+
     const { t_addOn } = req.body;
     if (bucket_name.split("-").length == 2) {
       next(new AppError("your bucket name is wrong", 500));
@@ -149,7 +157,6 @@ export const uploadResources = async (
     console.log("Resource Type:", resource_type);
 
     // we check that resourceType and given file type mached ?
-    console.log("file req outer", req.file);
     const file = req.file;
     if (!req.file) {
       console.log("file req", req.file);
@@ -187,77 +194,87 @@ export const uploadResources = async (
       console.log("❌ No file uploaded");
       return res.status(400).json({ error: "Image file is required" });
     }
-    const fullPath = `${correctedImagePathForS3}/${(req.file.originalname).replace(/\s/g, "")}`;
- 
+  //   const fullPath = `${correctedImagePathForS3}/${(req.file.originalname).replace(/\s/g, "")}`;
+  // console.log(fullPath,"fullPath")
     //Todo: 👉👉 file path ke according , you make changes in lambda funciton code
 
+  const ImagePathForLambda = normalizeImagePath(folder.path);
+  console.log(ImagePathForLambda,"imagep")
+   
+  const params = {
+    FunctionName: "testFunction1",
+    Payload: JSON.stringify({
+      body: JSON.stringify({
+        image: req.file.buffer.toString("base64"),
+        imagePath: `${ImagePathForLambda}/${(file.originalname).replace(/\s/g, "")}`,
+        originalImageBucketName: originalBucket,
+        // transformedBucket,
+        t_addOn,
+        contentType: req.file.mimetype,
+      }),
+    }), // ✅ Corrected: Wrapped in `body`
+  };
+
+  console.log("Sending Payload to Lambda:", params);
+
+  const result = await lambda.send(new InvokeCommand(params));
+
+  const payloadString = result.Payload
+    ? new TextDecoder().decode(result.Payload)
+    : "{}";
+
+  console.log("Lambda Response Payload:", payloadString);
+
+  const payload = JSON.parse(payloadString);
+
+  // ✅ Check if Lambda returned an error
+  if (payload.statusCode !== 200) {
+    return res.status(payload.statusCode).json(JSON.parse(payload.body));
+  }
+
+  // ---------------------------------
+  // ✅ Save file info to PostgreSQL (resources table)
+  const fileUrl = payload.fileUrl;
+  const fileType = file.mimetype;
+  const fileName = (file.originalname).replace(/\s/g, "");
+  const accountId =
+    req.user.accountId;
+
+  const insertedResource = await db
+    .insert(resources)
+    .values({
+      accountId,
+      parentResourceId: folderId || null,
+      type: "file",
+      name: fileName,
+      path: `${folder.path}/${fileName}`, // We save path with including bucket(to mentain the parent child relationship hirirechi)
+      visibility: "public",
+      inheritPermissions: true,
+      overridePermissions: false,
+      metadata: {
+        size: file.size,
+        mimetype: fileType,
+      },
+      resourceTypeDetails: {
+        format: fileType,
+        dimensions: payload.dimensions || null, // Assuming Lambda provides this
+      },
+      status: "active",
+    })
+    .returning();
+
+  if (!res.headersSent) {
+    // ✅ **FIXED: Prevents "Cannot set headers after they are sent" issue**
+    // return res.status(payload.statusCode || 500).json(payload);
+    return res.status(200).json({
+      success: true,
+       data:{...payload,url:`${process.env.SERVER_BASE_URL}/api/v1/resource/${bucket_name}/image/upload/${fileName}`}
+    });
+    
+    
+    
+  }
   
-    const params = {
-      FunctionName: "testFunction1",
-      Payload: JSON.stringify({
-        body: JSON.stringify({
-          image: req.file.buffer.toString("base64"),
-          imagePath: fullPath,
-          originalImageBucketName: originalBucket,
-          // transformedBucket,
-          t_addOn,
-          contentType: req.file.mimetype,
-        }),
-      }), // ✅ Corrected: Wrapped in `body`
-    };
-
-    console.log("Sending Payload to Lambda:", params);
-
-    const result = await lambda.send(new InvokeCommand(params));
-
-    const payloadString = result.Payload
-      ? new TextDecoder().decode(result.Payload)
-      : "{}";
-
-    console.log("Lambda Response Payload:", payloadString);
-
-    const payload = JSON.parse(payloadString);
-
-    // ✅ Check if Lambda returned an error
-    if (payload.statusCode !== 200) {
-      return res.status(payload.statusCode).json(JSON.parse(payload.body));
-    }
-
-    // ---------------------------------
-    // ✅ Save file info to PostgreSQL (resources table)
-    const fileUrl = payload.fileUrl;
-    const fileType = file.mimetype;
-    const fileName = (file.originalname).replace(/\s/g, "");
-    const accountId =
-      req.user.accountId;
-
-    const insertedResource = await db
-      .insert(resources)
-      .values({
-        accountId,
-        parentResourceId: folderId || null,
-        type: "file",
-        name: fileName,
-        path: `/original/${fullPath}`, // We save path with including bucket(to mentain the parent child relationship hirirechi)
-        visibility: "private",
-        inheritPermissions: true,
-        overridePermissions: false,
-        metadata: {
-          size: file.size,
-          mimetype: fileType,
-        },
-        resourceTypeDetails: {
-          format: fileType,
-          dimensions: payload.dimensions || null, // Assuming Lambda provides this
-        },
-        status: "active",
-      })
-      .returning();
-
-    if (!res.headersSent) {
-      // ✅ **FIXED: Prevents "Cannot set headers after they are sent" issue**
-      return res.status(payload.statusCode || 500).json(payload);
-    }
   } catch (error) {
     console.error("❌ Error invoking Lambda:", error);
     if (!res.headersSent) {
@@ -267,167 +284,194 @@ export const uploadResources = async (
   }
 };
 
-// puran upload resorce api hai:-
-// export const uploadResources = async (
-//   req: Request,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<any> => {
-//   console.log("Incoming Request Data:", req.body);
+export const uploadResourcess = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { bucket_name, resource_type } = req.params;
+    console.log(req.headers)
+    const t_addOn = req.body.t_addOn;
+    const folderId = req.body.folderId || req.headers['x-folder-id'] || req.query.folderId;
+    const { accountId: userAccountId } = req.user;
+  console.log(folderId,"folderIdd")
+  console.log(req.files)
+    const [existingBucket] = await db.select().from(resources).where(
+      and(eq(resources.name, bucket_name), eq(resources.accountId, userAccountId))
+    ).limit(1);
 
-// // -----------------------------------
-//   try {
-//     // const { originalBucket, transformedBucket, imagePath } = req.body;
-//     const { originalBucket, transformedBucket, imagePath } = req.body;
-//     console.log("imagePath", imagePath);
+    if (!existingBucket) {
+      return res.status(400).json({ message: "Your environment does not exist!", success: false });
+    }
 
-//     if (!req.file) {
-//       console.log("❌ No file uploaded");
-//       return res.status(400).json({ error: "Image file is required" });
-//     }
+    if (resource_type !== "image") {
+      return res.status(400).json({ message: "Only image type is supported currently." });
+    }
 
-//     const params = {
-//       FunctionName: "imageHub-processing-1",
-//       Payload: JSON.stringify({
-//         body: JSON.stringify({
-//           image: req.file.buffer.toString("base64"),
-//           imagePath:filePath,
-//           originalBucket,
-//           transformedBucket,
-//           contentType: req.file.mimetype,
-//         }),
-//       }), // ✅ Corrected: Wrapped in `body`
-//     };
+    const [folder] = await db.select().from(resources).where(
+      and(eq(resources.resourceId, folderId), eq(resources.type, "folder"))
+    ).limit(1);
 
-//     console.log("Sending Payload to Lambda:", params);
+    if (!folder) {
+      return res.status(400).json({ message: "Folder does not exist!", success: false });
+    }
 
-//     const result = await lambda.send(new InvokeCommand(params));
+    if (!Array.isArray(req.files) || req.files.length === 0) {
+      return res.status(400).json({ error: "No files uploaded" });
+    }
 
-//     const payloadString = result.Payload
-//       ? new TextDecoder().decode(result.Payload)
-//       : "{}";
+    const normalizeImagePath = (originalPath: string) => {
+      let path = originalPath.replace(/^\/+|\/+$/g, '');
+      if (path.startsWith('original/')) {
+        path = path.substring('original/'.length);
+      }
+      return path;
+    };
 
-//     console.log("Lambda Response Payload:", payloadString);
+    const originalBucket = bucket_name;
+    const ImagePathForLambda = normalizeImagePath(folder.path);
 
-//     const payload = JSON.parse(payloadString);
+    const uploadedFiles = [];
 
-//     if (!res.headersSent) {
-//       // ✅ **FIXED: Prevents "Cannot set headers after they are sent" issue**
-//       return res.status(payload.statusCode || 500).json(payload);
-//     }
-//   } catch (error) {
-//     console.error("❌ Error invoking Lambda:", error);
-//     if (!res.headersSent) {
-//       // ✅ **FIXED: Ensures response is sent only once**
-//       return res.status(500).json({ error: "Failed to process image" });
-//     }
-//   }
-// };
+    for (const file of req.files as Express.Multer.File[]) {
+      const fileExtension = path.extname(file.originalname).toLowerCase().replace(".", "");
+      const fileName = file.originalname.replace(/\s/g, "");
 
-// ================== checking the lambada ===========================
+      // Skip unsupported file types
+      if (!SUPPORTED_TYPES[resource_type]?.includes(fileExtension)) {
+        uploadedFiles.push({
+          fileName,
+          success: false,
+          error: `Unsupported file type: ${fileExtension}`,
+        });
+        continue;
+      }
 
-// export const findAndOptimizeReourse = async (
-//   req: Request<{ 0: string }>,
-//   res: Response,
-//   next: NextFunction
-// ): Promise<any> => {
- 
+      const lambdaParams = {
+        FunctionName: "testFunction1",
+        Payload: JSON.stringify({
+          body: JSON.stringify({
+            image: file.buffer.toString("base64"),
+            imagePath: `${ImagePathForLambda}/${fileName}`,
+            originalImageBucketName: originalBucket,
+            t_addOn,
+            contentType: file.mimetype,
+          }),
+        }),
+      };
 
-//   // Extract the image path
-//   const imagePath = req.params[0]; // Captures everything after `/image/`
+      try {
+        const result = await lambda.send(new InvokeCommand(lambdaParams));
+        const payloadString = result.Payload ? new TextDecoder().decode(result.Payload) : "{}";
+        const payload = JSON.parse(payloadString);
 
-//   // Extract query parameters
-//   const { width, height, quality, format } = req.query;
+        if (payload.statusCode !== 200) {
+          uploadedFiles.push({
+            fileName,
+            success: false,
+            error: JSON.parse(payload.body).error || "Lambda failed",
+          });
+          continue;
+        }
 
-//   // Construct the queryParams string only if parameters exist
-//   const queryParams = [];
-//   if (width) queryParams.push(`width=${width}`);
-//   if (height) queryParams.push(`height=${height}`);
-//   if (quality) queryParams.push(`quality=${quality}`);
-//   if (format) queryParams.push(`format=${format}`);
+        const { fileUrl, dimensions } = payload;
 
-//   // Combine query parameters string (only if there are valid params)
-//   const queryParamsString = queryParams.length ? queryParams.join(",") : "";
-//   console.log(queryParamsString);
-//   console.log("imagePat", imagePath);
-//   // Prepare Lambda parameters
-//   const params = {
-//     // originalImageBucketName: originalBucket,
-//     transformedImageCacheTTL: "max-age=31536000",
-//     imagePath: imagePath,
-//     queryParams: queryParamsString,
-//   };
+        await db.insert(resources).values({
+          accountId: userAccountId,
+          parentResourceId: folderId || null,
+          type: "file",
+          name: fileName,
+          path: `${folder.path}/${fileName}`,
+          visibility: "public",
+          inheritPermissions: true,
+          overridePermissions: false,
+          metadata: {
+            size: file.size,
+            mimetype: file.mimetype,
+          },
+          resourceTypeDetails: {
+            format: file.mimetype,
+            dimensions: dimensions || null,
+          },
+          status: "active",
+        });
 
-//   const command = new InvokeCommand({
-//     FunctionName: "testFunction1",
-//     Payload: JSON.stringify(params),
-//   });
+        uploadedFiles.push({
+          fileName,
+          success: true,
+          url: `${process.env.SERVER_BASE_URL}/api/v1/resource/${bucket_name}/image/upload/${fileName}`,
+          s3Url: fileUrl,
+          dimensions,
+        });
 
-//   try {
-//     const result = await lambda.send(command);
+      } catch (lambdaErr) {
+        console.error(`❌ Lambda error for file ${fileName}:`, lambdaErr);
+        uploadedFiles.push({
+          fileName,
+          success: false,
+          error: "Lambda invocation failed",
+        });
+      }
+    }
 
-//     const payloadString = result.Payload
-//       ? new TextDecoder().decode(result.Payload)
-//       : "{}";
+    return res.status(200).json({
+      success: true,
+      uploadedFiles,
+    });
 
-//     let payload;
-//     try {
-//       payload = JSON.parse(payloadString);
-//       if (payload.body) {
-//         payload.body = JSON.parse(payload.body); // Parse inner JSON body
-//       }
-//     } catch (parseError) {
-//       console.error("Error parsing Lambda response:", parseError);
-//       return res.status(500).json({ error: "Invalid Lambda response format." });
-//     }
+  } catch (error) {
+    console.error("❌ Error processing files:", error);
+    if (!res.headersSent) {
+      return res.status(500).json({ error: "Failed to process files" });
+    }
+  }
+};
 
-//     if (payload.statusCode === 200) {
-//       return res.status(200).json(payload);
-//     } else {
-//       const statusCode = payload.statusCode || 500;
-//       return res.status(statusCode).json({
-//         error: payload.body?.error || "Unknown error occurred",
-//         details: payload.body?.details || "",
-//         suggestion: payload.body?.suggestion || "",
-//       });
-//     }
-//   } catch (error) {
-//     console.error("Error invoking Lambda function:", error);
-//     res.status(500).send("Internal Server Error");
-//   }
-// };
 
 export const findAndOptimizeResource = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<any> => {
+
   const { bucket, transformations, path } = req.params;
-
-
+  const overallStart = Date.now();
+console.log(req.params,"params")
   try {
-    // 1. Validate Bucket
+    // ⏱ Step 1: DB validation
+    const dbStart = Date.now();
     const [existingBucket] = await db
       .select()
       .from(resources)
-      .where(
-        and(eq(resources.name, bucket), eq(resources.type, "bucket"))
-      )
+      .where(and(eq(resources.name, bucket), eq(resources.type, "bucket")))
       .limit(1);
+    const dbEnd = Date.now();
+    console.log(`📦 DB validation took ${dbEnd - dbStart}ms`);
 
     if (!existingBucket) {
-      return res.status(400).json({ error: "Invalid bucket environment" });
+      console.log("bucket not exist")
+      return res.status(404).send();
+      // return res.status(404).json({ error: "Invalid bucket environment" });
     }
+   
 
-    // 2. Validate transformations if present
+    // ⏱ Step 2: Transformation validation
+    const validateStart = Date.now();
     if (transformations && transformations !== 'original') {
       const { valid, error } = validateTransformations(transformations);
+      const validateEnd = Date.now();
+      console.log(`🔍 Transformation validation took ${validateEnd - validateStart}ms`);
+     console.log("valid",valid)
       if (!valid) {
-        return res.status(400).json({ error });
+        if (process.env.NODE_ENV === 'development') {
+          return res.status(400).json({ error });
+        }
+        return res.status(404).send();
       }
     }
-console.log(`default/${path}`)
-    // 3. Prepare Lambda payload
+console.log("chaaaall2")
+    // ⏱ Step 3: Lambda Invocation
     const lambdaPayload = {
       bucket,
       path: `default/${path}`,
@@ -436,110 +480,162 @@ console.log(`default/${path}`)
       query: req.query,
     };
 
-    // 4. Invoke Lambda
+    const lambdaStart = Date.now();
     const lambdaResponse = await lambda.send(new InvokeCommand({
       FunctionName: process.env.IMAGE_PROCESSOR_LAMBDA!,
       InvocationType: "RequestResponse",
       Payload: Buffer.from(JSON.stringify(lambdaPayload)),
     }));
+    const lambdaEnd = Date.now();
+    console.log(`⚙️ Lambda execution took ${lambdaEnd - lambdaStart}ms`);
 
-    // 5. Process Lambda response
+    // ⏱ Step 4: Response parsing
+    const parseStart = Date.now();
     const responseText = new TextDecoder().decode(lambdaResponse.Payload);
     const parsedResponse = JSON.parse(responseText);
-
+    const parseEnd = Date.now();
+    console.log(`📦 Lambda response parse took ${parseEnd - parseStart}ms`);
+     console.log("parsedResponse",parsedResponse)
     if (!parsedResponse.statusCode) {
       throw new Error('Lambda response missing statusCode');
     }
 
-    // Handle different response types
-    if (parsedResponse.isBase64Encoded) {
-      return res
-        .status(parsedResponse.statusCode)
-        .set(parsedResponse.headers || {})
-        .send(Buffer.from(parsedResponse.body, 'base64'));
-    }
+    const totalDuration = Date.now() - overallStart;
+    console.log(`✅ Total request handled in ${totalDuration}ms`);
 
-    return res
-      .status(parsedResponse.statusCode)
-      .set(parsedResponse.headers || {})
-      .json(parsedResponse.body);
+    // ✅ Step 5: Send final response---------------------------
+    // if (parsedResponse.isBase64Encoded) {
+    //   return res
+    //     .status(parsedResponse.statusCode)
+    //     .set(parsedResponse.headers || {})
+    //     .send(Buffer.from(parsedResponse.body, 'base64'));
+    // }
+
+
+
+    // return res
+    //   .status(parsedResponse.statusCode)
+    //   .set(parsedResponse.headers || {})
+    //   .json({
+    //     ...parsedResponse.body,
+    //     duration: `${totalDuration}ms`,
+    //   });
+
+
+    // ✅ Step 5: Send final response ---------------------------
+const { statusCode, body, headers, isBase64Encoded } = parsedResponse;
+
+// ⛔ Handle 404: Image not found
+if (statusCode === 404) {
+  const errorBody = typeof body === "string" ? JSON.parse(body) : body;
+  // return res.status(404).json({
+  //   error: "Image not found",
+  //   message: errorBody?.message || "Requested file does not exist in S3",
+  //   duration: `${totalDuration}ms`,
+  // });
+  console.log('bucket key does not exist')
+  return res.status(404).send()
+}
+
+// ⛔ Handle other non-200 errors
+if (statusCode !== 200) {
+  const errorBody = typeof body === "string" ? JSON.parse(body) : body;
+  return res.status(statusCode).json({
+    error: "Image processing failed",
+    message: errorBody?.message || "An error occurred during processing",
+    duration: `${totalDuration}ms`,
+    ...(process.env.NODE_ENV === 'development' && {
+      details: errorBody?.stack,
+    }),
+  });
+}
+
+// ✅ Success response
+if (isBase64Encoded) {
+  return res
+    .status(statusCode)
+    .set(headers || {})
+    .send(Buffer.from(body, 'base64'));
+}
+
+// ✅ JSON response
+// return res
+//   .status(statusCode)
+//   .set(headers || {})
+//   .json({
+//     ...(typeof body === "string" ? JSON.parse(body) : body),
+//     duration: `${totalDuration}ms`,
+//   });
+
+  return res.status(404).send()
+
 
   } catch (err) {
-    console.error('Image processing error:', err);
-    
-    // Handle specific Lambda invocation errors
-    if (err && typeof err === 'object' && 'name' in err && err.name === 'InvocationError') {
-      return res.status(502).json({ 
-        error: "Image processor service unavailable",
-        details: (err as Error).message 
-      });
-    }
+    const totalDuration = Date.now() - overallStart;
+    console.error(`❌ Request failed after ${totalDuration}ms`, err);
 
-    // Handle JSON parse errors
-    if (err instanceof SyntaxError) {
-      return res.status(502).json({ 
-        error: "Invalid response from image processor" 
-      });
-    }
-
-    return res.status(500).json({ 
+    return res.status(500).json({
       error: "Image processing failed",
-      ...(process.env.NODE_ENV === 'development' && { details: err instanceof Error ? err.message : 'Unknown error' })
+      duration: `${totalDuration}ms`,
+      ...(process.env.NODE_ENV === 'development' && {
+        details: err instanceof Error ? err.message : 'Unknown error',
+      }),
     });
   }
 };
 
+
 // Extracted validation function
-function validateTransformations(transformStr: string) {
-  type SupportedConfig = {
-    c: string[];
-    w: { min: number; max: number };
-    h: { min: number; max: number };
-    q: { min: number; max: number };
-    f: string[];
-  };
+// function validateTransformations(transformStr: string) {
+//   type SupportedConfig = {
+//     c: string[];
+//     w: { min: number; max: number };
+//     h: { min: number; max: number };
+//     q: { min: number; max: number };
+//     f: string[];
+//   };
 
-  const SUPPORTED: SupportedConfig = {
-    c: ["fill", "fit", "limit", "pad", "scale", "thumb", "crop"],
-    w: { min: 1, max: 5000 },
-    h: { min: 1, max: 5000 },
-    q: { min: 1, max: 100 },
-    f: ["auto", "jpg", "jpeg", "webp", "avif", "png"],
-  };
+//   const SUPPORTED: SupportedConfig = {
+//     c: ["fill", "fit", "limit", "pad", "scale", "thumb", "crop"],
+//     w: { min: 1, max: 5000 },
+//     h: { min: 1, max: 5000 },
+//     q: { min: 1, max: 100 },
+//     f: ["auto", "jpg", "jpeg", "webp", "avif", "png"],
+//   };
 
-  const transformations = transformStr.split(',');
+//   const transformations = transformStr.split(',');
 
-  for (const t of transformations) {
-    const [key, value] = t.split('_');
+//   for (const t of transformations) {
+//     const [key, value] = t.split('_');
 
-    if (!SUPPORTED[key as keyof SupportedConfig]) {
-      return { valid: false, error: `Unsupported transformation: ${key}` };
-    }
+//     if (!SUPPORTED[key as keyof SupportedConfig]) {
+//       return { valid: false, error: `Unsupported transformation: ${key}` };
+//     }
 
-    const config = SUPPORTED[key as keyof SupportedConfig];
+//     const config = SUPPORTED[key as keyof SupportedConfig];
 
-    if (Array.isArray(config)) {
-      if (!config.includes(value)) {
-        return {
-          valid: false,
-          error: `Invalid value for ${key}: ${value}`,
-          allowedValues: config
-        };
-      }
-    } else {
-      const num = parseInt(value, 10);
-      if (isNaN(num) || num < config.min || num > config.max) {
-        return {
-          valid: false,
-          error: `${key} must be between ${config.min}-${config.max}`,
-          received: value
-        };
-      }
-    }
-  }
+//     if (Array.isArray(config)) {
+//       if (!config.includes(value)) {
+//         return {
+//           valid: false,
+//           error: `Invalid value for ${key}: ${value}`,
+//           allowedValues: config
+//         };
+//       }
+//     } else {
+//       const num = parseInt(value, 10);
+//       if (isNaN(num) || num < config.min || num > config.max) {
+//         return {
+//           valid: false,
+//           error: `${key} must be between ${config.min}-${config.max}`,
+//           received: value
+//         };
+//       }
+//     }
+//   }
 
-  return { valid: true };
-}
+//   return { valid: true };
+// }
 
 export const getAllBucketsForAccount = async (
   req: Request,
@@ -1017,7 +1113,7 @@ export const createFolder = async (
 ): Promise<any> => {
   try {
     // we always have one folder which is default and all folders comes under this it means always folderId comes for creating folder;
-
+console.log("create folder me aaay")
     const {
       parentFolderId: parentResourceId,
       folderName: name,
@@ -1085,7 +1181,7 @@ export const getRootFolderOfBucketOfAccount = async (req: Request, res: Response
 
   try {
     let accountId;
-    if (req.body.accountId) {
+    if (req.body?.accountId) {
       accountId = req.body.accountId;
     } else {
       accountId = req.user.accountId;
