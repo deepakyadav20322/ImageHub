@@ -163,7 +163,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
         const response = await createNewFolder({
           parentFolderId,
           folderName,
-          visibility: "private",
+          visibility: "public",
           token,
         });
         if (response) {
@@ -172,7 +172,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
             position: "bottom-center",
             duration: 4000,
           });
-          console.log(response);
+          console.log("folder response",response);
         }
       }
     } catch (error: any) {

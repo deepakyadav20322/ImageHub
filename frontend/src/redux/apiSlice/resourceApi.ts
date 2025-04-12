@@ -77,6 +77,8 @@ export const resourceApi = authApi.injectEndpoints({
         url: `/resource/get-all-environments/${accountId}`,
         headers: {
           Authorization: `${access_token}`, // Add custom header here
+            'Content-Type':'application/json'
+          
         },
       }),
       transformResponse: (response: { success: boolean; data: Resource[] }) => {
@@ -95,6 +97,9 @@ export const resourceApi = authApi.injectEndpoints({
         url: "/resources",
         method: "POST",
         body: resource,
+        headers:{
+          'Content-Type':'application/json'
+        },
       }),
       invalidatesTags: ["Resources"],
     }),
@@ -107,6 +112,9 @@ export const resourceApi = authApi.injectEndpoints({
         url: `/resources/${id}`,
         method: "PUT",
         body: resource,
+        headers:{
+          'Content-Type':'application/json'
+        },
       }),
       invalidatesTags: ["Resources"],
     }),

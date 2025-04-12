@@ -9,6 +9,7 @@ const folderApi = authApi.injectEndpoints({
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
+            'Content-Type':'application/json'
         },
       }),
       transformResponse: (response: { success: boolean; data: Resource[] }) =>
@@ -71,8 +72,11 @@ const folderApi = authApi.injectEndpoints({
         },
         headers: {
           Authorization: `Bearer ${token}`,
+            'Content-Type':'application/json'
         },
+      
       }),
+      
       transformResponse: (response: { success: boolean; data: Resource }) =>
         response.data,
       invalidatesTags: (result, error, arg) => [
@@ -88,6 +92,7 @@ const folderApi = authApi.injectEndpoints({
         method: "GET",
         headers: {
           Authorization: token,
+            'Content-Type':'application/json'
         },
       }),
       transformResponse: (response: { success: boolean; data: Resource }) =>
@@ -102,26 +107,34 @@ const folderApi = authApi.injectEndpoints({
         method: "DELETE",
         headers: {
           Authorization: token,
+      
+            'Content-Type':'application/json'
+      
         },
       }),
 
     }),
     uploadAssets: builder.mutation<
       Resource[],
-      { bucketName: string; resourceType: string; files: FormData; token: string }
+      { bucketName: string; resourceType: string; files: FormData; token: string,folderId:string }
     >({
-      query: ({ bucketName, resourceType, files, token }) => ({
-        url: `/resource/${bucketName}/${resourceType}/upload`,
+      query: ({ bucketName, resourceType, files, token,folderId }) => {
+        
+
+      return  {
+        url: `/resource/${bucketName}/${resourceType}/upload?folderId=${folderId}`,
         method: 'POST',
         body: files,
         headers: {
           Authorization: `Bearer ${token}`,
+          'x-folder-id': folderId,
       
         }
-      }),
+      }
+      },
       transformResponse: (response: { success: boolean; data: Resource[] }) => response.data,
       invalidatesTags: (result, error, arg) => [
-        { type: 'Asset', id: 'LIST' }
+        { type: "Asset", id: arg.folderId },
       ]
     })
 

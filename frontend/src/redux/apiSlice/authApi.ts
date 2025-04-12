@@ -11,7 +11,7 @@ export const authApi = createApi({
     credentials: 'include', // Handles cookies if needed
     prepareHeaders: (headers) => {
       // Add any common headers here
-      headers.set('Content-Type', 'application/json');
+      // headers.set('Content-Type', 'application/json');
       return headers;
     },
   }),

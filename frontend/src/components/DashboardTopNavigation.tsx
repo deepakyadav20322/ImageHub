@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { useLocation, useNavigate, useOutletContext } from "react-router";
+import { useLocation, useNavigate, useOutletContext, useParams } from "react-router";
 import { Link } from "react-router";
 import UploadDialog from "./UploadDialog";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { Resource } from "@/lib/types";
-import { useUploadAssetsMutation } from "@/redux/apiSlice/itemsApi";
+import { useGetAssetsOfFolderQuery, useUploadAssetsMutation } from "@/redux/apiSlice/itemsApi";
 const tabs = ["home", "assets", "folders", "collections", "moderation"];
 
 // Type for context
@@ -25,36 +25,33 @@ const Navbar = () => {
   // Access collapsed state from Outlet context
   const [uploadOpen, setUploadOpen] = useState(false);
   const { collapsed } = useOutletContext<SidebarContext>();
-  const [uploadAssets,{isError}] = useUploadAssetsMutation()
-
+  const {folderId:currentopenOrSelectedFolder}  = useParams()
   // Extract current tab from URL (default to 'home')
   const activeTab = location.pathname.split("/")[3] || "home";
-
   const handleTabChange = (tab: string) => {
-    navigate(`/dashboard/media/${tab.toLowerCase()}/${tab.toLowerCase()==="folders"?bucketRootFolder.resourceId:""}`);
+    navigate(`/dashboard/media/${tab.toLowerCase()}/${tab.toLowerCase()==="folders"?bucketRootFolder?.resourceId:""}`);
   };
+  const [uploadAssets,{isError}] = useUploadAssetsMutation()
+  const { refetch} = useGetAssetsOfFolderQuery({folderId:currentopenOrSelectedFolder||bucketRootFolder.resourceId, token:token || "" });
 
-  const handleUpload = async (files: File[]) => {
-    console.log("Files to upload:", files);
-    const formData = new FormData();
-  
-    // Append each file - use 'files[]' if backend expects array
-    files.forEach(file => formData.append('files', file)); // or 'files[]' based on backend
-  
-    // For debugging - this won't show in console but is correct
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}:`, value);
-    }
+  const handleUpload = async (formdata: FormData):Promise<any>  => {
+    console.log("Files to upload:", formdata);
+    console.log("Files to folder:", currentopenOrSelectedFolder, bucketRootFolder);
+   
   
     try {
       const response = await uploadAssets({
         bucketName: (user?.accountId + "-original"),
         resourceType: "image",
-        files: formData,
-        token: token || ""
+        files: formdata,
+        token: token || "",
+        folderId :currentopenOrSelectedFolder || bucketRootFolder.resourceId
       }).unwrap(); // unwrap() is important for error handling
       
       console.log("Upload success:", response);
+        // Close immediately
+        refetch()
+        return response 
     } catch (error) {
       console.error("Upload failed:", error);
       throw error;

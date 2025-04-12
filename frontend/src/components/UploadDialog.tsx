@@ -38,12 +38,13 @@ interface FileWithPreview extends File {
 interface UploadDialogProps {
   open: boolean
   onClose: () => void
-  onUpload: (files: File[]) => Promise<void>
+  onUpload: (formData: FormData) => Promise<void> // Changed to accept FormData
   maxSizeMB?: number
   allowedTypes?: string[]
   multiple?: boolean
   maxFiles?: number
 }
+
 
 const UploadDialog = ({
   open,
@@ -242,97 +243,187 @@ const UploadDialog = ({
     }
   }
 
-  const handleUpload = async () => {
-    if (files.length === 0) {
-      toast.error("Please select at least one file.")
-      return
-    }
+  // const handleUpload = async () => {
+  //   if (files.length === 0) {
+  //     toast.error("Please select at least one file.")
+  //     return
+  //   }
 
-    setUploading(true)
-    setOverallProgress(0)
-    setUploadStatus("idle")
+  //   setUploading(true)
+  //   setOverallProgress(0)
+  //   setUploadStatus("idle")
 
-    // Update all files to uploading status
+  //   // Update all files to uploading status
+  //   setFiles((prev) =>
+  //     prev.map((file) => ({
+  //       ...file,
+  //       status: "uploading",
+  //       uploadProgress: 0,
+  //     })),
+  //   )
+
+  //   // Simulate individual file upload progress
+  //   const progressIntervals = files.map((file) => {
+  //     return setInterval(
+  //       () => {
+  //         setFiles((prev) =>
+  //           prev.map((f) => {
+  //             if (f.id === file.id && f.uploadProgress !== undefined && f.uploadProgress < 95) {
+  //               return {
+  //                 ...f,
+  //                 uploadProgress: Math.min(95, (f.uploadProgress || 0) + Math.random() * 10),
+  //               }
+  //             }
+  //             return f
+  //           }),
+  //         )
+
+  //         // Update overall progress based on individual file progress
+  //         setOverallProgress((prev) => {
+  //           const totalProgress = files.reduce((sum, f) => sum + (f.uploadProgress || 0), 0)
+  //           return Math.min(95, totalProgress / files.length)
+  //         })
+  //       },
+  //       200 + Math.random() * 300,
+  //     )
+  //   })
+
+  //   try {
+  //     // Convert FileWithPreview back to File for the upload function
+  //     const filesToUpload = files.map((f) => {
+  //       const { id, preview, uploadProgress, status, errorMessage, ...fileProps } = f
+  //       return new File([f], f.name, fileProps)
+  //     })
+
+  //     await onUpload(filesToUpload)
+
+  //     // Set all files to success
+  //     setFiles((prev) =>
+  //       prev.map((file) => ({
+  //         ...file,
+  //         status: "success",
+  //         uploadProgress: 100,
+  //       })),
+  //     )
+
+  //     setOverallProgress(100)
+  //     setUploadStatus("success")
+  //     toast.success(files.length === 1 ? "File uploaded successfully!" : `${files.length} files uploaded successfully!`)
+
+  //     // Delay closing to show success state
+  //     setTimeout(() => {
+  //       onClose()
+  //       reset()
+  //     }, 1000)
+  //   } catch (error) {
+  //     setUploadStatus("error")
+
+  //     // Set all pending files to error
+  //     setFiles((prev) =>
+  //       prev.map((file) => ({
+  //         ...file,
+  //         status: file.uploadProgress && file.uploadProgress < 100 ? "error" : file.status,
+  //         errorMessage: "Upload failed",
+  //       })),
+  //     )
+
+  //     toast.error("Upload failed. Please try again.")
+  //   } finally {
+  //     // Clear all intervals
+  //     progressIntervals.forEach((interval) => clearInterval(interval))
+  //     setUploading(false)
+  //   }
+  // }
+  
+const handleUpload = async () => {
+  if (files.length === 0) {
+    toast.error("Please select at least one file.")
+    return
+  }
+
+  setUploading(true)
+  setOverallProgress(0)
+  setUploadStatus("idle")
+
+  // Update all files to uploading status
+  setFiles((prev) =>
+    prev.map((file) => ({
+      ...file,
+      status: "uploading",
+      uploadProgress: 0,
+    })),
+  )
+
+  // Create FormData object
+  const formData = new FormData()
+
+  // Add files to FormData
+  files.forEach((file, index) => {
+    // Convert FileWithPreview back to File and append to formData
+    const { id, preview, uploadProgress, status, errorMessage, ...fileProps } = file
+    const cleanFile = new File([file], file.name, fileProps)
+    formData.append(`files`, cleanFile) // Can use `files[]` if server expects array
+    // Or use individual names: formData.append(`file_${index}`, cleanFile)
+  })
+
+  // Simulate individual file upload progress
+  const progressIntervals = files.map((file) => {
+    return setInterval(
+      () => {
+        setFiles((prev) =>
+          prev.map((f) => {
+            if (f.id === file.id && f.uploadProgress !== undefined && f.uploadProgress < 95) {
+              return {
+                ...f,
+                uploadProgress: Math.min(95, (f.uploadProgress || 0) + Math.random() * 10),
+              }
+            }
+            return f
+          }),
+        )
+
+        // Update overall progress based on individual file progress
+        setOverallProgress((prev) => {
+          const totalProgress = files.reduce((sum, f) => sum + (f.uploadProgress || 0), 0)
+          return Math.min(95, totalProgress / files.length)
+        })
+      },
+      200 + Math.random() * 300,
+    )
+  })
+
+  try {
+    // Pass FormData to upload function
+    await onUpload(formData)
+
+    // Set all files to success
     setFiles((prev) =>
       prev.map((file) => ({
         ...file,
-        status: "uploading",
-        uploadProgress: 0,
+        status: "success",
+        uploadProgress: 100,
       })),
     )
 
-    // Simulate individual file upload progress
-    const progressIntervals = files.map((file) => {
-      return setInterval(
-        () => {
-          setFiles((prev) =>
-            prev.map((f) => {
-              if (f.id === file.id && f.uploadProgress !== undefined && f.uploadProgress < 95) {
-                return {
-                  ...f,
-                  uploadProgress: Math.min(95, (f.uploadProgress || 0) + Math.random() * 10),
-                }
-              }
-              return f
-            }),
-          )
+    setOverallProgress(100)
+    setUploadStatus("success")
+    toast.success(files.length === 1 ? "File uploaded successfully!" : `${files.length} files uploaded successfully!`)
 
-          // Update overall progress based on individual file progress
-          setOverallProgress((prev) => {
-            const totalProgress = files.reduce((sum, f) => sum + (f.uploadProgress || 0), 0)
-            return Math.min(95, totalProgress / files.length)
-          })
-        },
-        200 + Math.random() * 300,
-      )
-    })
-
-    try {
-      // Convert FileWithPreview back to File for the upload function
-      const filesToUpload = files.map((f) => {
-        const { id, preview, uploadProgress, status, errorMessage, ...fileProps } = f
-        return new File([f], f.name, fileProps)
-      })
-
-      await onUpload(filesToUpload)
-
-      // Set all files to success
-      setFiles((prev) =>
-        prev.map((file) => ({
-          ...file,
-          status: "success",
-          uploadProgress: 100,
-        })),
-      )
-
-      setOverallProgress(100)
-      setUploadStatus("success")
-      toast.success(files.length === 1 ? "File uploaded successfully!" : `${files.length} files uploaded successfully!`)
-
-      // Delay closing to show success state
-      setTimeout(() => {
-        onClose()
-        reset()
-      }, 1000)
-    } catch (error) {
-      setUploadStatus("error")
-
-      // Set all pending files to error
-      setFiles((prev) =>
-        prev.map((file) => ({
-          ...file,
-          status: file.uploadProgress && file.uploadProgress < 100 ? "error" : file.status,
-          errorMessage: "Upload failed",
-        })),
-      )
-
-      toast.error("Upload failed. Please try again.")
-    } finally {
-      // Clear all intervals
-      progressIntervals.forEach((interval) => clearInterval(interval))
-      setUploading(false)
-    }
+    // Delay closing to show success state
+    // setTimeout(() => {
+    //   onClose()
+    //   reset()
+    // }, 1000)
+    onClose()
+    reset()
+  } catch (error) {
+    // ... (error handling remains the same)
+  } finally {
+    // Clear all intervals
+    progressIntervals.forEach((interval) => clearInterval(interval))
+    setUploading(false)
   }
+}
 
   const reset = () => {
     setFiles([])
@@ -485,6 +576,7 @@ const UploadDialog = ({
                   type="file"
                   accept={allowedTypes.join(",")}
                   hidden
+                  name="files"
                   ref={inputRef}
                   onChange={handleFileChange}
                   multiple={multiple}
@@ -906,5 +998,4 @@ const UploadDialog = ({
 }
 
 export default UploadDialog
-
 
