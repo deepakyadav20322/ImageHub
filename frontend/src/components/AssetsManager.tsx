@@ -48,7 +48,6 @@ import {
 
 import AssetCard from "./Assets-Card-View";
 import AssetList from "./Assets-List-View";
-import AssetMosaic from "./Assets-Mosaic-View";
 import FolderTree, { FolderTreeData } from "./FolderTree";
 import { Resource } from "@/lib/types";
 import { useDispatch, useSelector } from "react-redux";
@@ -64,7 +63,7 @@ import { Label } from "@radix-ui/react-label";
 import toast from "react-hot-toast";
 import Breadcrumb from "./BreadCrumbFolder";
 
-type ViewMode = "list" | "card" | "mosaic";
+type ViewMode = "list" | "card" ;
 
 interface FolderTreeProps {
   folders: FolderTreeData[]; // Changed from 'resources' to 'folders' to match your usage
@@ -72,10 +71,13 @@ interface FolderTreeProps {
 
 const AssetManager = ({ folders }: FolderTreeProps) => {
   console.log("assets manager",folders);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [showSidebar, setShowSidebar] = useState(true);
   const [open, setOpen] = useState(false);
+  const [allSelectedAssets, setAllSelectedAssets] = useState<Resource[]>([]);
+  
   //   const [filteredAssets, setFilteredAssets] = useState(assets);
   // const [expandedFolders, setExpandedFolders] = useState<number[]>([1]);
   // const [selectedFolder, setSelectedFolder] = useState<number>(1);
@@ -88,7 +90,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
     { folderId: folderId || "", token: token || "" },
     { refetchOnMountOrArgChange: true }
   );
-
+  console.log(allSelectedAssets,"allselectedAssets")
   const reduxStateFolder = useSelector((state:RootState)=>state.items.folders)
   // console.log("AssetManager received folders:", folders);
   // console.log("Redux state folders:", reduxStateFolder);
@@ -196,12 +198,12 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
             New Folder
           </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[450px]">
+            <DialogContent className="sm:max-w-[450px] dark:border-slate-500">
               <DialogHeader className="pb-2">
                 <DialogTitle className="text-xl font-bold">
                   Create New Folder
                 </DialogTitle>
-                <DialogDescription className="text-base text-gray-500">
+                <DialogDescription className="text-base text-gray-500 dark:text-gray-300">
                   Create folder here. Click save when you're done.
                 </DialogDescription>
               </DialogHeader>
@@ -216,7 +218,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
                       id="name"
                       name="name"
                       placeholder="Enter folder name"
-                      className="w-full"
+                      className="w-full dark:border-gray-400"
                       autoComplete="off"
                       autoFocus
                     />
@@ -338,10 +340,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
                     <Grid className="h-4 w-4 mr-2" />
                     Card
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setViewMode("mosaic")}>
-                    <LayoutGrid className="h-4 w-4 mr-2" />
-                    Mosaic
-                  </DropdownMenuItem>
+                 
                 </DropdownMenuContent>
               </DropdownMenu>
 
@@ -392,7 +391,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
             transition={{ duration: 0.2 }}
             className="bg-background"
           >
-            <ScrollArea className="h-[calc(100vh-10rem)] border-r">
+            <ScrollArea className="h-[calc(100vh-10rem)] border-r dark:border-[#535f7a] dark:bg-zinc-900">
               <div className="h-full">
                 <FolderTree folders={folders} />
               </div>
@@ -470,9 +469,9 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
                       </div>
                       ) : (
                       <div className="max-h-[71vh] h-full overflow-aut">
-                        {viewMode === "list" && <AssetList assets={assets} />}
-                        {viewMode === "card" && <AssetCard assets={assets} />}
-                        {viewMode === "mosaic" && <AssetMosaic assets={assets} />}
+                        {viewMode === "list" && <AssetList assets={assets} setAllSelectedAssets={setAllSelectedAssets} allSelectedAssets={allSelectedAssets} />}
+                        {viewMode === "card" && <AssetCard assets={assets} allSelectedAssets={allSelectedAssets} />}
+                       
                       </div>
                       )}
                     </>
