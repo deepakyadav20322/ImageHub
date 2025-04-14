@@ -112,8 +112,8 @@ const Navbar = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem><Link to={'/dashboard/media'}>Dashboard</Link></DropdownMenuItem>
+                <DropdownMenuItem></DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   Logout
                 </DropdownMenuItem>

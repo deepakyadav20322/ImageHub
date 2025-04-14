@@ -209,7 +209,7 @@ const Breadcrumb: React.FC<Props> = ({ data, currentFolderId }) => {
   const items = visibleBreadcrumb();
 
   return (
-    <div className="text-sm text-gray-800 space-x-2 p-2 bg-gray-100 rounded mb-2 dark:text-white flex items-center gap-1 w-full">
+    <div className="text-sm text-gray-800 space-x-2 p-2 bg-gray-100 dark:bg-zinc-900 rounded mb-2 dark:text-white flex items-center gap-1 w-full">
       {items.map((item, idx) => (
         <div key={item.resourceId + idx} className="flex items-center gap-1">
           {item.resourceId === "ellipsis" ? (
@@ -219,9 +219,9 @@ const Breadcrumb: React.FC<Props> = ({ data, currentFolderId }) => {
               to={`/dashboard/media/folders/${item.resourceId}`}
               className={`${
                 item.resourceId === currentFolderId
-                  ? "text-[#0057FF] font-semibold"
+                  ? "text-[#135bed] dark:text-blue-500 font-semibold "
                   : ""
-              } hover:underline cursor-pointer`}
+              }underline cursor-pointer`}
             >
               {item.name}
             </Link>
