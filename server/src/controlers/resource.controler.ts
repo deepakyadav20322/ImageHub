@@ -461,6 +461,7 @@ console.log(req.params,"params")
     if (transformations && transformations !== 'original') {
       const { valid, error } = validateTransformations(transformations);
       const validateEnd = Date.now();
+      console.log("transformations",transformations)
       console.log(`🔍 Transformation validation took ${validateEnd - validateStart}ms`);
      console.log("valid",valid)
       if (!valid) {

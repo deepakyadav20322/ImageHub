@@ -18,7 +18,8 @@ const upload = multer({
 // router.post('/:bucket_name/:resource_type/upload',determineAuthType,authMiddleware,authenticateApiKey,upload,uploadResources);
 router.post('/:bucket_name/:resource_type/upload',authMiddleware,upload,uploadResourcess);
 // Route 1: With and without transformation by middleware 
-router.get('/:bucket/image/upload/:transformations/:path(*)',checkWithTransformOrNot,findAndOptimizeResource);
+// router.get('/:bucket/image/upload/:transformations?/:path(*)',checkWithTransformOrNot,findAndOptimizeResource);
+router.get('/:bucket/image/upload/:path(*)',checkWithTransformOrNot,findAndOptimizeResource);
 
 // router.get('/:bucket/image/upload/:transformations/:path(*)',determineAuthType,authMiddleware,authenticateApiKey,findAndOptimizeResource);
 router.get('/get-all-environments/:accountId',authMiddleware,getAllBucketsForAccount);
