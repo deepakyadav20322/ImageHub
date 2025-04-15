@@ -27,6 +27,7 @@ import {
   ImageIcon,
   ExternalLink,
   Plus,
+  FileUp,
 } from "lucide-react";
 import {
   Tooltip,
@@ -212,71 +213,74 @@ const UploadDialog = ({
     setFiles([]);
   }, []);
 
-  const fetchFileFromUrl = async (url: string) => {
-    if (!url) return;
+  // const fetchFileFromUrl = async (url: string) => {
+  //   if (!url) return;
 
-    try {
-      // Validate URL
-      try {
-        new URL(url);
-      } catch (e) {
-        throw new Error("Please enter a valid URL");
-      }
+  //   try {
+  //     // Validate URL
+  //     try {
+  //       new URL(url);
+  //     } catch (e) {
+  //       throw new Error("Please enter a valid URL");
+  //     }
 
-      // Fetch the file
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch file: ${response.statusText}`);
-      }
+  //     // Fetch the file
+  //     const response = await fetch(url);
+  //     if (!response.ok) {
+  //       throw new Error(`Failed to fetch file: ${response.statusText}`);
+  //     }
 
-      // Get file name from URL or Content-Disposition header
-      let fileName = url.split("/").pop() || "downloaded-file";
-      const contentDisposition = response.headers.get("content-disposition");
-      if (contentDisposition) {
-        const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
-        if (fileNameMatch) {
-          fileName = fileNameMatch[1];
-        }
-      }
+  //     // Get file name from URL or Content-Disposition header
+  //     let fileName = url.split("/").pop() || "downloaded-file";
+  //     const contentDisposition = response.headers.get("content-disposition");
+  //     if (contentDisposition) {
+  //       const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
+  //       if (fileNameMatch) {
+  //         fileName = fileNameMatch[1];
+  //       }
+  //     }
 
-      // Get content type
-      const contentType = response.headers.get("content-type") || "";
+  //     // Get content type
+  //     const contentType = response.headers.get("content-type") || "";
 
-      // Check if content type is allowed
-      const mimeType = contentType.split(";")[0].trim();
+  //     // Check if content type is allowed
+  //     const mimeType = contentType.split(";")[0].trim();
 
-      if (!allowedTypes.some((type) => type === mimeType)) {
-        console.log("File type validation failed:", {
-          received: mimeType,
-          allowed: allowedTypes,
-        });
-        throw new Error(
-          `File type not allowed. Only ${allowedTypes
-            .map((type) => type.split("/")[1].toUpperCase())
-            .join(", ")} are supported.`
-        );
-      }
+  //     if (!allowedTypes.some((type) => type === mimeType)) {
+  //       console.log("File type validation failed:", {
+  //         received: mimeType,
+  //         allowed: allowedTypes,
+  //       });
+  //       throw new Error(
+  //         `File type not allowed. Only ${allowedTypes
+  //           .map((type) => type.split("/")[1].toUpperCase())
+  //           .join(", ")} are supported.`
+  //       );
+  //     }
 
-      // Convert response to blob
-      const blob = await response.blob();
+  //     // Convert response to blob
+  //     const blob = await response.blob();
 
-      // Check file size
-      if (blob.size > maxSizeMB * 1024 * 1024) {
-        throw new Error(`File size exceeds ${maxSizeMB}MB limit.`);
-      }
+  //     // Check file size
+  //     if (blob.size > maxSizeMB * 1024 * 1024) {
+  //       throw new Error(`File size exceeds ${maxSizeMB}MB limit.`);
+  //     }
 
-      // Create a File object
-      const file = new File([blob], fileName, { type: contentType });
+  //     // Create a File object
+  //     const file = new File([blob], fileName, { type: contentType });
 
-      // Add file to the list
-      await handleFiles([file]);
+  //     // Add file to the list
+  //     await handleFiles([file]);
 
-      return file;
-    } catch (error) {
-      console.error("Error fetching file:", error);
-      throw error;
-    }
-  };
+  //     return file;
+  //   } catch (error) {
+  //     console.error("Error fetching file:", error);
+  //     throw error;
+  //   }
+  // };
+
+  // -----------------------
+
 
   // const handleUpload = async () => {
   //   if (files.length === 0) {
@@ -511,19 +515,20 @@ const UploadDialog = ({
         onInteractOutside={(e) => uploading && e.preventDefault()}
       >
         <DialogHeader className="space-y-3">
-          <DialogTitle className="text-xl font-semibold">
+          <DialogTitle className="text-xl font-semibold flex gap-x-2 items-center dark:text-white text-blue-600">
+            <span><FileUp/></span>
             Upload Files
           </DialogTitle>
-          <p className="text-sm text-gray-500">
-            Select files from your device or cloud storage
+          <p className="text-sm text-gray-500 dark:text-gray-300">
+            Select files from your device or cloud storage:
           </p>
           <DialogClose asChild>
             <button
-              className="absolute right-4 top-4 rounded-full p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200"
+              className="absolute right-4 top-4 rounded-full p-1.5 text-gray-500 transition-colors bg-gray-100 dark:bg-black hover:text-gray-700 focus:outline-none focus:ring-2 dark:focus:ring-slate-500 focus:ring-gray-200 :border-slate-500 cursor-pointer"
               aria-label="Close"
               disabled={uploading}
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4 text-red-400 " />
             </button>
           </DialogClose>
         </DialogHeader>
@@ -537,28 +542,28 @@ const UploadDialog = ({
           <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 gap-1 mb-8 sm:mb-4">
             <TabsTrigger
               value="my-files"
-              className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium dark:data-[state=active]:bg-slate-600 text-gray-500 cursor-pointer"
+              className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium dark:data-[state=active]:bg-black dark:data-[state=active]:border-slate-300 text-gray-500 cursor-pointer"
             >
               <HardDrive className="h-4 w-4" />
               <span>My Files</span>
             </TabsTrigger>
             <TabsTrigger
               value="google-drive"
-              className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer dark:data-[state=active]:bg-slate-600"
+              className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer dark:data-[state=active]:bg-black dark:data-[state=active]:border-slate-300"
             >
               <GoogleDrive className="h-4 w-4" />
               <span>Google Drive</span>
             </TabsTrigger>
             <TabsTrigger
               value="dropbox"
-              className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer dark:data-[state=active]:bg-slate-600"
+              className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer dark:data-[state=active]:bg-black dark:data-[state=active]:border-slate-300"
             >
               <Dropbox className="h-4 w-4" />
               <span>Dropbox</span>
             </TabsTrigger>
             <TabsTrigger
               value="url"
-              className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer dark:data-[state=active]:bg-slate-600"
+              className="flex items-center gap-1.5 data-[state=active]:text-blue-600 data-[state=active]:font-medium text-gray-500 cursor-pointer dark:data-[state=active]:bg-black dark:data-[state=active]:border-slate-300"
             >
               <ExternalLink className="h-4 w-4" />
               <span>URL</span>
@@ -568,8 +573,8 @@ const UploadDialog = ({
           <TabsContent value="my-files" className="space-y-4 ">
             {files.length === 0 ? (
               <motion.div
-                initial={{ opacity: 0.9, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
+                // initial={{ opacity: 0.9, y: 5 }}
+                // animate={{ opacity: 1, y: 0 }}
                 className={cn(
                   "relative flex min-h-[300px] cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-all duration-200 dark:border-gray-400 dark:bg-gray-600/20 p-6 hover:dark:bg-blue-600/10",
                   isDragging
@@ -873,7 +878,7 @@ const UploadDialog = ({
               <p className="mt-2 text-center text-sm text-gray-500 dark:text-slate-300">
                 Access your Google Drive files and select them for upload
               </p>
-              <Button className="mt-4 bg-blue-600 hover:bg-blue-700">
+              <Button className="mt-4 bg-blue-600 dark:text-white hover:bg-blue-700">
                 Connect Google Drive
               </Button>
             </div>
@@ -896,7 +901,7 @@ const UploadDialog = ({
 
           <TabsContent value="url" className="min-h-[300px]">
             <div className="flex flex-col space-y-4">
-              <div className="rounded-lg border border-gray-200 bg-gray-50 dark:bg-gray-400/20 p-4">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 dark:bg-gray-400/10 p-4">
                 <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-slate-200">
                   Upload from URL
                 </h3>
@@ -916,116 +921,107 @@ const UploadDialog = ({
                       placeholder="https://example.com/image.jpg"
                       className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     />
-                    <Button
-                      className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap dark:text-white"
-                      disabled={!fileUrl || isUrlLoading}
-                      onClick={async () => {
-                        if (!fileUrl) return;
+                 <Button
+  className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap dark:text-white"
+  disabled={!fileUrl || isUrlLoading}
+  onClick={async () => {
+    if (!fileUrl) return;
 
-                        try {
-                          setIsUrlLoading(true);
-                          setUrlError(null);
+    try {
+      setIsUrlLoading(true);
+      setUrlError(null);
 
-                          // Validate URL
-                          try {
-                            new URL(fileUrl);
-                          } catch (e) {
-                            throw new Error("Please enter a valid URL");
-                          }
+      // Validate URL
+      try {
+        new URL(fileUrl);
+      } catch (e) {
+        throw new Error("Please enter a valid URL.");
+      }
 
-                          // Fetch the file
-                          const response = await fetch(fileUrl);
-                          if (!response.ok) {
-                            throw new Error(
-                              `Failed to fetch file: ${response.statusText}`
-                            );
-                          }
+      // Fetch the file
+      const response = await fetch(fileUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.statusText}`);
+      }
 
-                          // Get file name from URL or Content-Disposition header
-                          let fileName =
-                            fileUrl.split("/").pop() || "downloaded-file";
-                          const contentDisposition = response.headers.get(
-                            "content-disposition"
-                          );
-                          if (contentDisposition) {
-                            const fileNameMatch =
-                              contentDisposition.match(/filename="(.+)"/);
-                            if (fileNameMatch) {
-                              fileName = fileNameMatch[1];
-                            }
-                          }
+      // Get content-type and mime type
+      const contentType = response.headers.get("content-type") || "";
+      const mimeType = contentType.split(";")[0].trim();
 
-                          // Get content type
-                          const contentType =
-                            response.headers.get("content-type") || "";
+      // Allowed types
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(mimeType)) {
+        throw new Error(
+          `Unsupported file type: ${mimeType}. Only ${allowedTypes
+            .map((t) => t.split("/")[1].toUpperCase())
+            .join(", ")} are supported.`
+        );
+      }
 
-                          // Check if content type is allowed
-                          // To this:
-                          const mimeType = contentType.split(";")[0].trim();
+      // Extract file name from URL or Content-Disposition
+      let rawFileName = fileUrl.split("/").pop()?.split("?")[0] || "downloaded-file";
+      const contentDisposition = response.headers.get("content-disposition");
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename[^;=\n]*=(['"]?)([^'"\n]*)\1/);
+        if (match && match[2]) {
+          rawFileName = match[2];
+        }
+      }
 
-                          if (!allowedTypes.some((type) => type === mimeType)) {
-                            console.log("File type validation failed:", {
-                              received: mimeType,
-                              allowed: allowedTypes,
-                            });
-                            throw new Error(
-                              `File type not allowed. Only ${allowedTypes
-                                .map((type) => type.split("/")[1].toUpperCase())
-                                .join(", ")} are supported.`
-                            );
-                          }
+    
+     // Generate extension map dynamically from allowedTypes
+const extensionMap = Object.fromEntries(
+  allowedTypes.map((type) => [type, `.${type.split("/")[1]}`])
+);
+      const correctExt = extensionMap[mimeType];
 
-                          // Convert response to blob
-                          const blob = await response.blob();
+      // Clean filename (e.g., abc.sd.jpg → abc.jpg)
+      const baseName = rawFileName.split(".")[0]; // take only before first dot
+      const finalFileName = `${baseName}${correctExt}`;
 
-                          // Check file size
-                          if (blob.size > maxSizeMB * 1024 * 1024) {
-                            throw new Error(
-                              `File size exceeds ${maxSizeMB}MB limit.`
-                            );
-                          }
+      // Convert response to blob
+      const blob = await response.blob();
 
-                          // Create a File object
-                          const file = new File([blob], fileName, {
-                            type: contentType,
-                          });
+      // Max file size (MB)
+      const maxSizeMB = 10;
+      if (blob.size > maxSizeMB * 1024 * 1024) {
+        throw new Error(`File size exceeds ${maxSizeMB}MB limit.`);
+      }
 
-                          // Add file to the list
-                          await handleFiles([file]);
+      // Create File object
+      const file = new File([blob], finalFileName, { type: mimeType });
 
-                          // Switch to My Files tab to show the uploaded file
-                          setActiveTab("my-files");
+      // Upload file
+      await handleFiles([file]);
 
-                          // Clear URL input
-                          setFileUrl("");
+      // Switch to My Files tab
+      setActiveTab("my-files");
 
-                          toast.success("File fetched successfully!");
-                        } catch (error) {
-                          console.error("Error fetching file:", error);
-                          setUrlError(
-                            error instanceof Error
-                              ? error.message
-                              : "Failed to fetch file"
-                          );
-                          toast.error(
-                            error instanceof Error
-                              ? error.message
-                              : "Failed to fetch file"
-                          );
-                        } finally {
-                          setIsUrlLoading(false);
-                        }
-                      }}
-                    >
-                      {isUrlLoading ? (
-                        <>
-                          <span className="h-4 w-4 mr-1.5 animate-spin rounded-full border-2 border-white border-t-transparent dark:text-white" />
-                          Fetching...
-                        </>
-                      ) : (
-                        "Fetch File"
-                      )}
-                    </Button>
+      // Clear input
+      setFileUrl("");
+      toast.success("File fetched successfully!");
+    } catch (error) {
+      console.error("Error fetching file:", error);
+      const message =
+        error instanceof Error ? error.message : "Failed to fetch file";
+      setUrlError(message);
+      toast.error(message);
+    } finally {
+      setIsUrlLoading(false);
+    }
+  }}
+>
+  {isUrlLoading ? (
+    <>
+      <span className="h-4 w-4 mr-1.5 animate-spin rounded-full border-2 border-white border-t-transparent dark:text-white" />
+      Fetching...
+    </>
+  ) : (
+    "Fetch File"
+  )}
+</Button>
+
+
                   </div>
 
                   {urlError && (
@@ -1105,7 +1101,7 @@ const UploadDialog = ({
             variant="outline"
             onClick={onClose}
             disabled={uploading}
-            className="w-full sm:w-auto transition-all duration-200 mt-2 sm:mt-0"
+            className="w-full sm:w-auto transition-all duration-200 mt-2 sm:mt-0 dark:border-slate-500"
           >
             Cancel
           </Button>
