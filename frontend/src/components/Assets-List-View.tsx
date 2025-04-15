@@ -33,7 +33,8 @@ import { useSelector } from "react-redux";
 
 import { RootState } from "@/redux/store";
 import { useParams } from "react-router";
-import { useGetAssetsOfFolderQuery } from "@/redux/apiSlice/itemsApi";
+import { useDeleteAssetOfFolderMutation, useGetAssetsOfFolderQuery } from "@/redux/apiSlice/itemsApi";
+import AssetActions from "./AssetsActions";
 interface AssetListProps {
   assets: Resource[];
   allSelectedAssets: Resource[];
@@ -48,6 +49,11 @@ const AssetList = ({
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const { user, token } = useSelector((state: RootState) => state.auth);
+  const {activeBucket} = useSelector((state: RootState) => state.resource);
+  const { folders: AllfolderData } = useSelector(
+    (state: RootState) => state.items
+  ) as { folders: Resource[] };
+
   const toggleAsset = (id: string) => {
     if (selectedAssets.includes(id)) {
       setSelectedAssets(selectedAssets.filter((assetId) => assetId !== id));
@@ -85,6 +91,13 @@ const AssetList = ({
       // optional error UI
     }
   };
+
+
+  const handleShare = (assetId: string) => {
+    // Add custom logic here to share the asset via email
+    console.log("Sharing asset via email with ID:", assetId);
+  };
+
 
   if (assets.length === 0) {
     return (
@@ -177,7 +190,7 @@ const AssetList = ({
                   }}
                 />
               </TableHead>
-              <TableHead className=" bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-r border-r">
+              <TableHead className=" bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-r">
                 Display name
               </TableHead>
               <TableHead className="hidden lg:table-cell sticky top-0 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-r">
@@ -239,7 +252,12 @@ const AssetList = ({
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {"default"}
+                    {
+                      AllfolderData.find(
+                        (data: Resource) =>
+                          data.resourceId === asset.parentResourceId
+                      )?.name
+                    }
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     <div className="flex items-center gap-2">
@@ -293,7 +311,7 @@ const AssetList = ({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
+                    {/* <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                           <MoreHorizontal className="h-4 w-4" />
@@ -318,7 +336,14 @@ const AssetList = ({
                         </DropdownMenuItem>
                         <DropdownMenuItem>Delete</DropdownMenuItem>
                       </DropdownMenuContent>
-                    </DropdownMenu>
+                    </DropdownMenu> */}
+                    {/* Here we make a reusable components which use all view of assets for perform actions on each assets(file)  */}
+                    <AssetActions
+                  asset={asset}
+                  bucketId={activeBucket}
+                  folderId={currentopenOrSelectedFolder ?? ""}
+                   onShare={handleShare} // Optional: share handler
+                     />
                   </TableCell>
                 </motion.tr>
               ))}

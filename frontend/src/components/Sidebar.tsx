@@ -509,6 +509,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logout } from "@/redux/features/authSlice";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ISidebarProps {
   collapsed: boolean;
@@ -536,7 +537,7 @@ const Sidebar = ({
     dispatch(logout());
     navigate("/login");
   };
-
+  const isMobile = useIsMobile();
   // Initialize environments when resources load
   useEffect(() => {
     if (resources && resources.length > 0) {
@@ -589,7 +590,7 @@ const Sidebar = ({
   return (
     <>
       <button
-        className="fixed top-4 left-4 z-50 p-2 rounded-md bg-white dark:bg-black shadow-md lg:hidden"
+        className={`${"fixed top-2 left-3"} z-49 p-2 rounded-md bg-white dark:bg-black shadow-sm lg:hidden`}
         onClick={toggleMobileSidebar}
         aria-label="Toggle menu"
       >
@@ -610,7 +611,7 @@ const Sidebar = ({
       <aside
         className={`
           fixed top-0 left-0 z-40 h-full bg-white dark:bg-black border-r dark:border-r-slate-400 border-gray-200 dark:border-black transition-transform duration-200 
-          ${mobileOpen ? "translate-x-0" : "-translate-x-full"} 
+          ${mobileOpen ? "translate-x-0" : "-translate-x-[115%]"} 
           ${collapsed ? "w-16" : "w-64"} 
           lg:translate-x-0
         `}
@@ -633,12 +634,11 @@ const Sidebar = ({
             <Image className="w-6 h-6 mr-2 text-gray-800 dark:text-gray-200" />
             {!collapsed && (
               <h1 className="text-base font-medium text-gray-800 dark:text-gray-200">
-                MediaHub
+                <Link to={"/"}> MediaHub</Link>
               </h1>
             )}
           </div>
-
-          <ModeToggle />
+          <div className="">{!collapsed ? <ModeToggle /> : ""}</div>
         </div>
 
         {/* Environment Selector */}
@@ -741,11 +741,14 @@ const Sidebar = ({
         </nav>
 
         <div
-          className={`absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 dark:border-black
+          className={`absolute bottom-0 left-0 right-0 border-t border-gray-200 dark:border-black
                      bg-white dark:bg-black 
                      ${collapsed ? "items-center justify-center" : ""}`}
         >
-          <div className="flex items-center">
+          <div className="flex items-center flex-col w-full gap-y-3 py-2">
+            <div className="border-b w-full text-center">
+              {collapsed ? <ModeToggle /> : ""}
+            </div>
             <div className="flex-shrink-0">
               {/* <button
               

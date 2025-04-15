@@ -8,6 +8,7 @@ import { RootState } from "@/redux/store";
 import { useGetRootFolderOfBucketQuery } from "@/redux/apiSlice/itemsApi";
 import { setBucketRoootFolder } from "@/redux/features/itemsSlice";
 import BrandLoadingScreen from '@/components/BrandLoadingScreen'
+import { useIsMobile } from "@/hooks/use-mobile";
 const SidebarLayout = () => {
   const [collapsed, setCollapsed] = useState(false);
  const { user,token } = useSelector((state: RootState) => state.auth);
@@ -68,6 +69,7 @@ console.log("from bucket layout: ",data)
   const handleBucketSwitch = (bucketId: string) => {
     dispatch(setActiveBucket(bucketId));
   };
+  const isMobile = useIsMobile()
   
   if (isLoading || isFetching) return <BrandLoadingScreen/>;
   if (error) return <p>Error fetching data</p>;
@@ -79,7 +81,7 @@ console.log("from bucket layout: ",data)
       {/* Main Content with Context */}
       <main
         className={`flex-1 overflow-x-hidden transition-all duration-200
-          ml-16 ${collapsed ? "lg:ml-16" : "lg:ml-64"}
+        ${collapsed ? "lg:ml-16" : "lg:ml-64"}
         `}
       >
     

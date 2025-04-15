@@ -136,12 +136,28 @@ const folderApi = authApi.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: "Asset", id: arg.folderId },
       ]
-    })
-
+    }),
+    deleteAssetOfFolder:builder.mutation< Resource,{bucketId:string,folderId:string,assetId:string,token:string}>({query:({bucketId,folderId,assetId,token})=>{
+      return{
+        url: `/resource/folder/delete-asset/${bucketId}/${folderId}/${assetId}`,
+        method: 'DELETE',
+        headers:{
+          Authorization:token,
+          
+        },
+      }
+    },
+    invalidatesTags: (result, error, arg) => [
+      { type: "Asset", id: arg.assetId },
+    ]
+  })
+    
   }),
+  
 });
 
 export const {
+  useDeleteAssetOfFolderMutation,
   useUploadAssetsMutation,
   useCreateNewFolderMutation,
   useGetFoldersQuery,

@@ -15,10 +15,11 @@ import { motion, AnimatePresence, LayoutGroup } from "framer-motion"
 import { Resource } from "@/lib/types"
 
 interface AssetCardProps {
-  assets: Resource[]
+  assets: Resource[],
+  allSelectedAssets:Resource[]
 }
 
-const AssetCard = ({ assets }: AssetCardProps) => {
+const AssetCard = ({ assets ,allSelectedAssets}: AssetCardProps) => {
   const [selectedAssets, setSelectedAssets] = useState<string[]>([])
   const prevAssetsRef = useRef<Resource[]>([])
   
@@ -99,6 +100,8 @@ const AssetCard = ({ assets }: AssetCardProps) => {
                     <DropdownMenuItem>View</DropdownMenuItem>
                     <DropdownMenuItem>Download</DropdownMenuItem>
                     <DropdownMenuItem>Rename</DropdownMenuItem>
+                    <DropdownMenuItem>Share</DropdownMenuItem>
+
                     <DropdownMenuItem>Delete</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

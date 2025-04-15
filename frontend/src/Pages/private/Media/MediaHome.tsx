@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 
-export default function DiscoveryInterface() {
+export default function MediaHome() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeCategory, setActiveCategory] = useState("all")
   const [filteredItems, setFilteredItems] = useState(featureItems)
@@ -34,25 +34,23 @@ export default function DiscoveryInterface() {
 
   return (
     <motion.div
-      className="min-h-screen bg-slate-50 pt-30 overflow-hidden"
+      className="min-h-screen bg-slate-50 dark:bg-black pt-30 overflow-hidden"
       initial="hidden"
       animate="show"
       variants={staggerContainer}
     >
       {/* Header */}
-      <motion.div variants={fadeInUp} className="container mx-auto px-4 text-center">
-        <h1 className="text-3xl md:text-4xl font-medium text-slate-800 mb-8">
+      <motion.div variants={fadeInUp} className="container dark:bg-black  mx-auto px-4 text-center">
+        <h1 className="text-3xl md:text-4xl font-medium text-slate-800 dark:text-white mb-8">
           Let's Start Discovering
         </h1>
         <motion.div className="max-w-xl mx-auto relative" variants={fadeInUp}>
           <div className="relative group">
-            <Input
-              type="text"
-              placeholder="Search Media Library"
-              className="pl-10 pr-10 py-6 border-slate-200 rounded-full shadow-sm transition-all focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-0 focus:scale-[1.01]"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <Input
+  type="text"
+  placeholder="Search Media Library"
+  className="pl-10 pr-10 py-6 border border-slate-200 dark:border-slate-700 rounded-full shadow-sm transition-all bg-white dark:bg-black text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-0"
+/>
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4 transition-colors duration-200 group-focus-within:text-slate-600" />
             {searchTerm && (
               <Button
@@ -156,32 +154,41 @@ function CategoryBadge({ name, label, active, onClick }: CategoryBadgeProps) {
     >
       <Badge
         variant={active ? "default" : "outline"}
-        className={`px-4 py-1.5 text-sm cursor-pointer transition-all ${
-          active ? "bg-slate-800 hover:bg-slate-700 shadow-md" : "bg-transparent hover:bg-slate-100"
-        }`}
+        className={`px-4 py-1.5 text-sm cursor-pointer transition-all 
+          ${
+            active
+              ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-300 shadow-md"
+              : "bg-transparent text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+          }`}
         onClick={onClick}
       >
         {label}
       </Badge>
     </motion.div>
-  )
+  );
 }
+
 
 function FeatureItem({ title, action, icon, color }: FeatureItemProps) {
   return (
-    <div className="group bg-white rounded-xl p-6 border border-slate-100 transition-all hover:shadow-lg hover:ring-1 hover:ring-slate-200 hover:border-slate-200 cursor-pointer">
-      <div className="flex items-start gap-4">
-        <div
-          className={`${color} h-10 w-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110`}
-        >
-          <span className="text-white font-medium">{icon}</span>
-        </div>
-        <div className="space-y-1">
-          <h3 className="font-medium text-slate-800 group-hover:text-slate-900">{title}</h3>
-          <p className="text-slate-500 text-sm group-hover:text-slate-600">{action}</p>
-        </div>
+    <div className="group bg-white dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-800 transition-all hover:shadow-lg hover:ring-1 hover:ring-slate-200 dark:hover:ring-slate-700 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer">
+    <div className="flex items-start gap-4">
+      <div
+        className={`${color} h-10 w-10 rounded-lg flex items-center justify-center shrink-0 transition-transform group-hover:scale-110`}
+      >
+        <span className="text-white font-medium">{icon}</span>
+      </div>
+      <div className="space-y-1">
+        <h3 className="font-medium text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white">
+          {title}
+        </h3>
+        <p className="text-slate-500 dark:text-slate-300 text-sm group-hover:text-slate-600 dark:group-hover:text-slate-200">
+          {action}
+        </p>
       </div>
     </div>
+  </div>
+  
   )
 }
 

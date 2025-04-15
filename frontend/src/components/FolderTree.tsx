@@ -202,7 +202,7 @@ import {
   useGetFoldersQuery,
 } from "@/redux/apiSlice/itemsApi";
 import toast from "react-hot-toast";
-import { isAllOf } from "@reduxjs/toolkit";
+
 
 export interface FolderTreeData {
   resourceId: string;
@@ -281,6 +281,11 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
   const closeDialog = () => {
     setDialogType(null);
     setSelectedFolder(null);
+    // this because when we close popup then it add pointer event none in the body(you can see in page source)
+    // const overlay = document.querySelector('.dialog-overlay') as HTMLElement;
+    // if (overlay) {
+    //   overlay.style.pointerEvents = 'auto';  // Reset pointer events
+    // }
   };
 
   const handleDeleteFolder = async () => {
@@ -325,8 +330,8 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
         <div
           className={`flex items-center justify-between py-1 my-1 rounded pr-2 ${
             folderId === item.resourceId
-              ? "bg-[#0057FF]/10 hover:bg-[#0057FF]/20"
-              : "hover:bg-gray-100"
+              ? "bg-[#0057FF]/10 hover:bg-[#0057FF]/20 dark:bg-[#0057FF]/20 dark:hover:bg-[#0057FF]/30"
+              : "hover:bg-gray-100 dark:hover:bg-[#191f2c]"
           }`}
           style={{
             paddingLeft: `${level * 16 + (item.type === "folder" ? 8 : 24)}px`,
@@ -358,7 +363,7 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
 
             <span
               onClick={() => handleFolderClick(item.resourceId)}
-              className="text-sm cursor-pointer"
+              className="text-sm cursor-pointer dark:text-white"
             >
               {item.displayName || item.name}
             </span>
@@ -368,11 +373,11 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
           {item.type === "folder" && item.parentResourceId !== activeBucket && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="p-1 rounded hover:bg-gray-200">
-                  <MoreVertical size={16} />
+                <button className="p-1 rounded hover:bg-gray-200  dark:hover:bg-zinc-700">
+                  <MoreVertical size={16} className={"dark:text-white"} />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-40">
+              <DropdownMenuContent className=" w-40 dark:bg-[#2a2a2a] dark:border-zinc-700 dark:text-white">
                 <DropdownMenuItem onClick={() => openDialog("delete", item)}>
                   <Trash2 size={14} className="mr-2" />
                   Delete
@@ -409,7 +414,7 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
 
   return (
     <>
-      <div className="p-2 overflow-y-auto w-60 bg-white">
+      <div className="p-2 overflow-y-auto w-60 bg-white dark:bg-[#0c0c0f]">
         {folders.length === 0 ? (
           <button
             onClick={() =>
@@ -427,63 +432,143 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
       </div>
 
       {/* Dialog */}
-      <Dialog
-        open={!!dialogType && !!selectedFolder}
-        onOpenChange={(isOpen) => !isOpen && closeDialog()}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {dialogType === "delete" && "Delete Folder"}
-              {dialogType === "share" && "Share Folder"}
-              {dialogType === "download" && "Download Folder"}
-            </DialogTitle>
-            <DialogDescription>
-              Are you sure you want to <strong>{dialogType}</strong> the folder{" "}
-              <strong>"{selectedFolder?.name}"</strong>?
-            </DialogDescription>
-          </DialogHeader>
+      {/* <Dialog
+  open={!!dialogType && !!selectedFolder}
+  onOpenChange={(isOpen) => {
+    if (!isOpen) {
+      closeDialog();
+    }
+  }}
+>
+  <DialogContent className="dark:bg-[#2a2a2a] dark:text-white dark:border-zinc-700">
+    <DialogHeader>
+      <DialogTitle className="dark:text-white">
+        {dialogType === "delete" && "Delete Folder"}
+        {dialogType === "share" && "Share Folder"}
+        {dialogType === "download" && "Download Folder"}
+      </DialogTitle>
+      <DialogDescription className="dark:text-zinc-300">
+        Are you sure you want to <strong>{dialogType}</strong> the folder{" "}
+        <strong>"{selectedFolder?.name}"</strong>?
+      </DialogDescription>
+    </DialogHeader>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={closeDialog}>
-              Cancel
-            </Button>
-            <Button
-              disabled={isLoading}
-              className={`${
-                dialogType === "delete"
-                  ? "bg-red-600 hover:bg-red-700"
-                  : "bg-[#0057FF] hover:bg-[#004ae6]"
-              } text-white relative`}
-              onClick={() => {
-                switch (dialogType) {
-                  case "delete":
-                    handleDeleteFolder();
-                    break;
-                  case "share":
-                    // Add share logic here
-                    toast.success("Sharing functionality coming soon");
-                    closeDialog();
-                    break;
-                  case "download":
-                    // Add download logic here
-                    toast.success("Download functionality coming soon");
-                    closeDialog();
-                    break;
-                }
-              }}
-            >
-              {isLoading ? (
-                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
-              ) : dialogType === "delete" ? (
-                "Delete"
-              ) : (
-                "Confirm"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+    <DialogFooter>
+      <Button variant="outline" onClick={closeDialog}>
+        Cancel
+      </Button>
+      <Button
+        disabled={isLoading}
+        className={`${
+          dialogType === "delete"
+            ? "bg-red-600 hover:bg-red-700"
+            : "bg-[#0057FF] hover:bg-[#004ae6]"
+        } text-white relative`}
+        onClick={() => {
+          switch (dialogType) {
+            case "delete":
+              handleDeleteFolder();
+              break;
+            case "share":
+              toast.success("Sharing functionality coming soon");
+              closeDialog();
+              break;
+            case "download":
+              toast.success("Download functionality coming soon");
+              closeDialog();
+              break;
+          }
+        }}
+      >
+        {isLoading ? (
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+        ) : dialogType === "delete" ? (
+          "Delete"
+        ) : (
+          "Confirm"
+        )}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog> */}
+
+<Dialog
+  open={!!dialogType && !!selectedFolder}
+  onOpenChange={(isOpen) => {
+    if (!isOpen) {
+      closeDialog();
+    }
+  }}
+>
+  <DialogContent 
+    className="dark:bg-[#2a2a2a] dark:text-white dark:border-zinc-700"
+    onCloseAutoFocus={(event) => {
+      event.preventDefault();
+      document.body.style.pointerEvents = '';
+    }}
+    onInteractOutside={(e) => {
+      // Prevent closing when clicking on the dialog itself
+      const isDialogContent = e.target instanceof HTMLElement && 
+        e.target.closest('[role="dialog"]');
+      if (isDialogContent) {
+        e.preventDefault();
+      }
+    }}
+  >
+    <DialogHeader>
+      <DialogTitle className="dark:text-white">
+        {dialogType === "delete" && "Delete Folder"}
+        {dialogType === "share" && "Share Folder"}
+        {dialogType === "download" && "Download Folder"}
+      </DialogTitle>
+      <DialogDescription className="dark:text-zinc-300">
+        Are you sure you want to <strong>{dialogType}</strong> the folder{" "}
+        <strong>"{selectedFolder?.name}"</strong>?
+      </DialogDescription>
+    </DialogHeader>
+
+    <DialogFooter>
+      <Button 
+        variant="outline" 
+        onClick={closeDialog}
+        className="dark:bg-zinc-700 dark:hover:bg-zinc-600"
+      >
+        Cancel
+      </Button>
+      <Button
+        disabled={isLoading}
+        className={`${
+          dialogType === "delete"
+            ? "bg-red-600 hover:bg-red-700"
+            : "bg-[#0057FF] hover:bg-[#004ae6]"
+        } text-white relative`}
+        onClick={() => {
+          switch (dialogType) {
+            case "delete":
+              handleDeleteFolder();
+              break;
+            case "share":
+              toast.success("Sharing functionality coming soon");
+              closeDialog();
+              break;
+            case "download":
+              toast.success("Download functionality coming soon");
+              closeDialog();
+              break;
+          }
+        }}
+      >
+        {isLoading ? (
+          <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-current border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+        ) : dialogType === "delete" ? (
+          "Delete"
+        ) : (
+          "Confirm"
+        )}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </>
   );
 };
