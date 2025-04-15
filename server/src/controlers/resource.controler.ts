@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import {S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { InvokeCommand, Lambda } from "@aws-sdk/client-lambda";
 import multer from "multer";
 import { resources } from "../db/schema";
@@ -23,6 +24,15 @@ const lambda = new Lambda({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
 });
+
+const s3 = new S3Client({
+  region: process.env.AWS_REGION, // e.g., "us-east-1"
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
+
 // Middleware to handle multipart form-data (for file uploads)
 
 // export const uploadResources = async (
@@ -1264,4 +1274,77 @@ export const deleteFolderOfBucketWhithAllChildItems = async (req:Request, res:Re
   } catch (error) {
     
   }
+}
+
+
+export const deleteSingleAsset = async (req:Request,res:Response,next:NextFunction):Promise<any>=>{
+try {
+  const {bucketId,folderId,assetId} = req.params;
+  if(!bucketId || !folderId || !assetId){
+    return res.json({message:"required parameters are absent",success:false});
+  }
+  const { accountId } = req.user;
+console.log(bucketId,folderId,assetId)
+  // Check if bucket exists
+  const [bucket] = await db
+    .select()
+    .from(resources)
+    .where(and(
+      eq(resources.resourceId, bucketId),
+      eq(resources.type, "bucket"),
+      eq(resources.accountId, accountId)
+    ))
+    .limit(1);
+console.log(bucket)
+  if (!bucket) {
+    return res.status(404).json({ message: "Bucket not found" ,success:false});
+  }
+
+  const [asset] = await db.select().from(resources).
+    where(and(
+      eq(resources.resourceId, assetId),
+      eq(resources.type, "file"),
+      eq(resources.parentResourceId, folderId),
+      eq(resources.accountId, accountId)
+    )).limit(1);
+
+  
+  if (!asset) {
+    return res.status(404).json({ message: "Asset not found or invalid relationship" });
+  }
+  
+  const s3Key = asset.path.replace(/^\/?original\//, "");
+  
+  // delete from s3 first then db
+  try {
+    await s3.send(new DeleteObjectCommand({
+      Bucket: `${accountId}-original`,
+      Key: s3Key,
+    }));
+  
+    const deletedData = await db
+    .delete(resources)
+    .where(and(
+      eq(resources.resourceId, assetId),
+      eq(resources.type, "file"),
+      eq(resources.parentResourceId, folderId),
+      eq(resources.accountId, accountId)
+    ))
+  
+console.log("deleted data",deletedData)
+  if (!deletedData) {
+    return res.status(404).json({ message: "Asset not found or invalid relationship" });
+  }
+    return res.status(200).json({ message: "Asset deleted successfully" });
+  
+  } catch (err) {
+    console.error("deletion error during assets delete", err);
+    return res.status(500).json({ message: "Failed to delete asset from storage. Try again later." });
+  }
+  
+
+} catch (error) {
+  console.log(error)
+  throw (new AppError("Server error during asset deletion",500))
+}
 }

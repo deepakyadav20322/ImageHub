@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express'
 
-import  {findAndOptimizeResource, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, deleteFolderOfBucketWhithAllChildItems, uploadResourcess} from '../controlers/resource.controler'
+import  {findAndOptimizeResource, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, deleteFolderOfBucketWhithAllChildItems, uploadResourcess, deleteSingleAsset} from '../controlers/resource.controler'
 import authMiddleware from '../middlewares/auth.middleware';
 import { authenticateApiKey } from '../middlewares/authenticateApiKey.middleware';
 import multer from 'multer';
@@ -29,6 +29,8 @@ router.post('/folders/create-folder',authMiddleware,createFolder);
 router.get('/folders/getfolderAId/:accountId',authMiddleware,getAllFoldersDataByAccountId);
 router.get('/folders/root-folder/:bucketId',authMiddleware,getRootFolderOfBucketOfAccount);
 router.delete('/folders/delete-folder/:bucketId/:folderId',authMiddleware, deleteFolderOfBucketWhithAllChildItems);
+
+router.delete('/folder/delete-asset/:bucketId/:folderId/:assetId',authMiddleware,deleteSingleAsset);
 
 
 
