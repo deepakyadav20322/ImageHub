@@ -96,7 +96,7 @@ console.log("iserror",isError);
                 key={tab}
                 onClick={() => handleTabChange(tab)}
                 className={cn(
-                  "relative px-4 py-2 text-sm font-medium transition capitalize  ",
+                  "relative px-4 py-2 text-sm font-medium transition capitalize cursor-pointer  ",
                   activeTab === tab
                     ? "text-blue-600 bg-blue-200/40 rounded-tl-xs rounded-tr-xs dark:text-blue-400 dark:bg-blue-900/30 "
                     : "text-gray-600 dark:text-zinc-300 hover:text-gray-800 dark:hover:text-white"
@@ -117,7 +117,7 @@ console.log("iserror",isError);
           {/* Search & Upload */}
           <div className="ml-auto flex items-end gap-4">
            
-            <Button onClick={()=>setUploadOpen(!uploadOpen)}  className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white dark:bg-blue-600 dark:hover:bg-blue-700">
+            <Button onClick={()=>setUploadOpen(!uploadOpen)}  className="bg-blue-600 hover:bg-blue-700 cursor-pointer flex items-center gap-2 text-white dark:bg-blue-600 dark:hover:bg-blue-700">
               <UploadIcon className="w-4 h-4" /> Upload
             </Button>
           </div>

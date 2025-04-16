@@ -940,6 +940,7 @@ const UploadDialog = ({
 
       // Fetch the file
       const response = await fetch(fileUrl);
+      console.log(response,"fetch file")
       if (!response.ok) {
         throw new Error(`Failed to fetch file: ${response.statusText}`);
       }

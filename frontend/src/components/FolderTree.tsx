@@ -331,7 +331,7 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
           className={`flex items-center justify-between py-1 my-1 rounded pr-2 ${
             folderId === item.resourceId
               ? "bg-[#0057FF]/10 hover:bg-[#0057FF]/20 dark:bg-[#0057FF]/20 dark:hover:bg-[#0057FF]/30"
-              : "hover:bg-gray-100 dark:hover:bg-[#191f2c]"
+              : "hover:bg-gray-100 dark:hover:bg-[#323e57]"
           }`}
           style={{
             paddingLeft: `${level * 16 + (item.type === "folder" ? 8 : 24)}px`,
@@ -341,7 +341,7 @@ const FolderTree = ({ folders }: FolderTreeProps) => {
             {item.type === "folder" && item.children && (
               <button
                 onClick={() => toggleFolder(item.resourceId)}
-                className="mr-1 text-gray-500 hover:text-gray-700 cursor-pointer"
+                className="mr-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-400 cursor-pointer"
               >
                 {expandedFolders[item.resourceId] ? (
                   <ChevronDown size={16} />
