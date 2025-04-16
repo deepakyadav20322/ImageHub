@@ -63,6 +63,7 @@ import { Label } from "@radix-ui/react-label";
 import toast from "react-hot-toast";
 import Breadcrumb from "./BreadCrumbFolder";
 import { useIsMobile } from "@/hooks/use-mobile";
+import AssetDrawer from "./AssetsInfoDrawer";
 
 type ViewMode = "list" | "card";
 
@@ -133,7 +134,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
       dispatch(setAssetsOfParticularFolder(data));
     }
   }, [dispatch, data]);
-  const { assets } = useSelector((state: RootState) => state.items);
+  const { assets } = useSelector((state: RootState) => state.items) as { assets: Resource[] };
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -142,7 +143,28 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
       setIsRefreshing(false);
     }, 800);
   };
+// =======================================================================================
 
+const handleSelectAsset = (assetId: string, selected: boolean) => {
+  if (selected) {
+    const assetToAdd = assets.find((asset) => asset.resourceId === assetId)
+    if (assetToAdd) {
+      setAllSelectedAssets((prev) => [...prev, assetToAdd])
+    }
+  } else {
+    setAllSelectedAssets((prev) => prev.filter((asset) => asset.resourceId !== assetId))
+  }
+}
+
+const handleSelectAll = (selected: boolean) => {
+  if (selected) {
+    setAllSelectedAssets([...assets])
+  } else {
+    setAllSelectedAssets([])
+  }
+}
+
+// =======================================================================================
   // const toggleFolder = (folderId: number) => {
   //   if (expandedFolders.includes(folderId)) {
   //     setExpandedFolders(expandedFolders.filter((id) => id !== folderId));
@@ -159,8 +181,10 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
     setSearchQuery("");
   };
 
-  const [createNewFolder, { isLoading: isFolderCreateLoading, isError }] =
-    useCreateNewFolderMutation();
+  const [
+    createNewFolder,
+    { isLoading: isFolderCreateLoading, isError, error: errorData },
+  ] = useCreateNewFolderMutation();
 
   const handleFolderCreate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -168,7 +192,6 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
     const formData = new FormData(e.currentTarget);
     const folderName = formData.get("name") as string;
     const parentFolderId = folderId || "";
-
     // Trim the name to avoid spaces-only input
     const trimmedName = folderName.trim();
 
@@ -203,12 +226,6 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
         return;
       }
 
-      // Check if folder name is valid
-      if (!folderName.trim()) {
-        alert("Folder name cannot be empty!");
-        return;
-      }
-
       if (token) {
         const response = await createNewFolder({
           parentFolderId,
@@ -216,7 +233,8 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
           visibility: "public",
           token,
         });
-        if (response) {
+
+        if (response.data) {
           setOpen(false);
           toast.success("Folder create successful", {
             position: "bottom-center",
@@ -224,10 +242,16 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
           });
           console.log("folder response", response);
         }
+        if (errorData && "data" in errorData) {
+          toast.error((errorData.data as { message: string }).message);
+        }
       }
-    } catch (error: any) {
-      console.error("Failed to create folder:", error);
-      alert(error.message);
+    } catch (err: any) {
+      if (err?.status === 400) {
+        toast.error(err.message);
+      }
+      console.error("Failed to create folder:", err);
+      alert(err.message);
     }
   };
 
@@ -266,7 +290,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
                       id="name"
                       name="name"
                       placeholder="Enter folder name"
-                      className="w-full dark:border-gray-400"
+                      className={`w-full dark:border-gray-400 `}
                       autoComplete="off"
                       autoFocus
                     />
@@ -283,24 +307,24 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
               Cancel
             </Button>
             </DialogClose> */}
-                    <Button
+                  <Button
                     type="submit"
                     className={`${
                       isFolderCreateLoading
-                      ? "bg-gray-600 cursor-not-allowed hover:bg-gray-600 dark:bg-gray-700 dark:hover:bg-gray-700"
-                      : "bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
+                        ? "bg-gray-600 cursor-not-allowed hover:bg-gray-600 dark:bg-gray-700 dark:hover:bg-gray-700"
+                        : "bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
                     } text-white cursor-pointer`}
                     disabled={isFolderCreateLoading}
-                    >
+                  >
                     {isFolderCreateLoading ? (
                       <>
-                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Creating...
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        Creating...
                       </>
                     ) : (
                       "Save"
                     )}
-                    </Button>
+                  </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
@@ -345,18 +369,20 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
 
             <div className="flex items-center gap-2 ml-4">
               <Tabs
-                defaultValue={viewMode}
+                value={viewMode}
                 onValueChange={(v) => setViewMode(v as ViewMode)}
                 className="hidden sm:block"
               >
                 <TabsList>
-                  <TabsTrigger value="list">
+                  <TabsTrigger value="list"   className="px-3 py-2 rounded-md transition-all dark:data-[state=active]:bg-zinc-600/70 dark:data-[state=active]:text-white"
+  >
                     <List className="h-4 w-4 mr-1" />
                     <span className="sr-only sm:not-sr-only sm:inline-block">
                       List
                     </span>
                   </TabsTrigger>
-                  <TabsTrigger value="card">
+                  <TabsTrigger value="card"    className="px-3 py-2 rounded-md transition-all dark:data-[state=active]:bg-zinc-600/70 dark:data-[state=active]:text-white"
+  >
                     <Grid className="h-4 w-4 mr-1" />
                     <span className="sr-only sm:not-sr-only sm:inline-block">
                       Card
@@ -394,10 +420,24 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
                 <Settings className="h-4 w-4" />
                 <span className="sr-only">Settings</span>
               </Button>
-              <Button variant="outline" size="icon">
-                <Eye className="h-4 w-4" />
-                <span className="sr-only">Preview</span>
-              </Button>
+              {/* <Button variant="outline" size="icon"> */}
+              {/* <Eye className="h-4 w-4" />
+                <span className="sr-only">Preview</span> */}
+              <AssetDrawer
+                asset={{
+                  imageUrl: "/Empty_State_Illustration_1.svg",
+                  location: "Home",
+                  format: "JPG",
+                  fileSize: "211.32 KB",
+                  dimensions: "1600 × 900",
+                  lastReplaced: "Apr 15, 2025 11:14 am",
+                  created: "Apr 15, 2025 11:14 am",
+                  tags: "tag1, tag2",
+                  description: "A sample asset image",
+                }}
+              />
+
+              {/* </Button> */}
             </div>
           </div>
         </header>
@@ -454,7 +494,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
                   animate={{ width: 40, opacity: 1 }}
                   exit={{ width: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-green-600 border-r dark:border-[#4a546b]  flex flex-col items-center py-4 mt-4"
+                  className=" border-r dark:border-[#4a546b]  flex flex-col items-center py-4 mt-4"
                 >
                   <Folder size={20} className=" text-blue-400" />
                 </motion.div>
@@ -529,10 +569,20 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
                             />
                           )}
                           {viewMode === "card" && (
+                            // <AssetCard
+                            //   assets={assets}
+                            //   selectedAssets={allSelectedAssets.map(asset => asset.resourceId)}
+                              
+                            // />
                             <AssetCard
-                              assets={assets}
-                              allSelectedAssets={allSelectedAssets}
-                            />
+                            assets={assets}
+                            selectedAssets={allSelectedAssets}
+                            setAllSelectedAssets={setAllSelectedAssets}
+                            onSelectAsset={handleSelectAsset}
+                            onSelectAll={handleSelectAll}
+                          />
+                          
+                     
                           )}
                         </div>
                       )}

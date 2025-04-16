@@ -226,7 +226,7 @@ const AssetList = ({
                   // className="group hover:bg-blue-100/45 hover:dark:bg-blue-400/20 h-[60px]"
                   className={cn(
                     "group h-[60px] border-b border-slate-300 dark:border-slate-700", // bottom border
-                    selectedAssets.includes(asset.resourceId)
+                    selectedAssets?.includes(asset.resourceId)
                       ? "bg-blue-100 dark:bg-blue-800/40 border-b-white dark:border-slate-500"
                       : "hover:bg-blue-100/45 hover:dark:bg-blue-400/20"
                   )}
@@ -234,7 +234,7 @@ const AssetList = ({
                   <TableCell>
                     <Checkbox
                       className="border-gray-300 dark:border-zinc-600 rounded-sm text-primary focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-zinc-900"
-                      checked={selectedAssets.includes(asset.resourceId)}
+                      checked={selectedAssets?.includes(asset.resourceId)}
                       onCheckedChange={() => toggleAsset(asset.resourceId)}
                       aria-label={`Select ${asset.name}`}
                     />

@@ -144,7 +144,7 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash2, Share2 } from "lucide-react";
+import { MoreHorizontal, Trash2, Share2, Pencil } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -198,7 +198,7 @@ export default function AssetActions({ asset, onShare,bucketId,folderId }: Asset
   // Handle Share Action - Copy Link
   const handleCopyLink = () => {
     navigator.clipboard.writeText(
-      `https://yourapp.com/assets/${asset.resourceId}`
+      `${import.meta.env.VITE_API_URL_V1}/resource/${auth.user?.accountId || '????'}-original/image/upload/${asset.path.replace("/original/default/", "")}`
     );
     toast.success("Link copied to clipboard");
     closeDialog();
@@ -213,21 +213,25 @@ export default function AssetActions({ asset, onShare,bucketId,folderId }: Asset
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu >
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
             <MoreHorizontal className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => setDialogType("share")}>
-            <Share2 size={14} className="mr-2" />
+        <DropdownMenuContent align="end"  className={'border-slate-500'}>
+          <DropdownMenuItem onClick={() => setDialogType("share")} className="cursor-pointer" >
+            <Share2 color="green" size={14}/>
             Share
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setDialogType("delete")}>
-            <Trash2 size={14} className="mr-2" />
+          <DropdownMenuItem onClick={() => setDialogType("delete")} className="cursor-pointer" >
+            <Trash2 color="red" size={14} className="mr-2" />
             Delete
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setDialogType("delete")} className="cursor-not-allowed" >
+            <Pencil color="yellow" size={14} className="mr-2" />
+            Rename
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
