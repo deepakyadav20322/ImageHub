@@ -406,12 +406,14 @@ export const uploadResourcess = async (
           },
           status: "active",
         });
-
+      
+        const fullPath =  `${folder.path}/${fileName}`;
+        console.log("fullpath",fullPath)
+        console.log("fullpath replace",fullPath.replace("/original/default/", ""))
         uploadedFiles.push({
           fileName,
           success: true,
-          url: `${process.env.SERVER_BASE_URL}/api/v1/resource/${bucket_name}/image/upload/${fileName}`,
-          s3Url: fileUrl,
+          url: `${process.env.SERVER_BASE_URL}/api/v1/resource/${bucket_name}/image/upload/${fullPath.replace("/original/default/", "")}`,
           dimensions,
         });
 
@@ -424,6 +426,7 @@ export const uploadResourcess = async (
         });
       }
     }
+    console.log(uploadedFiles)
 
     return res.status(200).json({
       success: true,
@@ -1148,6 +1151,26 @@ console.log("create folder me aaay")
 
     if (!parentFolder) {
       return res.status(404).json({ message: "Parent folder not found." });
+    }
+
+    // Check if folder with same name already exists under the parent folder
+    const [existingFolder] = await db
+      .select()
+      .from(resources)
+      .where(
+        and(
+          eq(resources.parentResourceId, parentResourceId),
+          eq(resources.name, name),
+          eq(resources.type, 'folder')
+        )
+      )
+      .limit(1);
+
+    if (existingFolder) {
+      return res.status(400).json({ 
+        message: "A folder with this name already exists."
+        ,success:false
+      });
     }
 
     // Build the folder path
