@@ -104,56 +104,76 @@
 
 
 import React from 'react'
-import CTASection from '@/components/landingPageComponents/CTASection'
 import FeaturesSection from '@/components/landingPageComponents/FeaturesSection'
-import FooterSection from '@/components/landingPageComponents/FooterSection'
-import Header from '@/components/landingPageComponents/Header'
+
 import HeroSection from '@/components/landingPageComponents/HeroSection'
-import PricingSection from '@/components/landingPageComponents/PricingSection'
-import UseCasesSection from '@/components/landingPageComponents/UseCasesSection'
 
+import { lazy, Suspense } from "react"
+import TransformationSection from '@/components/landingPageComponents/TransformationSection'
 
-const Home = () => {
+// Lazy load non-critical sections
+const UseCasesSection = lazy(() => import("@/components/landingPageComponents/UseCasesSection"))
+const PricingSection = lazy(() => import("@/components/landingPageComponents/PricingSection"))
+const CTASection = lazy(() => import("@/components/landingPageComponents/CTASection"))
+const FooterSection = lazy(() => import("@/components/landingPageComponents/FooterSection"))
+
+// Add loading fallbacks
+const SectionLoading = () => (
+  <div className="w-full py-24 flex justify-center items-center">
+    <div className="h-8 w-8 rounded-full border-4 border-gray-300 border-t-[#155dfc] animate-spin"></div>
+  </div>
+)
+
+export default function LandingPage() {
   return (
-    <div>
-    <div className="flex min-h-screen flex-col bg-[#0F172A]">
-      {/* <Header /> */}
-      <main className="relative flex-1">
-        {/* Global background decorative elements */}
-        <div className="fixed inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-[0.02]" />
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(56,189,248,0.3),rgba(255,255,255,0))]" />
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_50%_50%_at_50%_100%,rgba(56,189,248,0.3),rgba(255,255,255,0))]" />
+      <div className="flex min-h-screen flex-col bg-white dark:bg-gray-950">
+        {/* <Header /> */}
+        <main className="relative flex-1">
+          {/* Global background decorative elements */}
+          <div className="fixed inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:4rem_4rem] opacity-[0.02]" />
+          <div className="fixed inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(21,93,252,0.15),rgba(255,255,255,0))]" />
+          <div className="fixed inset-0 bg-[radial-gradient(ellipse_50%_50%_at_50%_100%,rgba(21,93,252,0.15),rgba(255,255,255,0))]" />
 
-        {/* Content sections */}
-        <div className="relative">
-          <HeroSection />
+          {/* Content sections */}
           <div className="relative">
-            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#0F172A] to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0F172A] to-transparent" />
-            <FeaturesSection />
+            <HeroSection />
+            <div className="relative">
+              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white dark:from-gray-950 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-gray-950 to-transparent" />
+              <FeaturesSection />
+            </div>
+            <div className="relative">
+              <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white dark:from-gray-950 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-gray-950 to-transparent" />
+              <TransformationSection />
+            </div>
+            <Suspense fallback={<SectionLoading />}>
+              <div className="relative">
+                <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white dark:from-gray-950 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-gray-950 to-transparent" />
+                <UseCasesSection />
+              </div>
+            </Suspense>
+            <Suspense fallback={<SectionLoading />}>
+              <div className="relative">
+                <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white dark:from-gray-950 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-gray-950 to-transparent" />
+                <PricingSection />
+              </div>
+            </Suspense>
+            <Suspense fallback={<SectionLoading />}>
+              <div className="relative">
+                <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white dark:from-gray-950 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-gray-950 to-transparent" />
+                <CTASection />
+              </div>
+            </Suspense>
           </div>
-          <div className="relative">
-            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#0F172A] to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0F172A] to-transparent" />
-            <UseCasesSection />
-          </div>
-          <div className="relative">
-            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#0F172A] to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0F172A] to-transparent" />
-            <PricingSection />
-          </div>
-          <div className="relative">
-            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-[#0F172A] to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0F172A] to-transparent" />
-            <CTASection />
-          </div>
-        </div>
-      </main>
-      <FooterSection />
-    </div>
-
-    </div>
+        </main>
+        <Suspense fallback={<SectionLoading />}>
+          <FooterSection />
+        </Suspense>
+      </div>
+    
   )
 }
-
-export default Home
