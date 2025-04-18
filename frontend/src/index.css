@@ -156,3 +156,39 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* styles.css */
+.scrollable-hide-scrollbar {
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;  /* IE/Edge */
+
+  /* Chrome, Safari, Opera */
+}
+.scrollable-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* --------------------------- custome scrollbar for dark mode and assets table---------- */
+/* styles.css or globals.css */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #1f2937; /* gray-800 */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #6b7280; /* gray-500 */
+  border-radius: 6px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #111827; /* gray-900 */
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #9ca3af; /* gray-400 */
+}

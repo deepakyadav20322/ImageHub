@@ -12,11 +12,12 @@ import MediaTopNavLayout from "./Layouts/MediaTopNavLayout";
 import Folders from "./Pages/private/Media/Folders";
 import Folders2 from "./Pages/private/Media/Folders2";
 import AccountSetting from "./Pages/private/Settings/AccountSetting";
-
+import TestPage from '@/Pages/TestPage'
 const App = () => {
   return (
     <Routes>
       <Route path="/" index element={<Home />} />
+      <Route path="/test" index element={<TestPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
 
@@ -34,6 +35,7 @@ const App = () => {
       <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<MediaHome />} />
         <Route path="folders" element={<Folders2 />} />
+        <Route path="assets" element={<TestPage/>} />
         <Route path="folders/:folderId" element={<Folders />} />
         <Route path="*" element={<GetStarted />} />
       </Route>
