@@ -373,6 +373,7 @@ export const uploadResourcess = async (
 
       try {
         const result = await lambda.send(new InvokeCommand(lambdaParams));
+        console.log(result)
         const payloadString = result.Payload ? new TextDecoder().decode(result.Payload) : "{}";
         const payload = JSON.parse(payloadString);
 
@@ -1201,9 +1202,9 @@ console.log("create folder me aaay")
       .returning();
 
     // Send response
-    res.status(201).json({
-      message: "Folder created successfully.",
-      folder: newFolder,
+    res.status(200).json({
+     success:true,
+      data: newFolder,
     });
   } catch (error) {
     console.log(error);
@@ -1371,3 +1372,142 @@ console.log("deleted data",deletedData)
   throw (new AppError("Server error during asset deletion",500))
 }
 }
+
+
+// export const getAllAssetsOfParticularAccount = async(req:Request,res:Response,next:NextFunction):Promise<any>=>{
+//   try {
+//     const {bucketId,accountId} = req.params;
+//     console.log(bucketId,accountId)
+//     if(!bucketId || !accountId){
+//      return res.status(400).json({messagge:"bucket or account does not exist",success:false});
+//     }
+//     const [bucket] = await db
+//     .select()
+//     .from(resources)
+//     .where(
+//       and(
+//         eq(resources.resourceId, bucketId),
+//         eq(resources.type, "bucket"),
+//         eq(resources.accountId, accountId)
+//       )
+//     )
+//     .limit(1);
+  
+//   if (!bucket) {
+//     return res.status(400).json({ message: "bucket does not exist", success: false });
+//   }
+
+//       // cte query to get all resources of particular account and specific buckets
+// const files = await db.execute(
+//   sql`
+//     WITH RECURSIVE resource_tree AS (
+//       SELECT *
+//       FROM resources
+//       WHERE resource_id = ${bucketId}
+
+//       UNION ALL
+
+//       SELECT r.*
+//       FROM resources r
+//       INNER JOIN resource_tree rt ON r.parent_resource_id = rt.resource_id
+//       WHERE r.account_id = ${accountId}
+//     )
+//     SELECT *
+//     FROM resource_tree
+//     WHERE type = 'file';
+//   `
+// );
+// console.log(files.rowCount,"count");
+//  res.status(200).json({success:true,data:files.rows})
+    
+//   } catch (error) {
+//     console.log("something error during getallassets");
+//     new AppError("Error during fetching all assets", 500)
+//   }
+
+// }
+
+
+
+
+
+const snakeToCamel = (str: string) => {
+  return str.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+};
+
+// Function to transform the rows to camelCase keys
+const transformRowKeys = (row: any) => {
+  const transformedRow: any = {};
+  for (const key in row) {
+    if (row.hasOwnProperty(key)) {
+      const newKey = snakeToCamel(key);
+      transformedRow[newKey] = row[key];
+    }
+  }
+  return transformedRow;
+};
+
+export const getAllAssetsOfParticularAccount = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { bucketId, accountId } = req.params;
+    console.log(bucketId, accountId);
+
+    if (!bucketId || !accountId) {
+      return res.status(400).json({ message: "bucket or account does not exist", success: false });
+    }
+
+    const [bucket] = await db
+      .select()
+      .from(resources)
+      .where(
+        and(
+          eq(resources.resourceId, bucketId),
+          eq(resources.type, "bucket"),
+          eq(resources.accountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!bucket) {
+      return res.status(400).json({ message: "bucket does not exist", success: false });
+    }
+
+    // cte query to get all resources of a particular account and specific buckets
+    const files = await db.execute(
+      sql`
+        WITH RECURSIVE resource_tree AS (
+          SELECT *
+          FROM resources
+          WHERE resource_id = ${bucketId}
+
+          UNION ALL
+
+          SELECT r.*
+          FROM resources r
+          INNER JOIN resource_tree rt ON r.parent_resource_id = rt.resource_id
+          WHERE r.account_id = ${accountId}
+        )
+        SELECT *
+        FROM resource_tree
+        WHERE type = 'file';
+      `
+    );
+    
+    // Transform rows to camelCase
+    const transformedFiles = files.rows.map((file: any) => transformRowKeys(file));
+
+    console.log(transformedFiles.length, "count");
+
+    res.status(200).json({ success: true, data: transformedFiles });
+
+  } catch (error) {
+    console.log("Something went wrong during fetching all assets");
+    next(new AppError("Error during fetching all assets", 500));
+  }
+};
+
+
