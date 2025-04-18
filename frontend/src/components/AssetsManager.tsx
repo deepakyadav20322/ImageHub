@@ -134,7 +134,9 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
       dispatch(setAssetsOfParticularFolder(data));
     }
   }, [dispatch, data]);
-  const { assets } = useSelector((state: RootState) => state.items) as { assets: Resource[] };
+  const { assets } = useSelector((state: RootState) => state.items) as {
+    assets: Resource[];
+  };
 
   const handleRefresh = () => {
     setIsRefreshing(true);
@@ -143,28 +145,30 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
       setIsRefreshing(false);
     }, 800);
   };
-// =======================================================================================
+  // =======================================================================================
 
-const handleSelectAsset = (assetId: string, selected: boolean) => {
-  if (selected) {
-    const assetToAdd = assets.find((asset) => asset.resourceId === assetId)
-    if (assetToAdd) {
-      setAllSelectedAssets((prev) => [...prev, assetToAdd])
+  const handleSelectAsset = (assetId: string, selected: boolean) => {
+    if (selected) {
+      const assetToAdd = assets.find((asset) => asset.resourceId === assetId);
+      if (assetToAdd) {
+        setAllSelectedAssets((prev) => [...prev, assetToAdd]);
+      }
+    } else {
+      setAllSelectedAssets((prev) =>
+        prev.filter((asset) => asset.resourceId !== assetId)
+      );
     }
-  } else {
-    setAllSelectedAssets((prev) => prev.filter((asset) => asset.resourceId !== assetId))
-  }
-}
+  };
 
-const handleSelectAll = (selected: boolean) => {
-  if (selected) {
-    setAllSelectedAssets([...assets])
-  } else {
-    setAllSelectedAssets([])
-  }
-}
+  const handleSelectAll = (selected: boolean) => {
+    if (selected) {
+      setAllSelectedAssets([...assets]);
+    } else {
+      setAllSelectedAssets([]);
+    }
+  };
 
-// =======================================================================================
+  // =======================================================================================
   // const toggleFolder = (folderId: number) => {
   //   if (expandedFolders.includes(folderId)) {
   //     setExpandedFolders(expandedFolders.filter((id) => id !== folderId));
@@ -183,7 +187,7 @@ const handleSelectAll = (selected: boolean) => {
 
   const [
     createNewFolder,
-    { isLoading: isFolderCreateLoading, isError, error: errorData },
+    { isLoading: isFolderCreateLoading, isSuccess, isError, error: errorData },
   ] = useCreateNewFolderMutation();
 
   const handleFolderCreate = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -227,21 +231,24 @@ const handleSelectAll = (selected: boolean) => {
       }
 
       if (token) {
+        console.log("folder start run--------------------");
         const response = await createNewFolder({
           parentFolderId,
           folderName,
           visibility: "public",
           token,
-        });
-
-        if (response.data) {
-          setOpen(false);
-          toast.success("Folder create successful", {
-            position: "bottom-center",
+        }).unwrap();
+        console.log("folder middle run--------------------", response);
+        if (response) {
+          toast.success("Folder create successful", 
+            {
+            position: "top-center",
             duration: 4000,
           });
+          setOpen(false);
           console.log("folder response", response);
         }
+
         if (errorData && "data" in errorData) {
           toast.error((errorData.data as { message: string }).message);
         }
@@ -252,6 +259,8 @@ const handleSelectAll = (selected: boolean) => {
       }
       console.error("Failed to create folder:", err);
       alert(err.message);
+    } finally {
+      setOpen(false);
     }
   };
 
@@ -373,16 +382,20 @@ const handleSelectAll = (selected: boolean) => {
                 onValueChange={(v) => setViewMode(v as ViewMode)}
                 className="hidden sm:block"
               >
-                <TabsList>
-                  <TabsTrigger value="list"   className="px-3 py-2 rounded-md transition-all dark:data-[state=active]:bg-zinc-600/70 dark:data-[state=active]:text-white"
-  >
+                <TabsList className="gap-x-1">
+                  <TabsTrigger
+                    value="list"
+                    className="px-2 py-2 rounded-md transition-all dark:data-[state=active]:bg-zinc-600/70 dark:data-[state=active]:text-white cursor-pointer"
+                  >
                     <List className="h-4 w-4 mr-1" />
                     <span className="sr-only sm:not-sr-only sm:inline-block">
                       List
                     </span>
                   </TabsTrigger>
-                  <TabsTrigger value="card"    className="px-3 py-2 rounded-md transition-all dark:data-[state=active]:bg-zinc-600/70 dark:data-[state=active]:text-white"
-  >
+                  <TabsTrigger
+                    value="card"
+                    className="px-2 py-2 rounded-md transition-all dark:data-[state=active]:bg-zinc-600/70 dark:data-[state=active]:text-white cursor-pointer"
+                  >
                     <Grid className="h-4 w-4 mr-1" />
                     <span className="sr-only sm:not-sr-only sm:inline-block">
                       Card
@@ -424,6 +437,7 @@ const handleSelectAll = (selected: boolean) => {
               {/* <Eye className="h-4 w-4" />
                 <span className="sr-only">Preview</span> */}
               <AssetDrawer
+                isIcon={true}
                 asset={{
                   imageUrl: "/Empty_State_Illustration_1.svg",
                   location: "Home",
@@ -505,7 +519,7 @@ const handleSelectAll = (selected: boolean) => {
           {/* Content */}
           <div className="flex-1 overflow-auto">
             <div className="p-4">
-              <div className="mb-6">
+              <div className="mb-1">
                 {/* <h2 className="text-2xl font-semibold tracking-tight">
                 {selectedFolder === 1 ? "All Assets" : folders.find((f) => f.id === selectedFolder)?.name}
                 <span className="ml-2 text-sm text-muted-foreground">
@@ -572,17 +586,15 @@ const handleSelectAll = (selected: boolean) => {
                             // <AssetCard
                             //   assets={assets}
                             //   selectedAssets={allSelectedAssets.map(asset => asset.resourceId)}
-                              
+
                             // />
                             <AssetCard
-                            assets={assets}
-                            selectedAssets={allSelectedAssets}
-                            setAllSelectedAssets={setAllSelectedAssets}
-                            onSelectAsset={handleSelectAsset}
-                            onSelectAll={handleSelectAll}
-                          />
-                          
-                     
+                              assets={assets}
+                              selectedAssets={allSelectedAssets}
+                              setAllSelectedAssets={setAllSelectedAssets}
+                              onSelectAsset={handleSelectAsset}
+                              onSelectAll={handleSelectAll}
+                            />
                           )}
                         </div>
                       )}

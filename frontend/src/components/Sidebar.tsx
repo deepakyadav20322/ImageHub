@@ -533,7 +533,7 @@ const Sidebar = ({
   // This should match your resourceSlice state structure
   const resources = useSelector((state: RootState) => state.resource.bucket);
 
-  const handleLogout = () => {
+  const handleLogout = () => { 
     dispatch(logout());
     navigate("/login");
   };

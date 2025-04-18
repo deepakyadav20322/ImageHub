@@ -29,6 +29,7 @@ const SidebarLayout = () => {
       bucketId: activeBucket ,
       token: token || ''}
   );
+  
   // console.log(token)
 console.log("from bucket layout: ",data)
   // useEffect(() => {

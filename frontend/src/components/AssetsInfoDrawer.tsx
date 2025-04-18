@@ -10,11 +10,11 @@ import {
   DrawerHeader,
 } from "@/components/ui/drawer";
 import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-  } from "@/components/ui/tooltip"
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,19 +43,26 @@ const InfoItem = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-const AssetDrawer = ({ asset }: { asset: Asset }) => {
+const AssetDrawer = ({ asset, isIcon }: { asset: Asset; isIcon: boolean }) => {
   if (!asset) return null;
 
-  const [tags, setTags] = useState(asset.tags.split(",").map((tag) => tag.trim()));
+  const [tags, setTags] = useState(
+    asset.tags.split(",").map((tag) => tag.trim())
+  );
   const [tagInput, setTagInput] = useState("");
   const [description, setDescription] = useState(asset.description);
-  const [errors, setErrors] = useState<{ tags?: string; description?: string }>({});
+  const [errors, setErrors] = useState<{ tags?: string; description?: string }>(
+    {}
+  );
 
   const handleAddTag = () => {
     const newTag = tagInput.trim();
     if (newTag && !tags.includes(newTag)) {
       if (newTag.length > 20) {
-        setErrors((e) => ({ ...e, tags: "Each tag must be under 20 characters." }));
+        setErrors((e) => ({
+          ...e,
+          tags: "Each tag must be under 20 characters.",
+        }));
         return;
       }
       setTags([...tags, newTag]);
@@ -96,16 +103,25 @@ const AssetDrawer = ({ asset }: { asset: Asset }) => {
   return (
     <Drawer direction="right">
       <DrawerTrigger asChild>
-
-        <Button variant="outline" size="icon" className="cursor-pointer">
-              <Eye className="h-4 w-4" />
-                <span className="sr-only">Preview</span>
-                </Button>
+        <Button
+          variant={isIcon ? "outline" : "default"}
+          size={isIcon ? "icon" : "lg"}
+          className="cursor-pointer"
+        >
+          {isIcon ? (
+            <Eye className="h-4 w-4" />
+          ) : (
+            <span className="">Preview</span>
+          )}
+          <span className="sr-only">Preview</span>
+        </Button>
       </DrawerTrigger>
 
       <DrawerContent className="p-4 dark:bg-gray-900 bg-white max-w-md ml-auto h-screen">
         <DrawerHeader>
-          <DrawerTitle className="text-xl font-semibold">Asset Details</DrawerTitle>
+          <DrawerTitle className="text-xl font-semibold">
+            Asset Details
+          </DrawerTitle>
           <DrawerDescription className="text-sm text-muted-foreground">
             Preview, inspect, and edit asset information.
           </DrawerDescription>
@@ -127,11 +143,10 @@ const AssetDrawer = ({ asset }: { asset: Asset }) => {
             </TabsList>
 
             <TabsContent value="summary" className="mt-4">
-               
               <Card className="bg-background border-muted">
-              <span className="text-center inline-block rounded-full bg-[#422006] px-3 py-1 text-xs font-semibold text-[#dcd10b] border border-[#dcd10b] mx-2">
-  More rich metadata info coming soon!!
-</span>
+                <span className="text-center inline-block rounded-full bg-[#422006] px-3 py-1 text-xs font-semibold text-[#dcd10b] border border-[#dcd10b] mx-2">
+                  More rich metadata info coming soon!!
+                </span>
 
                 <CardContent className="p-4 space-y-2">
                   <InfoItem label="Location" value={asset.location} />
@@ -145,40 +160,44 @@ const AssetDrawer = ({ asset }: { asset: Asset }) => {
             </TabsContent>
 
             <TabsContent value="metadata" className="mt-4">
-  <Card className="bg-background border-muted">
-    <CardContent className="p-4 space-y-4">
-      <div className="space-y-1">
-        <Label htmlFor="tags" className="text-sm font-medium text-foreground">
-          Tags
-        </Label>
-        <Input
-          id="tags"
-          placeholder="Add tags, separated by commas"
-          defaultValue={asset.tags}
-          className="text-sm"
-        />
-      </div>
+              <Card className="bg-background border-muted">
+                <CardContent className="p-4 space-y-4">
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="tags"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Tags
+                    </Label>
+                    <Input
+                      id="tags"
+                      placeholder="Add tags, separated by commas"
+                      defaultValue={asset.tags}
+                      className="text-sm"
+                    />
+                  </div>
 
-      <div className="space-y-1">
-        <Label htmlFor="description" className="text-sm font-medium text-foreground">
-          Description
-        </Label>
-        <Textarea
-          id="description"
-          placeholder="Add a description..."
-          defaultValue={asset.description}
-          className="text-sm min-h-[100px]"
-        />
-      </div>
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="description"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Description
+                    </Label>
+                    <Textarea
+                      id="description"
+                      placeholder="Add a description..."
+                      defaultValue={asset.description}
+                      className="text-sm min-h-[100px]"
+                    />
+                  </div>
 
-      <div className="flex justify-end">
-        <Button variant="default">Save Metadata</Button>
-      </div>
-    </CardContent>
-  </Card>
-</TabsContent>
-
-
+                  <div className="flex justify-end">
+                    <Button variant="default">Save Metadata</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
 

@@ -33,8 +33,14 @@ import { useSelector } from "react-redux";
 
 import { RootState } from "@/redux/store";
 import { useParams } from "react-router";
-import { useDeleteAssetOfFolderMutation, useGetAssetsOfFolderQuery } from "@/redux/apiSlice/itemsApi";
+import {
+  useDeleteAssetOfFolderMutation,
+  useGetAllAssetsOfParticularAccountQuery,
+  useGetAssetsOfFolderQuery,
+} from "@/redux/apiSlice/itemsApi";
 import AssetActions from "./AssetsActions";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
 interface AssetListProps {
   assets: Resource[];
   allSelectedAssets: Resource[];
@@ -49,7 +55,7 @@ const AssetList = ({
   const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const { user, token } = useSelector((state: RootState) => state.auth);
-  const {activeBucket} = useSelector((state: RootState) => state.resource);
+  const { activeBucket } = useSelector((state: RootState) => state.resource);
   const { folders: AllfolderData } = useSelector(
     (state: RootState) => state.items
   ) as { folders: Resource[] };
@@ -76,6 +82,13 @@ const AssetList = ({
     token: token || "",
   });
 
+  const { refetch: AllassetsOfAccRefetch } =
+    useGetAllAssetsOfParticularAccountQuery({
+      accountId: user?.accountId ?? "",
+      bucketId: activeBucket,
+      token: token || "",
+    });
+
   const { handleUpload, isError, isLoading } = useAssetUploader(); // custome hooks
   const handleDialogUpload = async (formdata: FormData) => {
     try {
@@ -84,7 +97,7 @@ const AssetList = ({
         userAccountId: user?.accountId!,
         token: token || "",
         folderId: currentopenOrSelectedFolder || "",
-        refetch,
+        refetch: [refetch, AllassetsOfAccRefetch],
       });
       setUploadOpen(false); // optionally close dialog after success
     } catch (err) {
@@ -92,12 +105,10 @@ const AssetList = ({
     }
   };
 
-
   const handleShare = (assetId: string) => {
     // Add custom logic here to share the asset via email
     console.log("Sharing asset via email with ID:", assetId);
   };
-
 
   if (assets.length === 0) {
     return (
@@ -248,7 +259,30 @@ const AssetList = ({
                           className="h-full w-full object-cover"
                         /> */}
                       </div>
-                      <span className="font-medium">{asset.name}</span>
+                     
+                      
+                      <TooltipProvider>
+  <Tooltip>
+    <TooltipTrigger>
+    <span
+                        className="font-medium truncate"
+                        style={{
+                          maxWidth: "200px",
+                          display: "inline-block",
+                          overflow: "hidden",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {asset.name}
+                      </span>
+    </TooltipTrigger>
+    {asset.name.length>32 &&
+    <TooltipContent>
+        {asset.name}
+    </TooltipContent>
+}
+  </Tooltip>
+</TooltipProvider>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
@@ -339,11 +373,11 @@ const AssetList = ({
                     </DropdownMenu> */}
                     {/* Here we make a reusable components which use all view of assets for perform actions on each assets(file)  */}
                     <AssetActions
-                  asset={asset}
-                  bucketId={activeBucket}
-                  folderId={currentopenOrSelectedFolder ?? ""}
-                   onShare={handleShare} // Optional: share handler
-                     />
+                      asset={asset}
+                      bucketId={activeBucket}
+                      folderId={currentopenOrSelectedFolder ?? ""}
+                      onShare={handleShare} // Optional: share handler
+                    />
                   </TableCell>
                 </motion.tr>
               ))}

@@ -93,7 +93,7 @@ const LoginForm = () => {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+        <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive dark:bg-destructive/50 dark:text-[#dc0215]">
           {error}
         </div>
       )}

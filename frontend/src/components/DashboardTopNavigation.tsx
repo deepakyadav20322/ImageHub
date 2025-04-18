@@ -9,7 +9,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { Resource } from "@/lib/types";
 import { useGetAssetsOfFolderQuery, useUploadAssetsMutation } from "@/redux/apiSlice/itemsApi";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 const tabs = ["home", "assets", "folders", "collections", "moderation"];
 
 // Type for context
@@ -27,13 +27,13 @@ const Navbar = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const { collapsed } = useOutletContext<SidebarContext>();
   const {folderId:currentopenOrSelectedFolder}  = useParams()
-  const isMobile = useIsMobile()
+
   // Extract current tab from URL (default to 'home')
   const activeTab = location.pathname.split("/")[3] || "home";
   const handleTabChange = (tab: string) => {
     navigate(`/dashboard/media/${tab.toLowerCase()}/${tab.toLowerCase()==="folders"?bucketRootFolder?.resourceId:""}`);
   };
-  const { refetch} = useGetAssetsOfFolderQuery({folderId:currentopenOrSelectedFolder||bucketRootFolder.resourceId, token:token || "" });
+  const { refetch} = useGetAssetsOfFolderQuery({folderId:currentopenOrSelectedFolder||bucketRootFolder?.resourceId, token:token || "" });
   
   const [uploadAssets,{isError}] = useUploadAssetsMutation()
   const handleUpload = async (formdata: FormData):Promise<any>  => {
@@ -72,7 +72,7 @@ console.log("iserror",isError);
     //   collapsed ? "" : "lg:w-[calc(100%-15rem)]"
     // )}
     className={cn(
-      "transition-all duration-200 fixed top-0 z-45 lg:px-6 py-2 shadow-sm border-b mb-1",
+      "transition-transform duration-200 fixed top-0 z-45 lg:px-6 py-2 shadow-sm border-b mb-1",
       "bg-white text-black border-gray-200",
       "dark:bg-black dark:text-white dark:border-zinc-700",
       // Handle width

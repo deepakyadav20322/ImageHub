@@ -307,9 +307,16 @@
 
 // export default AssetCard
 
-import React from "react";
+import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ImageIcon, FileText, Globe, Lock, MoreHorizontal } from "lucide-react";
+import {
+  ImageIcon,
+  FileText,
+  Globe,
+  Lock,
+  MoreHorizontal,
+  UploadIcon,
+} from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
@@ -324,6 +331,10 @@ import AssetActions from "./AssetsActions";
 import { RootState } from "@/redux/store";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router";
+import UploadDialog from "./UploadDialog";
+import { useGetAllAssetsOfParticularAccountQuery, useGetAssetsOfFolderQuery } from "@/redux/apiSlice/itemsApi";
+import { useAssetUploader } from "@/hooks/useAssetsUploader";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface AssetCardProps {
   assets: Resource[];
@@ -340,11 +351,22 @@ const AssetCard: React.FC<AssetCardProps> = ({
   onSelectAsset,
   onSelectAll,
 }) => {
-  //  const { user, token } = useSelector((state: RootState) => state.auth);
+
   const { activeBucket } = useSelector((state: RootState) => state.resource);
+  const [uploadOpen, setUploadOpen] = useState(false);
   const { folderId: currentopenOrSelectedFolder } = useParams();
+  const { user, token } = useSelector((state: RootState) => state.auth);
   const isAssetSelected = (id: string) =>
     selectedAssets.some((asset) => asset.resourceId === id);
+  const { refetch } = useGetAssetsOfFolderQuery({
+    folderId: currentopenOrSelectedFolder || "",
+    token: token || "",
+  });
+  const { refetch:AllassetsOfAccRefetch } = useGetAllAssetsOfParticularAccountQuery({
+    accountId: user?.accountId ?? '',
+     bucketId:activeBucket,
+    token: token || "",
+  });
 
   const handleShare = (assetId: string) => {
     // Add custom logic here to share the asset via email
@@ -365,6 +387,23 @@ const AssetCard: React.FC<AssetCardProps> = ({
     onSelectAsset?.(id, !alreadySelected);
   };
 
+  const { handleUpload, isError, isLoading } = useAssetUploader(); // custome hooks
+  const handleDialogUpload = async (formdata: FormData) => {
+    try {
+      await handleUpload({
+        formdata,
+        userAccountId: user?.accountId!,
+        token: token || "",
+        folderId: currentopenOrSelectedFolder || "",
+        refetch: [refetch,AllassetsOfAccRefetch],
+     
+      });
+      setUploadOpen(false); // optionally close dialog after success
+    } catch (err) {
+      // optional error UI
+    }
+  };
+
   const getFileIcon = (mimetype: string | undefined) => {
     if (!mimetype) return <FileText className="h-4 w-4 text-gray-500" />;
     if (mimetype.startsWith("image/"))
@@ -379,6 +418,55 @@ const AssetCard: React.FC<AssetCardProps> = ({
       <Lock className="h-4 w-4 text-orange-400" />
     );
   };
+
+  if (assets.length === 0) {
+    return (
+      <>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{
+            duration: 0.4,
+            ease: "easeOut",
+          }}
+          className="w-full h-full min-h-[25rem] flex justify-center items-center"
+        >
+          <motion.div
+            className="flex flex-col items-center gap-4 p-6 dark:bg-black bg-slate-100 rounded-lg w-full max-w-lg mx-auto"
+            transition={{ duration: 0.3, delay: 0.1 }}
+          >
+            <img src="/Empty_State_Illustration_1.svg" alt="" />
+            <h2 className="text-lg font-semibold dark:text-slte-100">
+              Upload assets to this folder
+            </h2>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                onClick={() => setUploadOpen(!uploadOpen)}
+                className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
+              >
+                <UploadIcon className="w-4 h-4" /> Upload
+              </Button>
+            </motion.div>
+          </motion.div>
+          <UploadDialog
+            open={uploadOpen}
+            onClose={() => setUploadOpen(false)}
+            onUpload={handleDialogUpload}
+            maxSizeMB={5}
+            allowedTypes={[
+              "image/jpeg",
+              "image/png",
+              "image/jpg",
+              "image/webp",
+            ]}
+            multiple={true}
+            maxFiles={5}
+          />
+        </motion.div>
+      </>
+    );
+  }
 
   return (
     <div
@@ -448,7 +536,26 @@ const AssetCard: React.FC<AssetCardProps> = ({
               <CardContent className="p-4 flex flex-col gap-1">
                 <div className="flex items-center gap-2 font-medium truncate">
                   {getFileIcon(asset.metadata?.mimetype)}
-                  <span className="truncate">{asset.name}</span>
+                  <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <span
+                              className="font-medium truncate"
+                              style={{
+                                maxWidth: "200px",
+                                display: "inline-block",
+                                overflow: "hidden",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {asset.name}
+                            </span>
+                          </TooltipTrigger>
+                          {asset.name.length > 32 && (
+                            <TooltipContent>{asset.name}</TooltipContent>
+                          )}
+                        </Tooltip>
+                      </TooltipProvider>
                 </div>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>
