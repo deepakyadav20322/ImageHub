@@ -7,6 +7,7 @@ import {
   boolean,
   json,
   uniqueIndex,
+  unique,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -67,6 +68,47 @@ export const users = pgTable("users", {
     .notNull(),
 });
 
+
+
+export const emailVerificationTokens = pgTable('email_verification_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+
+  userId: uuid('user_id').notNull().references(() => users.userId, { onDelete: 'cascade' }),
+
+  accountId: uuid('account_id').references(() => accounts.accountId, { onDelete: 'set null' }),
+  email: varchar('email', { length: 255 }).notNull(),
+  token: text('token').notNull(),
+
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+
+  isUsed: boolean('is_used').default(false).notNull(),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+},(table) => {
+  return {
+    uniqueUserAccount: unique().on(table.userId, table.accountId),
+  }}
+);
+export const PasswordResetToken = pgTable('email_verification_tokens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+
+  userId: uuid('user_id').notNull().references(() => users.userId, { onDelete: 'cascade' }),
+
+  accountId: uuid('account_id').references(() => accounts.accountId, { onDelete: 'set null' }),
+  email: varchar('email', { length: 255 }).notNull(),
+  token: text('token').notNull(),
+
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+
+  isUsed: boolean('is_used').default(false).notNull(),
+
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+},
+(table) => {
+  return {
+    uniqueUserAccount: unique().on(table.userId, table.accountId),
+  }}
+);
 // 🔹 Accounts Table
 export const accounts = pgTable("accounts", {
   accountId: uuid("account_id").primaryKey().defaultRandom(),

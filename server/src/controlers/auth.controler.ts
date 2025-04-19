@@ -8,9 +8,10 @@ import {
   permissions,
   apiKeys,
   resources,
+  PasswordResetToken,
 } from "../db/schema";
 import { db } from "../db/db_connect";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, gt, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { generateJWTtoken } from "../utils/JwtTokenHandler";
 import { generateApiKey, generateApiSecret } from "../utils/apiKeyHandler";
@@ -20,6 +21,8 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { date } from "drizzle-orm/mysql-core";
+import { sendMail } from "../utils/mailer";
+import { passwordResetTemplate } from "../utils/passwordResetMailTemplate";
 
 export const userLogin = async (
   req: Request,
@@ -96,18 +99,18 @@ export const userLogin = async (
 
     const rolePermissionsData = user[0]?.role?.roleId
       ? await db
-          .select({
-            permission:
-              sql`${permissions.resource} || ':' || ${permissions.action}`.as(
-                "permission"
-              ),
-          })
-          .from(rolePermissions)
-          .leftJoin(
-            permissions,
-            eq(rolePermissions.permissionId, permissions.permissionId)
-          )
-          .where(eq(rolePermissions.roleId, user[0].role.roleId))
+        .select({
+          permission:
+            sql`${permissions.resource} || ':' || ${permissions.action}`.as(
+              "permission"
+            ),
+        })
+        .from(rolePermissions)
+        .leftJoin(
+          permissions,
+          eq(rolePermissions.permissionId, permissions.permissionId)
+        )
+        .where(eq(rolePermissions.roleId, user[0].role.roleId))
       : [];
 
     const formattedPermissions = rolePermissionsData.map(
@@ -443,5 +446,164 @@ export const userRegister = async (
     return next(
       new AppError("Something went wrong during user registration ", 500)
     );
+  }
+};
+
+
+
+export const forgetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { email } = req.body;
+    console.log(req.body)
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email is required',
+      });
+    }
+
+    // Find user
+    const user = await db
+      .select({
+        userId: users.userId,
+        email: users.email,
+        accountId: users.accountId, // Assuming `users` table has accountId FK
+      })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (!user || user.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No user found with this email',
+      });
+    }
+
+    const currentUser = user[0];
+
+    // Generate reset token (JWT or UUID-based string)
+    const resetToken = generateJWTtoken({ userId: currentUser.userId, accountId: currentUser.accountId, email: currentUser.email }, 15 * 60); // 15 mins
+
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+
+    // Upsert token (if same user already requested reset, update token)
+    await db
+      .insert(PasswordResetToken)
+      .values({
+        userId: currentUser.userId,
+        accountId: currentUser.accountId,
+        email: currentUser.email,
+        token: resetToken,
+        expiresAt,
+      })
+      .onConflictDoUpdate({
+        target: [PasswordResetToken.userId, PasswordResetToken.accountId],
+        set: {
+          token: resetToken,
+          expiresAt,
+        },
+      });
+
+    // TODO: Send reset email with token link
+    await sendMail({
+      to: currentUser.email,
+      subject: 'Reset your password',
+      html: passwordResetTemplate(resetToken),
+    });
+
+    // e.g., https://yourapp.com/reset-password?token=${resetToken}
+
+    res.status(200).json({
+      success: true,
+      message: 'Password reset link has been sent to your email.',
+      // resetToken, // Only for dev/testing, remove in prod
+    });
+  } catch (error) {
+    console.error('[FORGOT_PASSWORD_ERROR]', error);
+    res.status(500).json({
+      success: false,
+      message: 'Something went wrong. Please try again later.',
+    });
+  }
+};
+
+
+export const resetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { token, password } = req.body;
+  console.log(token,password)
+    if (!token || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Token and new password are required',
+      });
+    }
+
+    // 1. Validate token from DB
+    const tokenData = await db
+      .select()
+      .from(PasswordResetToken)
+      .where(
+        and(
+          eq(PasswordResetToken.token, token),
+          gt(PasswordResetToken.expiresAt, new Date()) // token not expired
+        )
+      )
+      .limit(1);
+
+    if (!tokenData || tokenData.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid or expired token',
+      });
+    }
+
+    const { userId, accountId } = tokenData[0];
+
+    // 2. Hash new password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 3. Update user's password
+    await db
+      .update(users)
+      .set({ password: hashedPassword })
+      .where(
+        and(
+          eq(users.userId, userId as string),
+          eq(users.accountId, accountId as string)
+        )
+      );
+
+    // 4. Delete used token
+    await db
+      .delete(PasswordResetToken)
+      .where(
+        and(
+          eq(PasswordResetToken.token, token),
+          eq(PasswordResetToken.userId, userId),
+          accountId ? eq(PasswordResetToken.accountId, accountId) : undefined
+        )
+      );
+
+    return res.status(200).json({
+      success: true,
+       data:{  message: 'Password has been reset successfully',}
+    });
+  } catch (error) {
+    console.error('[RESET_PASSWORD_ERROR]', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Something went wrong. Please try again later.',
+    });
   }
 };
