@@ -6,16 +6,24 @@ import { RootState } from "@/redux/store";
 const AuthLayout = () => {
   const { user, loading } = useSelector((state: RootState) => state.auth);
   // console.log(user)
-
-  const isAuthPage = location.pathname === "/login" || location.pathname === "/signup";
+console.log(location)
+  const isAuthPage = [
+    "/login",
+    "/signup",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email"
+  ].includes(location.pathname)
   
+  console.log(isAuthPage)
+  console.log(user&&'true')
   if (loading) {
     return <Loader />; // Show a loading state instead of redirecting
   }
-
-  if (!user && !loading) {
-    console.log("user not found", user);
-    return <Navigate to="/login" />;
+  // 🛑 Redirect unauthenticated users away from protected pages
+  if (!user && !isAuthPage && !loading) {
+    console.log("user not found",user)
+    return <Navigate to="/login" />
   }
 
   if (user && isAuthPage) {
