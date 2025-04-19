@@ -475,7 +475,13 @@ const UploadDialog = ({
       reset();
     } catch (error) {
       // ... (error handling remains the same)
-    } finally {
+      console.log(error, "Error occurred during upload");
+
+      const errorMessage =
+      (error as { data?: { message?: string } })?.data?.message ?? 'An unknown error occurred';
+    
+    toast.error(errorMessage);
+        } finally {
       // Clear all intervals
       progressIntervals.forEach((interval) => clearInterval(interval));
       setUploading(false);

@@ -48,9 +48,33 @@ export const authApi = createApi({
         return response.data
       }
 
-    })
+    }),
+    forgetPassword: builder.mutation({
+      query: (data) => ({
+        url: '/auth/forget-password',
+        method: 'POST',
+        body: data, // RTK will serialize this to JSON
+        credentials: 'include',
+      }),
+      transformErrorResponse: (response) => {
+        return response.data;
+      }
+    }),
+    resetPassword: builder.mutation({
+      query: (data) => ({
+        url: '/auth/reset-password',
+        method: 'POST',
+        body: data,
+        credentials: 'include', // if your server uses cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+    }),
+    
+    
   }),
 });
 
-export const { useLoginMutation,useSignUpMutation } = authApi;
+export const { useLoginMutation,useSignUpMutation,useForgetPasswordMutation,useResetPasswordMutation } = authApi;
 export default authApi;

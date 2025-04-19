@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { loginSchema } from "@/lib/ZodSchema";
@@ -119,12 +119,24 @@ const LoginForm = () => {
               </FormItem>
             )}
           />
+       
           <FormField
             control={form.control}
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>
+                <div className="flex items-center justify-between w-full">
+      <FormLabel>Password</FormLabel>
+      <Link
+        to="/forgot-password"
+        className="text-sm text-muted-foreground hover:text-primary"
+      >
+        Forgot password?
+      </Link>
+    </div>
+
+                </FormLabel>
                 <FormControl>
                   <Input
                     placeholder="••••••••"
@@ -138,6 +150,7 @@ const LoginForm = () => {
               </FormItem>
             )}
           />
+         
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <>
@@ -163,7 +176,7 @@ const LoginForm = () => {
       <Button
         variant="outline"
         type="button"
-        className="w-full"
+        className="w-full cursor-not-allowed"
         onClick={handleGoogleSignIn}
         disabled={isLoading}
       >

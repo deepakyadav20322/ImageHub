@@ -13,16 +13,28 @@ import Folders from "./Pages/private/Media/Folders";
 import Folders2 from "./Pages/private/Media/Folders2";
 import AccountSetting from "./Pages/private/Settings/AccountSetting";
 import TestPage from '@/Pages/TestPage'
+import ForgotPasswordPage from "./Pages/ForgotPasswordPage";
+import ResetPasswordPage from "./Pages/ResetPasswordPage";
+import VerifyEmailPage from "./Pages/VerifyEmailPage";
 const App = () => {
   return (
     <Routes>
       <Route path="/" index element={<Home />} />
       <Route path="/test" index element={<TestPage />} />
-      <Route path="/login" element={<LoginPage />} />
+      {/* <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} /> */}
 
       {/* {here we define the sidebar layout for all dashboard pages} */}
       <Route element={<AuthLayout />}>
+      {/* ****************- Here we attach auth pages in authlayout because it is not accessible after login-- */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      {/* -***************------------------------------------- */}
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/dashboard" element={<SidebarLayout />}>
         <Route index element={<Navigate to="media" replace />} />
