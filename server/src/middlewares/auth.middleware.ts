@@ -25,7 +25,7 @@ async function authMiddleware(
 
     console.log("kuchh aaya hai in middleware...");
     // If no token, return unauthorized error
-    console.log(token)
+    // console.log(token)
     if (!token) {
       return res
         .status(401)

@@ -1447,6 +1447,72 @@ const transformRowKeys = (row: any) => {
   return transformedRow;
 };
 
+// export const getAllAssetsOfParticularAccount = async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+// ): Promise<any> => {
+//   try {
+//     const { bucketId, accountId } = req.params;
+//     const {tags,search,sorted_by} = req.query;
+//     console.log(req.query,"query requ")
+//     console.log(bucketId, accountId);
+
+//     if (!bucketId || !accountId) {
+//       return res.status(400).json({ message: "bucket or account does not exist", success: false });
+//     }
+
+//     const [bucket] = await db
+//       .select()
+//       .from(resources)
+//       .where(
+//         and(
+//           eq(resources.resourceId, bucketId),
+//           eq(resources.type, "bucket"),
+//           eq(resources.accountId, accountId)
+//         )
+//       )
+//       .limit(1);
+
+//     if (!bucket) {
+//       return res.status(400).json({ message: "bucket does not exist", success: false });
+//     }
+
+//     // cte query to get all resources of a particular account and specific buckets
+//     const files = await db.execute(
+//       sql`
+//         WITH RECURSIVE resource_tree AS (
+//           SELECT *
+//           FROM resources
+//           WHERE resource_id = ${bucketId}
+
+//           UNION ALL
+
+//           SELECT r.*
+//           FROM resources r
+//           INNER JOIN resource_tree rt ON r.parent_resource_id = rt.resource_id
+//           WHERE r.account_id = ${accountId}
+//         )
+//         SELECT *
+//         FROM resource_tree
+//         WHERE type = 'file';
+//       `
+//     );
+    
+//     // Transform rows to camelCase
+//     const transformedFiles = files.rows.map((file: any) => transformRowKeys(file));
+
+//     console.log(transformedFiles.length, "count");
+
+//     res.status(200).json({ success: true, data: transformedFiles });
+
+//   } catch (error) {
+//     console.log("Something went wrong during fetching all assets");
+//     next(new AppError("Error during fetching all assets", 500));
+//   }
+// };
+
+
 export const getAllAssetsOfParticularAccount = async (
   req: Request,
   res: Response,
@@ -1454,8 +1520,12 @@ export const getAllAssetsOfParticularAccount = async (
 ): Promise<any> => {
   try {
     const { bucketId, accountId } = req.params;
-    console.log(bucketId, accountId);
-
+    const tags = typeof req.query.tags === "string" ? req.query.tags : undefined;
+    const search = typeof req.query.search === "string" ? req.query.search : "";
+    const sorted_by = typeof req.query.sorted_by === "string" ? req.query.sorted_by : "created_at desc";
+    
+    const tagList = tags ? tags.split(",") : [];
+    
     if (!bucketId || !accountId) {
       return res.status(400).json({ message: "bucket or account does not exist", success: false });
     }
@@ -1476,36 +1546,35 @@ export const getAllAssetsOfParticularAccount = async (
       return res.status(400).json({ message: "bucket does not exist", success: false });
     }
 
-    // cte query to get all resources of a particular account and specific buckets
-    const files = await db.execute(
-      sql`
-        WITH RECURSIVE resource_tree AS (
-          SELECT *
-          FROM resources
-          WHERE resource_id = ${bucketId}
-
-          UNION ALL
-
-          SELECT r.*
-          FROM resources r
-          INNER JOIN resource_tree rt ON r.parent_resource_id = rt.resource_id
-          WHERE r.account_id = ${accountId}
-        )
+    const query = sql`
+      WITH RECURSIVE resource_tree AS (
         SELECT *
-        FROM resource_tree
-        WHERE type = 'file';
-      `
-    );
-    
-    // Transform rows to camelCase
-    const transformedFiles = files.rows.map((file: any) => transformRowKeys(file));
+        FROM resources
+        WHERE resource_id = ${bucketId}
 
-    console.log(transformedFiles.length, "count");
+        UNION ALL
+
+        SELECT r.*
+        FROM resources r
+        INNER JOIN resource_tree rt ON r.parent_resource_id = rt.resource_id
+        WHERE r.account_id = ${accountId}
+      )
+      SELECT rt.*
+      FROM resource_tree rt
+      LEFT JOIN resource_tags t ON rt.resource_id = t.resource_id
+      WHERE rt.type = 'file'
+      ${search ? sql`AND rt.name ILIKE ${'%' + search + '%'}` : sql``}
+      ${tagList.length > 0 ? sql`AND t.tag IN (${sql.join(tagList.map(t => sql`${t}`), sql`,`)})` : sql``}
+      ORDER BY ${sql.raw(sorted_by)};
+    `;
+
+    const files = await db.execute(query);
+    const transformedFiles = files.rows.map((file: any) => transformRowKeys(file));
 
     res.status(200).json({ success: true, data: transformedFiles });
 
   } catch (error) {
-    console.log("Something went wrong during fetching all assets");
+    console.log("Something went wrong during fetching all assets", error);
     next(new AppError("Error during fetching all assets", 500));
   }
 };
