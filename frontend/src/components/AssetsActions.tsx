@@ -141,7 +141,7 @@
 //     </>
 //   );
 // }
-import { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal, Trash2, Share2, Pencil } from "lucide-react";
@@ -161,133 +161,161 @@ import { useSelector } from "react-redux";
 
 interface AssetActionsProps {
   asset: Resource;
-  bucketId:string,
-  folderId:string,
+  bucketId: string;
+  folderId: string;
   onShare?: (id: string) => void;
 }
 
-export default function AssetActions({ asset, onShare,bucketId,folderId }: AssetActionsProps) {
+export default React.memo(function AssetActions({ 
+  asset, 
+  onShare,
+  bucketId,
+  folderId 
+}: AssetActionsProps) {
   const [dialogType, setDialogType] = useState<"delete" | "share" | null>(null);
-  const [deleteAsset, { isLoading,error }] = useDeleteAssetOfFolderMutation();
-  const auth = useSelector((state:RootState)=>state.auth)
-    const { refetch } = useGetAssetsOfFolderQuery({
-      folderId: folderId ?? "",
-      token: auth.token || "",
-    });
-  console.log(error)
-  // Close Dialog
-  const closeDialog = () => setDialogType(null);
+  const {token,user} = useSelector((state: RootState) => state.auth);
+ 
+  
+  const { refetch } = useGetAssetsOfFolderQuery({
+    folderId: folderId ?? "",
+    token: token || "",
+  }, { skip: !folderId });
 
-  // Handle Delete Action
-  const handleDelete = async () => {
+  const [deleteAsset, { isLoading, error }] = useDeleteAssetOfFolderMutation();
+
+  const closeDialog = useCallback(() => setDialogType(null), []);
+
+  const handleDelete = useCallback(async () => {
     try {
       await deleteAsset({
-        bucketId: bucketId,
-        folderId: folderId,
+        bucketId,
+        folderId,
         assetId: asset.resourceId,
-        token:auth.token || "",
+        token :token|| '',
       }).unwrap();
       toast.success("Asset deleted successfully");
-      refetch()
+      refetch();
       closeDialog();
     } catch {
       toast.error("Failed to delete asset");
     }
-  };
+  }, [bucketId, folderId, asset.resourceId, token, deleteAsset, refetch, closeDialog]);
 
-  // Handle Share Action - Copy Link
-  const handleCopyLink = () => {
+  const handleCopyLink = useCallback(() => {
+    console.log(asset.path,"path")
     navigator.clipboard.writeText(
-      `${import.meta.env.VITE_API_URL_V1}/resource/${auth.user?.accountId || '????'}-original/image/upload/${asset.path.replace("/original/default/", "")}`
+     `${import.meta.env.VITE_API_URL_V1}/resource/${user?.accountId || '????'}-original/image/upload/${asset.path.replace("/original/default/", "")}`
     );
     toast.success("Link copied to clipboard");
     closeDialog();
-  };
+  }, [asset.path, user?.accountId, closeDialog]);
 
-  // Handle Share Action - Email (if onShare callback is provided)
-  const handleShareEmail = () => {
-    if (onShare) onShare(asset.resourceId); // Optionally, call parent's share handler
+  const handleShareEmail = useCallback(() => {
+    onShare?.(asset.resourceId);
     toast.success("Shared via email (mock)");
     closeDialog();
-  };
+  }, [asset.resourceId, onShare, closeDialog]);
+
+  const dropdownActions = useMemo(() => [
+    {
+      label: "Share",
+      icon: <Share2 color="green" size={14} />,
+      onClick: () => setDialogType("share"),
+      disabled: false
+    },
+    {
+      label: "Delete",
+      icon: <Trash2 color="red" size={14} />,
+      onClick: () => setDialogType("delete"),
+      disabled: false
+    },
+    {
+      label: "Rename",
+      icon: <Pencil color="yellow" size={14} />,
+      onClick: () => {},
+      disabled: true
+    }
+  ], []);
 
   return (
     <>
-      <DropdownMenu >
+      <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
             <MoreHorizontal className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end"  className={'border-slate-500'}>
-          <DropdownMenuItem onClick={() => setDialogType("share")} className="cursor-pointer" >
-            <Share2 color="green" size={14}/>
-            Share
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setDialogType("delete")} className="cursor-pointer" >
-            <Trash2 color="red" size={14} className="mr-2" />
-            Delete
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setDialogType("delete")} className="cursor-not-allowed" >
-            <Pencil color="yellow" size={14} className="mr-2" />
-            Rename
-          </DropdownMenuItem>
+        <DropdownMenuContent align="end" className="border-slate-500">
+          {dropdownActions.map((action) => (
+            <DropdownMenuItem
+              key={action.label}
+              onClick={action.onClick}
+              className={action.disabled ? "cursor-not-allowed" : "cursor-pointer"}
+              disabled={action.disabled}
+            >
+              {action.icon}
+              {action.label}
+            </DropdownMenuItem>
+          ))}
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={dialogType === "delete"} onOpenChange={closeDialog}>
-        <DialogContent  
-        onCloseAutoFocus={(event) => {
-      event.preventDefault();
-      document.body.style.pointerEvents = '';
-    }}>
-          <DialogHeader>
-            <DialogTitle>Delete Asset</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete <strong>{asset.name}</strong>?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={closeDialog} disabled={isLoading}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-red-600 text-white hover:bg-red-700"
-              onClick={handleDelete}
-              disabled={isLoading}
-            >
-              {isLoading ? "Deleting..." : "Delete"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {dialogType === "delete" && (
+        <Dialog open onOpenChange={closeDialog}>
+          <DialogContent
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              document.body.style.pointerEvents = '';
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>Delete Asset</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete <strong>{asset.name}</strong>?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={closeDialog} disabled={isLoading}>
+                Cancel
+              </Button>
+              <Button
+                className="bg-red-600 text-white hover:bg-red-700"
+                onClick={handleDelete}
+                disabled={isLoading}
+              >
+                {isLoading ? "Deleting..." : "Delete"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
-      {/* Share Dialog */}
-      <Dialog open={dialogType === "share"} onOpenChange={closeDialog}>
-        <DialogContent 
-         onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          document.body.style.pointerEvents = '';
-        }}
-        >
-          <DialogHeader>
-            <DialogTitle>Share Asset</DialogTitle>
-            <DialogDescription>
-              Share <strong>{asset.name}</strong> using one of the methods:
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 mt-4">
-            <Button variant="outline" className="w-full" onClick={handleCopyLink}>
-              Copy Link
-            </Button>
-            <Button variant="outline" className="w-full" onClick={handleShareEmail}>
-              Share via Email
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {dialogType === "share" && (
+        <Dialog open onOpenChange={closeDialog}>
+          <DialogContent
+              onCloseAutoFocus={(event) => {
+                event.preventDefault();
+                document.body.style.pointerEvents = ''
+              }}
+          >
+            <DialogHeader>
+              <DialogTitle>Share Asset</DialogTitle>
+              <DialogDescription>
+                Share <strong>{asset.name}</strong> using one of the methods:
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 mt-4">
+              <Button variant="outline" className="w-full" onClick={handleCopyLink}>
+                Copy Link
+              </Button>
+              <Button variant="outline" className="w-full" onClick={handleShareEmail}>
+                Share via Email
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
-}
+});

@@ -307,7 +307,7 @@
 
 // export default AssetCard
 
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ImageIcon,
@@ -336,28 +336,32 @@ import { useGetAllAssetsOfParticularAccountQuery, useGetAssetsOfFolderQuery } fr
 import { useAssetUploader } from "@/hooks/useAssetsUploader";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
+// interface AssetCardProps {
+//   assets: Resource[];
+//   selectedAssets?: Resource[];
+//   setAllSelectedAssets: (assets: Resource[]) => void;
+//   onSelectAsset?: (assetId: string, selected: boolean) => void;
+//   onSelectAll?: (selected: boolean) => void;
+// }
+
 interface AssetCardProps {
   assets: Resource[];
-  selectedAssets?: Resource[];
-  setAllSelectedAssets: (assets: Resource[]) => void;
-  onSelectAsset?: (assetId: string, selected: boolean) => void;
-  onSelectAll?: (selected: boolean) => void;
+  selectedAssets: Resource[];
+  onAssetSelect: (asset: Resource, isSelected: boolean) => void;
+  onSelectAll: (assets: Resource[], isSelected: boolean) => void;
 }
 
 const AssetCard: React.FC<AssetCardProps> = ({
   assets,
-  selectedAssets = [],
-  setAllSelectedAssets,
-  onSelectAsset,
-  onSelectAll,
+  selectedAssets,
+  onAssetSelect,
+  onSelectAll
 }) => {
 
   const { activeBucket } = useSelector((state: RootState) => state.resource);
   const [uploadOpen, setUploadOpen] = useState(false);
   const { folderId: currentopenOrSelectedFolder } = useParams();
   const { user, token } = useSelector((state: RootState) => state.auth);
-  const isAssetSelected = (id: string) =>
-    selectedAssets.some((asset) => asset.resourceId === id);
   const { refetch } = useGetAssetsOfFolderQuery({
     folderId: currentopenOrSelectedFolder || "",
     token: token || "",
@@ -372,20 +376,34 @@ const AssetCard: React.FC<AssetCardProps> = ({
     // Add custom logic here to share the asset via email
     console.log("Sharing asset via email with ID:", assetId);
   };
-  const toggleAsset = (id: string) => {
-    const alreadySelected = isAssetSelected(id);
-    if (alreadySelected) {
-      setAllSelectedAssets(
-        selectedAssets.filter((asset) => asset.resourceId !== id)
-      );
-    } else {
-      const newAsset = assets.find((asset) => asset.resourceId === id);
-      if (newAsset) {
-        setAllSelectedAssets([...selectedAssets, newAsset]);
-      }
+
+  // -------------- item selection part -------------------
+
+    const selectedIds = useMemo(() => 
+      new Set(selectedAssets.map(a => a.resourceId)),
+      [selectedAssets]
+    );
+  
+    // Memoized selection checker
+    const isAssetSelected = useCallback((assetId: string) => 
+      selectedIds.has(assetId),
+      [selectedIds]
+    );
+  
+  const toggleAsset = (assetId: string) => {
+    const asset = assets.find(a => a.resourceId === assetId);
+    if (asset) {
+      onAssetSelect(asset, !isAssetSelected(assetId));
     }
-    onSelectAsset?.(id, !alreadySelected);
   };
+  
+  const toggleAllAssets = (checked: boolean) => {
+    onSelectAll(assets, checked);
+  };
+  
+  
+  // ------------------------------------------
+
 
   const { handleUpload, isError, isLoading } = useAssetUploader(); // custome hooks
   const handleDialogUpload = async (formdata: FormData) => {

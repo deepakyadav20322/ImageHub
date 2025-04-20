@@ -78,8 +78,8 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [showSidebar, setShowSidebar] = useState(true);
   const [open, setOpen] = useState(false);
-  const [allSelectedAssets, setAllSelectedAssets] = useState<Resource[]>([]);
-
+  // const [allSelectedAssets, setAllSelectedAssets] = useState<Resource[]>([]);
+  const [selectedAssets, setSelectedAssets] = useState<Resource[]>([]);
   //   const [filteredAssets, setFilteredAssets] = useState(assets);
   // const [expandedFolders, setExpandedFolders] = useState<number[]>([1]);
   // const [selectedFolder, setSelectedFolder] = useState<number>(1);
@@ -97,7 +97,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
     { folderId: folderId || "", token: token || "" },
     { refetchOnMountOrArgChange: true }
   );
-  console.log(allSelectedAssets, "allselectedAssets");
+  console.log(selectedAssets, "selectedAssets---------------");
   const reduxStateFolder = useSelector(
     (state: RootState) => state.items.folders
   );
@@ -147,26 +147,22 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
   };
   // =======================================================================================
 
-  const handleSelectAsset = (assetId: string, selected: boolean) => {
-    if (selected) {
-      const assetToAdd = assets.find((asset) => asset.resourceId === assetId);
-      if (assetToAdd) {
-        setAllSelectedAssets((prev) => [...prev, assetToAdd]);
-      }
-    } else {
-      setAllSelectedAssets((prev) =>
-        prev.filter((asset) => asset.resourceId !== assetId)
-      );
-    }
+
+  
+  // ... other existing state and logic
+
+  const handleAssetSelect = (asset: Resource, isSelected: boolean) => {
+    setSelectedAssets(prev => 
+      isSelected 
+        ? [...prev, asset]
+        : prev.filter(a => a.resourceId !== asset.resourceId)
+    );
   };
 
-  const handleSelectAll = (selected: boolean) => {
-    if (selected) {
-      setAllSelectedAssets([...assets]);
-    } else {
-      setAllSelectedAssets([]);
-    }
+  const handleSelectAll = (assets: Resource[], isSelected: boolean) => {
+    setSelectedAssets(isSelected ? [...assets] : []);
   };
+
 
   // =======================================================================================
   // const toggleFolder = (folderId: number) => {
@@ -437,18 +433,10 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
               {/* <Eye className="h-4 w-4" />
                 <span className="sr-only">Preview</span> */}
               <AssetDrawer
+                allSelectedAssets={selectedAssets}
+                setAllSelectedAssets={setSelectedAssets}
                 isIcon={true}
-                asset={{
-                  imageUrl: "/Empty_State_Illustration_1.svg",
-                  location: "Home",
-                  format: "JPG",
-                  fileSize: "211.32 KB",
-                  dimensions: "1600 × 900",
-                  lastReplaced: "Apr 15, 2025 11:14 am",
-                  created: "Apr 15, 2025 11:14 am",
-                  tags: "tag1, tag2",
-                  description: "A sample asset image",
-                }}
+               
               />
 
               {/* </Button> */}
@@ -578,21 +566,17 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
                           {viewMode === "list" && (
                             <AssetList
                               assets={assets}
-                              setAllSelectedAssets={setAllSelectedAssets}
-                              allSelectedAssets={allSelectedAssets}
+                              selectedAssets={selectedAssets}
+                              onAssetSelect={handleAssetSelect}
+                              onSelectAll={handleSelectAll}
                             />
                           )}
                           {viewMode === "card" && (
-                            // <AssetCard
-                            //   assets={assets}
-                            //   selectedAssets={allSelectedAssets.map(asset => asset.resourceId)}
-
-                            // />
+                           
                             <AssetCard
                               assets={assets}
-                              selectedAssets={allSelectedAssets}
-                              setAllSelectedAssets={setAllSelectedAssets}
-                              onSelectAsset={handleSelectAsset}
+                              selectedAssets={selectedAssets}
+                              onAssetSelect={handleAssetSelect}
                               onSelectAll={handleSelectAll}
                             />
                           )}

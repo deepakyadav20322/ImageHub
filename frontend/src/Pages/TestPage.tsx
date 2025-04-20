@@ -1231,10 +1231,10 @@ const AssetsManagerTable = () => {
                           </TableRow>
                         ))
                       ) : (
-                        <TableRow className="dark:bg-black dark:hover:bg-black">
+                        <TableRow className="dark:bg-black dark:hover:bg-black hover:bg-white">
                           <TableCell
                             colSpan={columns.length}
-                            className="h-24 text-center"
+                            className="h-24 text-center"  
                           >
                             {/* {if no any assets available---------------------------------} */}
 
@@ -1278,6 +1278,7 @@ const AssetsManagerTable = () => {
           </div>
 
           {/* Fixed Pagination */}
+          {  (table.getRowModel().rows.length)>0?
           <div className="sticky bottom-0 z-20 bg-card border-t px-4 py-3 shadow-md">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-sm font-medium text-foreground">
@@ -1308,6 +1309,7 @@ const AssetsManagerTable = () => {
               </div>
             </div>
           </div>
+:''}
         </motion.div>
       </AnimatePresence>
     </div>

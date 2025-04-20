@@ -15,6 +15,7 @@
 // export type ResourceStatus = "active" | "archived" | "deleted";
 
 export interface Resource {
+  tags: any;
   resourceId: string;
   accountId: string;
   parentResourceId?: string;

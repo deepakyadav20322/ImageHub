@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   MoreHorizontal,
   Upload,
@@ -43,16 +43,16 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 interface AssetListProps {
   assets: Resource[];
-  allSelectedAssets: Resource[];
-  setAllSelectedAssets: (assets: Resource[]) => void;
+  selectedAssets: Resource[];
+  onAssetSelect: (asset: Resource, isSelected: boolean) => void;
+  onSelectAll: (assets: Resource[], isSelected: boolean) => void;
 }
-
 const AssetList = ({
   assets,
-  allSelectedAssets,
-  setAllSelectedAssets,
+  selectedAssets,
+  onAssetSelect,
+  onSelectAll
 }: AssetListProps) => {
-  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const { user, token } = useSelector((state: RootState) => state.auth);
   const { activeBucket } = useSelector((state: RootState) => state.resource);
@@ -60,23 +60,35 @@ const AssetList = ({
     (state: RootState) => state.items
   ) as { folders: Resource[] };
 
-  const toggleAsset = (id: string) => {
-    if (selectedAssets.includes(id)) {
-      setSelectedAssets(selectedAssets.filter((assetId) => assetId !== id));
-      // setAllSelectedAssets(selectedAssets.filter((assetId) => assetId !== id));
-    } else {
-      setSelectedAssets([...selectedAssets, id]);
-    }
-  };
-  const { folderId: currentopenOrSelectedFolder } = useParams();
-  const toggleAllAssets = (checked: boolean) => {
-    if (checked) {
-      setSelectedAssets(assets.map((asset) => asset.resourceId));
-      setAllSelectedAssets(assets.map((asset) => asset));
-    } else {
-      setSelectedAssets([]);
-    }
-  };
+const { folderId: currentopenOrSelectedFolder } = useParams();
+
+
+
+
+  // if you are using set then its look is O(1) than array lookup in O(n)---
+  const selectedIds = useMemo(() => 
+    new Set(selectedAssets.map(a => a.resourceId)),
+    [selectedAssets]
+  );
+
+  // Memoized selection checker
+  const isAssetSelected = useCallback((assetId: string) => 
+    selectedIds.has(assetId),
+    [selectedIds]
+  );
+
+const toggleAsset = (assetId: string) => {
+  const asset = assets.find(a => a.resourceId === assetId);
+  if (asset) {
+    onAssetSelect(asset, !isAssetSelected(assetId));
+  }
+};
+
+const toggleAllAssets = (checked: boolean) => {
+  onSelectAll(assets, checked);
+};
+
+
   const { refetch } = useGetAssetsOfFolderQuery({
     folderId: currentopenOrSelectedFolder || "",
     token: token || "",
@@ -237,7 +249,7 @@ const AssetList = ({
                   // className="group hover:bg-blue-100/45 hover:dark:bg-blue-400/20 h-[60px]"
                   className={cn(
                     "group h-[60px] border-b border-slate-300 dark:border-slate-700", // bottom border
-                    selectedAssets?.includes(asset.resourceId)
+                    selectedAssets?.some(selected => selected.resourceId === asset.resourceId)
                       ? "bg-blue-100 dark:bg-blue-800/40 border-b-white dark:border-slate-500"
                       : "hover:bg-blue-100/45 hover:dark:bg-blue-400/20"
                   )}
@@ -245,7 +257,7 @@ const AssetList = ({
                   <TableCell>
                     <Checkbox
                       className="border-gray-300 dark:border-zinc-600 rounded-sm text-primary focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-zinc-900"
-                      checked={selectedAssets?.includes(asset.resourceId)}
+                      checked={isAssetSelected(asset.resourceId)}
                       onCheckedChange={() => toggleAsset(asset.resourceId)}
                       aria-label={`Select ${asset.name}`}
                     />
