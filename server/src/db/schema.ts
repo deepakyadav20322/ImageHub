@@ -8,6 +8,11 @@ import {
   json,
   uniqueIndex,
   unique,
+  serial,
+  bigint,
+  index,
+  integer,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
@@ -274,6 +279,52 @@ export const resources = pgTable("resources", {
   // Offering an “Undo” feature or a “Recycle Bin” for temporarily deleted files is easier with soft deletion.
   deletedAt: timestamp("deleted_at", { withTimezone: true }), // NEW: Soft delete
 });
+
+
+
+export const tags = pgTable("tags", {
+  tagId:  uuid("tag_id").primaryKey().defaultRandom(),
+  accountId: uuid("account_id")
+  .references(() => accounts.accountId, { onDelete: "cascade" })
+  .notNull(),
+  userId: uuid("user_id").references(() => users.userId, { onDelete: "cascade" })
+  .notNull(),
+  tagName: text("tag_name").notNull(),
+  usageCount: integer("usage_count").default(0), // For tracking popularity
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+  // Case-sensitive uniqueness (exact matches)
+  uniqueAccountTag: unique("unique_account_tag")
+    .on(table.accountId, table.tagName),
+  
+  // Index for fast account-scoped tag searches
+  accountTagNameIdx: index("account_tag_name_idx")
+    .on(table.accountId, sql`lower(${table.tagName})`),
+  };
+});
+
+
+export const resourceTags = pgTable("resource_tags", {
+
+  resourceId: uuid("resource_id")
+    .notNull()
+    .references(() => resources.resourceId, { onDelete: "cascade" }),
+
+  tagId: uuid("tag_id")
+    .notNull()
+    .references(() => tags.tagId, { onDelete: "cascade" }),
+
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+}, (table) => {
+  return {
+    // Composite primary key to ensure uniqueness of (resource, tag) pair
+    pk: primaryKey({ columns: [table.resourceId, table.tagId] }),
+    // Optional index for fast reverse lookup of resources by tag
+    tagIndex: index("resource_tags_tag_id_idx").on(table.tagId),
+  };
+});
+
 
 // <<<===================Below thing use when we want to apply individula file/resource permission provide when it public =================>>>>
 
