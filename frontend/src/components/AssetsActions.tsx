@@ -212,7 +212,7 @@ export default React.memo(function AssetActions({
 
   const handleShareEmail = useCallback(() => {
     onShare?.(asset.resourceId);
-    toast.success("Shared via email (mock)");
+    toast.success("Shared via email feature comming soon");
     closeDialog();
   }, [asset.resourceId, onShare, closeDialog]);
 
@@ -246,12 +246,12 @@ export default React.memo(function AssetActions({
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="border-slate-500">
+        <DropdownMenuContent align="end" className="border-slate-500 dark:bg-zinc-800 ">
           {dropdownActions.map((action) => (
             <DropdownMenuItem
               key={action.label}
               onClick={action.onClick}
-              className={action.disabled ? "cursor-not-allowed" : "cursor-pointer"}
+              className={`${action.disabled} ? "cursor-not-allowed" : "cursor-pointer" dark:hover:bg-black cursor-pointer`}
               disabled={action.disabled}
             >
               {action.icon}

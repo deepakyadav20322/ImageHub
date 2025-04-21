@@ -2,6 +2,8 @@ import { Resource } from "@/lib/types";
 import authApi from "./authApi";
 import { boolean } from "zod";
 import { url } from "inspector";
+
+
 const folderApi = authApi.injectEndpoints({
   endpoints: (builder) => ({
     getFolders: builder.query<Resource[], { folderId: string; token: string }>({
@@ -117,13 +119,14 @@ const folderApi = authApi.injectEndpoints({
       Resource[],
       { bucketName: string; resourceType: string; files: FormData; token: string; folderId: string }
     >({
-      query: ({ bucketName, resourceType, files, token, folderId }) => ({
+      query: ({ bucketName, resourceType='image', files, token, folderId }) => ({
         url: `/resource/${bucketName}/${resourceType}/upload?folderId=${folderId}`,
         method: 'POST',
         body: files,
         headers: {
           Authorization: `Bearer ${token}`,
           'x-folder-id': folderId,
+         
         }
       }),
       transformResponse: (response: { success: boolean; data: Resource[] }) => response.data,
@@ -166,11 +169,62 @@ const folderApi = authApi.injectEndpoints({
       providesTags: (result, error, { bucketId }) => [
         { type: "AllAssets", id: bucketId },
       ],
-    })
+    }),
+
+    addTagsToAccount: builder.mutation<
+    { success: boolean; message: string },
+    {accountId:string ,bucketId:string, resourceId: string; token: string; tags: string[] }
+  >({
+    query: ({accountId,bucketId, resourceId, token, tags }) => ({
+      url: `resource/${bucketId}/addtags/${resourceId}`,
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: { tags },
+    }),
+    // Optimistic update to append tags to the existing list of tags in the Redux state
+    // onQueryStarted: async ({ accountId, tags }, { dispatch, queryFulfilled }) => {
+    //   try {
+    //     // If the request is successful, update the tags cache
+    //     const { data } = await queryFulfilled;
+    //     dispatch(
+    //       folderApi.util.updateQueryData('getAllTagsOfAccount', { accountId, token: '' }, (draft) => {
+    //         draft.push(...tags);
+    //       })
+    //     );
+    //   } catch (err) {
+    //     console.error('Error adding tags:', err);
+    //   }
+    // },
+    invalidatesTags: (result, error, { accountId }) => [{ type: 'Tags', id: accountId }],
+  }),
+
+  getAllTagsOfAccount: builder.query<
+  { success: boolean; data: string[] }, // Assuming tags are just strings
+  { bucketId:string,accountId: string; token: string }
+>({
+  query: ({bucketId, accountId, token }) => ({
+    url: `resource/${bucketId}/getAllTags`,
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }),
+  transformResponse: (response: { success: boolean; data: string[] }) => ({ success: response.success, data: response.data }),
+  providesTags: (result, error, { accountId }) => [
+    { type: 'Tags', id: accountId },
+  ],
+}),
+
+
+
   })
 });
 
 export const {
+  useAddTagsToAccountMutation,
+  useGetAllTagsOfAccountQuery,
   useLazyGetAllAssetsOfParticularAccountQuery,
   useDeleteAssetOfFolderMutation,
   useUploadAssetsMutation,

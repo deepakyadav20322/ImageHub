@@ -434,7 +434,6 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
                 <span className="sr-only">Preview</span> */}
               <AssetDrawer
                 allSelectedAssets={selectedAssets}
-                setAllSelectedAssets={setSelectedAssets}
                 isIcon={true}
                
               />

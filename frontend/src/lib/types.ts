@@ -34,7 +34,7 @@ export interface Resource {
   isSelected?: boolean;
   createdAt: string; // ISO date format
   updatedAt: string; // ISO date format
-    deletedAt?: string ;
+  deletedAt?: string ;
 }
 
 

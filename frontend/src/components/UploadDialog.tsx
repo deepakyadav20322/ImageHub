@@ -213,166 +213,6 @@ const UploadDialog = ({
     setFiles([]);
   }, []);
 
-  // const fetchFileFromUrl = async (url: string) => {
-  //   if (!url) return;
-
-  //   try {
-  //     // Validate URL
-  //     try {
-  //       new URL(url);
-  //     } catch (e) {
-  //       throw new Error("Please enter a valid URL");
-  //     }
-
-  //     // Fetch the file
-  //     const response = await fetch(url);
-  //     if (!response.ok) {
-  //       throw new Error(`Failed to fetch file: ${response.statusText}`);
-  //     }
-
-  //     // Get file name from URL or Content-Disposition header
-  //     let fileName = url.split("/").pop() || "downloaded-file";
-  //     const contentDisposition = response.headers.get("content-disposition");
-  //     if (contentDisposition) {
-  //       const fileNameMatch = contentDisposition.match(/filename="(.+)"/);
-  //       if (fileNameMatch) {
-  //         fileName = fileNameMatch[1];
-  //       }
-  //     }
-
-  //     // Get content type
-  //     const contentType = response.headers.get("content-type") || "";
-
-  //     // Check if content type is allowed
-  //     const mimeType = contentType.split(";")[0].trim();
-
-  //     if (!allowedTypes.some((type) => type === mimeType)) {
-  //       console.log("File type validation failed:", {
-  //         received: mimeType,
-  //         allowed: allowedTypes,
-  //       });
-  //       throw new Error(
-  //         `File type not allowed. Only ${allowedTypes
-  //           .map((type) => type.split("/")[1].toUpperCase())
-  //           .join(", ")} are supported.`
-  //       );
-  //     }
-
-  //     // Convert response to blob
-  //     const blob = await response.blob();
-
-  //     // Check file size
-  //     if (blob.size > maxSizeMB * 1024 * 1024) {
-  //       throw new Error(`File size exceeds ${maxSizeMB}MB limit.`);
-  //     }
-
-  //     // Create a File object
-  //     const file = new File([blob], fileName, { type: contentType });
-
-  //     // Add file to the list
-  //     await handleFiles([file]);
-
-  //     return file;
-  //   } catch (error) {
-  //     console.error("Error fetching file:", error);
-  //     throw error;
-  //   }
-  // };
-
-  // -----------------------
-
-
-  // const handleUpload = async () => {
-  //   if (files.length === 0) {
-  //     toast.error("Please select at least one file.")
-  //     return
-  //   }
-
-  //   setUploading(true)
-  //   setOverallProgress(0)
-  //   setUploadStatus("idle")
-
-  //   // Update all files to uploading status
-  //   setFiles((prev) =>
-  //     prev.map((file) => ({
-  //       ...file,
-  //       status: "uploading",
-  //       uploadProgress: 0,
-  //     })),
-  //   )
-
-  //   // Simulate individual file upload progress
-  //   const progressIntervals = files.map((file) => {
-  //     return setInterval(
-  //       () => {
-  //         setFiles((prev) =>
-  //           prev.map((f) => {
-  //             if (f.id === file.id && f.uploadProgress !== undefined && f.uploadProgress < 95) {
-  //               return {
-  //                 ...f,
-  //                 uploadProgress: Math.min(95, (f.uploadProgress || 0) + Math.random() * 10),
-  //               }
-  //             }
-  //             return f
-  //           }),
-  //         )
-
-  //         // Update overall progress based on individual file progress
-  //         setOverallProgress((prev) => {
-  //           const totalProgress = files.reduce((sum, f) => sum + (f.uploadProgress || 0), 0)
-  //           return Math.min(95, totalProgress / files.length)
-  //         })
-  //       },
-  //       200 + Math.random() * 300,
-  //     )
-  //   })
-
-  //   try {
-  //     // Convert FileWithPreview back to File for the upload function
-  //     const filesToUpload = files.map((f) => {
-  //       const { id, preview, uploadProgress, status, errorMessage, ...fileProps } = f
-  //       return new File([f], f.name, fileProps)
-  //     })
-
-  //     await onUpload(filesToUpload)
-
-  //     // Set all files to success
-  //     setFiles((prev) =>
-  //       prev.map((file) => ({
-  //         ...file,
-  //         status: "success",
-  //         uploadProgress: 100,
-  //       })),
-  //     )
-
-  //     setOverallProgress(100)
-  //     setUploadStatus("success")
-  //     toast.success(files.length === 1 ? "File uploaded successfully!" : `${files.length} files uploaded successfully!`)
-
-  //     // Delay closing to show success state
-  //     setTimeout(() => {
-  //       onClose()
-  //       reset()
-  //     }, 1000)
-  //   } catch (error) {
-  //     setUploadStatus("error")
-
-  //     // Set all pending files to error
-  //     setFiles((prev) =>
-  //       prev.map((file) => ({
-  //         ...file,
-  //         status: file.uploadProgress && file.uploadProgress < 100 ? "error" : file.status,
-  //         errorMessage: "Upload failed",
-  //       })),
-  //     )
-
-  //     toast.error("Upload failed. Please try again.")
-  //   } finally {
-  //     // Clear all intervals
-  //     progressIntervals.forEach((interval) => clearInterval(interval))
-  //     setUploading(false)
-  //   }
-  // }
 
   const handleUpload = async () => {
     if (files.length === 0) {
@@ -407,9 +247,17 @@ const UploadDialog = ({
         errorMessage,
         ...fileProps
       } = file;
-      const cleanFile = new File([file], file.name, fileProps);
-      formData.append(`files`, cleanFile); // Can use `files[]` if server expects array
-      // Or use individual names: formData.append(`file_${index}`, cleanFile)
+
+        // Create a new File with all original properties
+  const cleanFile = new File([file], file.name, {
+    type: file.type,
+  });
+  formData.append('files', cleanFile, cleanFile.name);
+
+      // const cleanFile = new File([file], file.name, fileProps);
+      // type: file.type, // Explicitly preserve the type
+      // formData.append(`files`, cleanFile,cleanFile.name); // Can use `files[]` if server expects array
+      // // Or use individual names: formData.append(`file_${index}`, cleanFile)
     });
 
     // Simulate individual file upload progress
