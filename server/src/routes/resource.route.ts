@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express'
 
-import  {findAndOptimizeResource, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, deleteFolderOfBucketWhithAllChildItems, uploadResourcess, deleteSingleAsset, getAllAssetsOfParticularAccount} from '../controlers/resource.controler'
+import  {findAndOptimizeResource, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, deleteFolderOfBucketWhithAllChildItems, uploadResourcess, deleteSingleAsset, getAllAssetsOfParticularAccount, AddTagsOnResourceFile, getAllTagsOfAccount} from '../controlers/resource.controler'
 import authMiddleware from '../middlewares/auth.middleware';
 import { authenticateApiKey } from '../middlewares/authenticateApiKey.middleware';
 import multer from 'multer';
@@ -32,6 +32,9 @@ router.delete('/folders/delete-folder/:bucketId/:folderId',authMiddleware, delet
 
 router.delete('/folder/delete-asset/:bucketId/:folderId/:assetId',authMiddleware,deleteSingleAsset);
 router.get('/:bucketId/:accountId/getAll-assets',authMiddleware,getAllAssetsOfParticularAccount);
+router.post('/:bucketId/addtags/:resourceId/',authMiddleware,AddTagsOnResourceFile);
+router.get('/:bucketId/getAllTags',authMiddleware,getAllTagsOfAccount);
+
 
 
 

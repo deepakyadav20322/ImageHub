@@ -2,12 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import {S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { InvokeCommand, Lambda } from "@aws-sdk/client-lambda";
 import multer from "multer";
-import { resources } from "../db/schema";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { resources, resourceTags } from "../db/schema";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/db_connect";
 import AppError from "../utils/AppError";
 import path from "path";
 import { validateTransformations } from "../utils/transformations";
+import { tags } from "../db/schema";
+
 
 export const getAllResources = async (
   req: Request,
@@ -97,6 +99,16 @@ const SUPPORTED_TYPES: Record<string, string[]> = {
   video: ["mp4", "avi", "mov", "mkv", "webm"],
   audio: ["mp3", "wav", "aac", "flac", "ogg"],
 };
+
+export function toCamelCase(obj: Record<string, any>) {
+  const newObj: Record<string, any> = {};
+  for (const key in obj) {
+    const camelKey = key.replace(/_([a-z])/g, (_, char) => char.toUpperCase());
+    newObj[camelKey] = obj[key];
+  }
+  return newObj;
+}
+
  
 export const uploadResources = async (
   req: Request,
@@ -300,6 +312,7 @@ export const uploadResourcess = async (
   next: NextFunction
 ): Promise<any> => {
   try {
+    console.time("apiRequest");
     const { bucket_name, resource_type } = req.params;
     console.log(req.headers)
     const t_addOn = req.body.t_addOn;
@@ -428,7 +441,7 @@ export const uploadResourcess = async (
       }
     }
     console.log(uploadedFiles)
-
+    console.timeEnd("apiRequest"); // Logs the time taken
     return res.status(200).json({
       success: true,
       uploadedFiles,
@@ -1546,27 +1559,65 @@ export const getAllAssetsOfParticularAccount = async (
       return res.status(400).json({ message: "bucket does not exist", success: false });
     }
 
+    // const query = sql`
+    //   WITH RECURSIVE resource_tree AS (
+    //     SELECT *
+    //     FROM resources
+    //     WHERE resource_id = ${bucketId}
+
+    //     UNION ALL
+
+    //     SELECT r.*
+    //     FROM resources r
+    //     INNER JOIN resource_tree rt ON r.parent_resource_id = rt.resource_id
+    //     WHERE r.account_id = ${accountId}
+    //   )
+    //   SELECT rt.*
+    //   FROM resource_tree rt
+    //   LEFT JOIN resource_tags t ON rt.resource_id = t.resource_id
+    //   WHERE rt.type = 'file'
+    //   ${search ? sql`AND rt.name ILIKE ${'%' + search + '%'}` : sql``}
+    //   ${tagList.length > 0 ? sql`AND t.tag IN (${sql.join(tagList.map(t => sql`${t}`), sql`,`)})` : sql``}
+    //   ORDER BY ${sql.raw(sorted_by)};
+    // `;
+
+
     const query = sql`
-      WITH RECURSIVE resource_tree AS (
-        SELECT *
-        FROM resources
-        WHERE resource_id = ${bucketId}
+  WITH RECURSIVE resource_tree AS (
+    SELECT *
+    FROM resources
+    WHERE resource_id = ${bucketId} -- Start with the parent folder
 
-        UNION ALL
+    UNION ALL
 
-        SELECT r.*
-        FROM resources r
-        INNER JOIN resource_tree rt ON r.parent_resource_id = rt.resource_id
-        WHERE r.account_id = ${accountId}
-      )
-      SELECT rt.*
-      FROM resource_tree rt
-      LEFT JOIN resource_tags t ON rt.resource_id = t.resource_id
-      WHERE rt.type = 'file'
-      ${search ? sql`AND rt.name ILIKE ${'%' + search + '%'}` : sql``}
-      ${tagList.length > 0 ? sql`AND t.tag IN (${sql.join(tagList.map(t => sql`${t}`), sql`,`)})` : sql``}
-      ORDER BY ${sql.raw(sorted_by)};
-    `;
+    SELECT r.*
+    FROM resources r
+    INNER JOIN resource_tree rt ON r.parent_resource_id = rt.resource_id
+    WHERE r.account_id = ${accountId} -- Ensure only current user's account resources are fetched
+  )
+
+  SELECT rt.* 
+  FROM resource_tree rt
+
+  -- Join to resource_tags (bridge table)
+  LEFT JOIN resource_tags rtg ON rt.resource_id = rtg.resource_id
+
+  -- Join to tags table to access tagName
+  LEFT JOIN tags t ON rtg.tag_id = t.tag_id
+
+  WHERE rt.type = 'file'
+
+  -- Optional search by file name
+  ${search ? sql`AND rt.name ILIKE ${'%' + search + '%'}` : sql``}
+
+  -- Optional filter by tags
+  ${tagList.length > 0 
+    ? sql`AND LOWER(t.tag_name) IN (${sql.join(tagList.map(t => sql`${t.toLowerCase()}`), sql`,`)})`
+    : sql``}
+
+  ORDER BY ${sql.raw(sorted_by)};
+`;
+
 
     const files = await db.execute(query);
     const transformedFiles = files.rows.map((file: any) => transformRowKeys(file));
@@ -1580,3 +1631,117 @@ export const getAllAssetsOfParticularAccount = async (
 };
 
 
+
+
+export const AddTagsOnResourceFile = async (req: Request, res: Response, next: NextFunction):Promise<any> => {
+  try {
+    const tagValue: string[] = req.body.tags;
+    const { resourceId ,bucketId} = req.params;
+    const { accountId, userId } = req.user;
+    console.log("Saving tags:", {
+      accountId: accountId,
+      bucketId: bucketId,
+      resourceId,
+      tagValue,
+
+    });
+
+    if (!Array.isArray(tagValue) || tagValue.length === 0) {
+      return res.status(400).json({ success: false, message: "tags array is required" });
+    }
+
+    if (!accountId || !userId) {
+      return res.status(400).json({ success: false, message: "accountId and userId are required" });
+    }
+
+    // Step 1: Check resource
+    const [resource] = await db
+      .select()
+      .from(resources)
+      .where(eq(resources.resourceId, resourceId))
+      .limit(1);
+
+    if (!resource) {
+      return res.status(404).json({ success: false, message: "Resource not found" });
+    }
+
+    // Step 2: Upsert tags with usageCount++
+    await Promise.all(tagValue.map(tagName =>
+      db.insert(tags).values({
+        tagName,
+        accountId,
+        userId,
+        createdAt: new Date(),
+        usageCount: 1,
+      }).onConflictDoUpdate({
+        target: [tags.accountId, tags.tagName],
+        set: {
+          usageCount: sql`${tags.usageCount} + 1`,
+        },
+      })
+    ));
+
+    // Step 3: Fetch tag IDs
+    const tagRecords = await db
+      .select({ tagId: tags.tagId, tagName: tags.tagName })
+      .from(tags)
+      .where(and(
+        eq(tags.accountId, accountId),
+        inArray(tags.tagName, tagValue)
+      ));
+
+    // Step 4: Associate tags with the resource
+    await Promise.all(tagRecords.map(tag =>
+      db.insert(resourceTags)
+        .values({
+          resourceId,
+          tagId: tag.tagId,
+          createdAt: new Date(),
+        })
+        .onConflictDoNothing()
+    ));
+
+    return res.status(200).json({
+      success: true,
+      message: "Tags upserted and linked to resource",
+      data: tagRecords,
+    });
+
+  } catch (error) {
+    console.error("Error upserting tags:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+
+export const getAllTagsOfAccount = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    const { accountId } = req.user;
+
+    if (!accountId) {
+      return res.status(400).json({ message: "Account ID is required" });
+    }
+
+    // Use drizzle ORM to fetch tags
+    const result = await db
+      .select({
+        tagId: tags.tagId,
+        tagName: tags.tagName,
+        usageCount: tags.usageCount,
+        createdAt: tags.createdAt,
+      })
+      .from(tags)
+      .where(eq(tags.accountId, accountId))
+      .orderBy(desc(tags.createdAt));
+
+    if (result.length === 0) {
+      return res.status(404).json({ message: "No tags found for this account" });
+    }
+
+    return res.status(200).json({ data: result, success: true });
+
+  } catch (err) {
+    console.error("Error fetching tags:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+}
