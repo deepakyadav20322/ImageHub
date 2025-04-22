@@ -1,4 +1,3 @@
-
 import {
   ColumnDef,
   flexRender,
@@ -67,10 +66,6 @@ import { TagFilterDropdown } from "@/components/TagFilterDropdown";
 import AssetsActions from "@/components/AssetsActions";
 import { getColumns } from "@/components/GetColumnOfAllAssets";
 
-
-
-
-
 type ViewMode = "list" | "card";
 
 const AssetsManagerTable = () => {
@@ -96,11 +91,12 @@ const AssetsManagerTable = () => {
 
   // Searching and view mode states
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-//   const [searchQuery, setSearchQuery] = useState("");
+  //   const [searchQuery, setSearchQuery] = useState("");
   const clearSearch = () => {
     setSearch("");
   };
-  const [getAllAssets] = useLazyGetAllAssetsOfParticularAccountQuery();
+  const [getAllAssets, { isLoading }] =
+    useLazyGetAllAssetsOfParticularAccountQuery();
 
   const fetchAssets = async () => {
     try {
@@ -136,7 +132,6 @@ const AssetsManagerTable = () => {
     fetchAssets();
   }, [activeBucket]);
 
-  
   const handleShare = (assetId: string) => {
     // Add custom logic here to share the asset via email
     console.log("Sharing asset via email with ID:", assetId);
@@ -147,22 +142,22 @@ const AssetsManagerTable = () => {
       fetchAssets();
     }
   }, [selectedTags]);
-  
 
-  
-  const columns = useMemo(() =>
-    getColumns({
-      bucketId: activeBucket,
-      handleShare,
-    }),
-  [activeBucket, handleShare]);
+  const columns = useMemo(
+    () =>
+      getColumns({
+        bucketId: activeBucket,
+        handleShare,
+      }),
+    [activeBucket, handleShare]
+  );
 
   const table = useReactTable({
     data: allAssets,
     columns,
     state: {
       rowSelection,
-      pagination:pagination,
+      pagination: pagination,
       sorting,
     },
     onRowSelectionChange: setRowSelection,
@@ -215,31 +210,30 @@ const AssetsManagerTable = () => {
               </div> */}
               <div className="flex items-center justify-between w-full">
                 <div className="flex px-2 items-center  gap-4 w-full ps-2">
-                
-                <div className="relative dark:bg-black dark:text-white bg-white text-black" >
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    autoComplete="off"
-                    className="border px-2 py-1 w-72  pl-9 pr-9 border-gray-400 rounded-md"
+                  <div className="relative dark:bg-black dark:text-white bg-white text-black">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      autoComplete="off"
+                      className="border px-2 py-1 w-72  pl-9 pr-9 border-gray-400 rounded-md"
+                    />
+                    {search && (
+                      <button
+                        onClick={clearSearch}
+                        className="absolute right-2.5 top-2.5 h-4 w-3 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <TagFilterDropdown
+                    selectedTags={selectedTags}
+                    setSelectedTags={setSelectedTags}
                   />
-                  {search && (
-                    <button
-                      onClick={clearSearch}
-                      className="absolute right-2.5 top-2.5 h-4 w-3 text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                <TagFilterDropdown
-                  selectedTags={selectedTags}
-                  setSelectedTags={setSelectedTags}
-                />
-                {/* <select
+                  {/* <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="border px-2 py-1 rounded"
@@ -248,19 +242,20 @@ const AssetsManagerTable = () => {
                   <option value="createdAt">Newest</option>
                   <option value="name">Name</option>
                 </select> */}
-                <Button
-                  onClick={() =>fetchAssets()}
-                  size={'sm'}
-                  className="bg-blue-500 text-white px-4 py-1 rounded"
-                >
-                  Apply
-                </Button>
+                  <Button
+                    onClick={() => fetchAssets()}
+                    size={"sm"}
+                    className="bg-blue-500 text-white px-4 py-1 rounded"
+                  >
+                    Apply
+                  </Button>
                 </div>
-                  <AssetDrawer
-                                allSelectedAssets={table.getSelectedRowModel().rows.map(row => row.original)}
-                                isIcon={false}
-                              />
-                              
+                <AssetDrawer
+                  allSelectedAssets={table
+                    .getSelectedRowModel()
+                    .rows.map((row) => row.original)}
+                  isIcon={false}
+                />
               </div>
             </div>
           </div>
@@ -366,22 +361,49 @@ const AssetsManagerTable = () => {
                 className="flex-1 overflow-auto custom-scrollbar"
                 onScroll={handleBodyScroll}
               >
-                <div style={{ minWidth: `${totalWidth}px` }}>
+                <motion.div
+                  style={{ minWidth: `${totalWidth}px` }}
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
                   <Table style={{ width: `${totalWidth}px` }}>
                     <TableBody>
-                      {table.getRowModel().rows?.length ? (
+                      {isLoading ? (
+                        [...Array(12)].map((_, idx) => (
+                          <TableRow key={idx} className="animate-pulse">
+                            {table.getAllColumns().map((col, colIndex) => (
+                              <TableCell key={colIndex}>
+                                <div className="md:h-6 h-4 w-full max-w-[150px] bg-gray-100/90 dark:bg-zinc-700 rounded animate-pulse" />
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))
+                      ) : table.getRowModel().rows.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={columns.length}>
+                            <motion.div
+                              className="flex flex-col items-center justify-center py-6 gap-2"
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ duration: 0.4 }}
+                            >
+                              <img
+                                src="/no-data.png"
+                                alt="No Data"
+                                className="h-32 w-32 opacity-70"
+                              />
+                              <p className="text-sm text-muted-foreground">
+                                No assets found
+                              </p>
+                            </motion.div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
                         table.getRowModel().rows.map((row) => (
-                          <TableRow
-                            key={row.id}
-                            data-state={row.getIsSelected() && "selected"}
-                          >
+                          <TableRow key={row.id}>
                             {row.getVisibleCells().map((cell) => (
-                              <TableCell
-                                key={cell.id}
-                                style={{
-                                  width: cell.column.getSize(),
-                                }}
-                              >
+                              <TableCell key={cell.id}>
                                 {flexRender(
                                   cell.column.columnDef.cell,
                                   cell.getContext()
@@ -390,81 +412,46 @@ const AssetsManagerTable = () => {
                             ))}
                           </TableRow>
                         ))
-                      ) : (
-                        <TableRow className="dark:bg-black dark:hover:bg-black hover:bg-white">
-                          <TableCell
-                            colSpan={columns.length}
-                            className="h-24 text-center"  
-                          >
-                            {/* {if no any assets available---------------------------------} */}
-
-                            <>
-                              <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{
-                                  duration: 0.4,
-                                  ease: "easeOut",
-                                }}
-                                className="w-full h-full min-h-[25rem] flex justify-center items-center"
-                              >
-                                <motion.div
-                                  className="flex flex-col items-center gap-4 p-6 dark:bg-zinc-900 bg-slate-100 rounded-lg w-full max-w-lg mx-auto"
-                                  transition={{ duration: 0.3, delay: 0.1 }}
-                                >
-                                  <img
-                                    src="/Empty_State_Illustration_1.svg"
-                                    alt=""
-                                  />
-                                  <h2 className="text-lg font-semibold dark:text-slte-100">
-                                    Upload assets to this folder
-                                  </h2>
-                                  <motion.div
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                  ></motion.div>
-                                </motion.div>
-                              </motion.div>
-                            </>
-                          </TableCell>
-                        </TableRow>
                       )}
                     </TableBody>
                   </Table>
-                </div>
+                </motion.div>
               </div>
             </motion.div>
           </div>
 
           {/* Fixed Pagination */}
-          {  (table.getRowModel().rows.length)>0?
-          <div className="sticky bottom-0 z-20 bg-card border-t px-4 py-3 shadow-md">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <p className="text-sm font-medium text-foreground">
-                {showingText()}
-              </p>
-              <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => table.previousPage()}
-                  disabled={!table.getCanPreviousPage()}
-                >
-                  ⬅️ Previous
-                </Button>
-                <Button
-                  size="sm"
-                  variant="default"
-                  onClick={() => { table.nextPage() ,console.log("page 123")}}
-                  disabled={!table.getCanNextPage()}
-                >
-                  Next ➡️
-                </Button>
+          {table.getRowModel().rows.length > 0 ? (
+            <div className="sticky bottom-0 z-20 bg-card border-t px-4 py-3 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p className="text-sm font-medium text-foreground">
+                  {showingText()}
+                </p>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => table.previousPage()}
+                    disabled={!table.getCanPreviousPage()}
+                  >
+                    ⬅️ Previous
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => {
+                      table.nextPage(), console.log("page 123");
+                    }}
+                    disabled={!table.getCanNextPage()}
+                  >
+                    Next ➡️
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-:''}
+          ) : (
+            ""
+          )}
         </motion.div>
       </AnimatePresence>
     </div>
