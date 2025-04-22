@@ -231,7 +231,7 @@ export const uploadResources = async (
         imagePath: `${ImagePathForLambda}/${(file.originalname).replace(/\s/g, "")}`,
         originalImageBucketName: originalBucket,
         // transformedBucket,
-        t_addOn,
+        t_addOn :t_addOn || '',
         contentType: req.file.mimetype,
       }),
     }), // ✅ Corrected: Wrapped in `body`
@@ -378,7 +378,7 @@ export const uploadResourcess = async (
             image: file.buffer.toString("base64"),
             imagePath: `${ImagePathForLambda}/${fileName}`,
             originalImageBucketName: originalBucket,
-            t_addOn,
+            t_addOn :t_addOn||'',
             contentType: file.mimetype,
           }),
         }),
@@ -386,17 +386,35 @@ export const uploadResourcess = async (
 
       try {
         const result = await lambda.send(new InvokeCommand(lambdaParams));
-        console.log(result)
-        const payloadString = result.Payload ? new TextDecoder().decode(result.Payload) : "{}";
-        const payload = JSON.parse(payloadString);
+        console.log("Lambda Raw Result:", result);
+
+      
+        const payloadString = result.Payload ? new TextDecoder().decode(result.Payload) : null;
+        console.log("Decoded Payload String:", payloadString);
+        if (!payloadString) {
+          throw new Error("Empty or undefined payload received from Lambda");
+        }
+
+      
+        let payload: any;
+        try {
+          payload = JSON.parse(payloadString);
+        } catch (parseError) {
+          throw new Error(`Failed to parse Lambda payload: ${payloadString}`);
+        }
 
         if (payload.statusCode !== 200) {
+          const errorBody = payload.body ? JSON.parse(payload.body) : {};
           uploadedFiles.push({
             fileName,
             success: false,
-            error: JSON.parse(payload.body).error || "Lambda failed",
+            error: errorBody.error || "Lambda returned failure status",
           });
           continue;
+        }
+
+        if (!payload.body) {
+          throw new Error("Lambda response missing 'body' field");
         }
 
         const { fileUrl, dimensions } = payload;

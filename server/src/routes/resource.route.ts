@@ -6,17 +6,29 @@ import { authenticateApiKey } from '../middlewares/authenticateApiKey.middleware
 import multer from 'multer';
 import { determineAuthType } from '../middlewares/DetermineRequestAuthType.middleware';
 import { checkWithTransformOrNot } from '../middlewares/checkTransFormationOrNot.middleware';
+import { handleUploadMulterErrors } from '../middlewares/handleMulterError.middleware';
 const router  = express.Router();
 
-const upload = multer({
-    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
-}).array('files', 10); // 'files' is the field name, 10 is the maximum number of files
+// const upload = multer({
+//     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+// }).array('files', 10); // 'files' is the field name, 10 is the maximum number of files
 
+const upload = multer({
+    limits: { fileSize: 5* 1024 * 1024 }, // 5MB limit
+    fileFilter: (req: Express.Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+        // Optional: Add file type filtering if needed
+        if (!file.mimetype.match(/^image\/(jpeg|png|gif|webp|avif)$/)) {
+            cb(new Error('Only image files are allowed!'));
+            return;
+        }
+        cb(null, true);
+    }
+}).array('files', 1); // 'files' is the field name, 10 is the maximum number of files
 
 // router.get('/',getAllResources);
 
 // router.post('/:bucket_name/:resource_type/upload',determineAuthType,authMiddleware,authenticateApiKey,upload,uploadResources);
-router.post('/:bucket_name/:resource_type/upload',authMiddleware,upload,uploadResourcess);
+router.post('/:bucket_name/:resource_type/upload',authMiddleware,upload,handleUploadMulterErrors,uploadResourcess);
 // Route 1: With and without transformation by middleware 
 // router.get('/:bucket/image/upload/:transformations?/:path(*)',checkWithTransformOrNot,findAndOptimizeResource);
 router.get('/:bucket/image/upload/:path(*)',checkWithTransformOrNot,findAndOptimizeResource);
