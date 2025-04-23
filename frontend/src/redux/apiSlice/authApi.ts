@@ -1,20 +1,59 @@
 import { loginSchema } from "@/lib/ZodSchema";
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { BaseQueryFn, createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import {z} from "zod";
 import {LoginResponse} from "@/lib/types"
+import { logout } from "../features/authSlice";
 type LoginCredentials = z.infer<typeof loginSchema>
 
+// here we create cutome base query that itersept error that if that error is jwt expirs then it logout and send to login ------------
+
+const baseQuery =  fetchBaseQuery({ 
+  baseUrl: import.meta.env.VITE_API_URL_V1,
+  credentials: 'include', // Handles cookies if needed
+  prepareHeaders: (headers) => {
+    // Add any common headers here
+    // headers.set('Content-Type', 'application/json');
+    return headers;
+  },
+})
+
+const customBaseQuery: BaseQueryFn<any, unknown, unknown> = async (
+  args,
+  api,
+  extraOptions
+) => {
+  const result = await baseQuery(args, api, extraOptions);
+  // if (result.error) {
+  //   // Log the detailed error structure HERE
+  //   console.error('Error received in customBaseQuery:', JSON.stringify(result.error, null, 2));
+  // }
+  if (
+    result.error &&
+    result.error.status === 401 &&
+    (result.error.data as any)?.message?.includes('Session expired. Please log in again.')
+  ) {
+    // Auto logout on token expiration
+    api.dispatch(logout());
+    window.location.href = '/login'; // redirect to login page
+  }
+
+  if (
+    result.error &&
+    result.error.status === 401 &&
+    (result.error.data as any)?.message?.includes('Authorization token is required')
+  ) {
+    // Auto logout on missing or invalid token
+    api.dispatch(logout());
+    window.location.href = '/login'; // redirect to login page
+  }
+
+  return result;
+};
+
+// ----------------------------------------------------
 export const authApi = createApi({
   reducerPath: "authSlice",
-  baseQuery: fetchBaseQuery({ 
-    baseUrl: import.meta.env.VITE_API_URL_V1,
-    credentials: 'include', // Handles cookies if needed
-    prepareHeaders: (headers) => {
-      // Add any common headers here
-      // headers.set('Content-Type', 'application/json');
-      return headers;
-    },
-  }),
+baseQuery:customBaseQuery,
   tagTypes: ['Auth','Resources','Folder', 'Asset','AllAssets','Tags'], // For cache invalidation
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginCredentials>({
@@ -26,7 +65,7 @@ export const authApi = createApi({
         headers: { 'Content-Type': 'application/json' },
         
       }),
-      transformErrorResponse: (response) => {
+      transformErrorResponse: (response:any) => {
         // Handle error responses
         console.log(response);
         return response.data;
@@ -38,12 +77,12 @@ export const authApi = createApi({
         method:"POST",
         body:credential,
         credentials:"include",
-        headers:{'Content-Type':'application/josn',
+        headers:{'Content-Type':'application/json',
           'Access-Control-Allow-Origin':'*'
         }
 
       }),
-      transformErrorResponse:(response)=>{
+      transformErrorResponse:(response: { success:string ; data: any })=>{
         // handle error data
         return response.data
       }
@@ -56,7 +95,7 @@ export const authApi = createApi({
         body: data, // RTK will serialize this to JSON
         credentials: 'include',
       }),
-      transformErrorResponse: (response) => {
+      transformErrorResponse: (response:any) => {
         return response.data;
       }
     }),
