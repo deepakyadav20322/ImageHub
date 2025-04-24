@@ -102,9 +102,12 @@ const ForgotPassword = () => {
             </form>
 
             {isError && (
-              <p className="text-red-500 text-sm text-center mt-2">
-                {error && 'status' in error ? (error as FetchBaseQueryError).data?.toString() : 'Failed to send reset link. Please try again.'}
-              </p>
+             <p className="text-red-500 text-sm text-center mt-2">
+             {error && typeof error === 'object' && 'status' in error
+               ? (error as FetchBaseQueryError).data?.toString()
+               : 'Failed to send reset link. Please try again.'}
+           </p>
+           
             )}
           
 

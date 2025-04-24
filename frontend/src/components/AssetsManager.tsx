@@ -245,7 +245,7 @@ const AssetManager = ({ folders }: FolderTreeProps) => {
           console.log("folder response", response);
         }
 
-        if (errorData && "data" in errorData) {
+        if (errorData && typeof errorData === 'object' && 'data' in errorData) {
           toast.error((errorData.data as { message: string }).message);
         }
       }

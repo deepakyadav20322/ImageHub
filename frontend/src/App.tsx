@@ -16,6 +16,7 @@ import TestPage from '@/Pages/TestPage'
 import ForgotPasswordPage from "./Pages/ForgotPasswordPage";
 import ResetPasswordPage from "./Pages/ResetPasswordPage";
 import VerifyEmailPage from "./Pages/VerifyEmailPage";
+import TransformationVisulizationPage from "./Pages/TransformVisulizationPage";
 const App = () => {
   return (
     <Routes>
@@ -30,6 +31,8 @@ const App = () => {
       <Route element={<AuthLayout />}>
       {/* ****************- Here we attach auth pages in authlayout because it is not accessible after login-- */}
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/edit-vizulization" element={<TransformationVisulizationPage />} />
+
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -60,3 +63,8 @@ const App = () => {
 };
 
 export default App;
+
+
+
+
+
