@@ -1,14 +1,15 @@
 import { Request, Response, NextFunction } from "express";
-import {S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { InvokeCommand, Lambda } from "@aws-sdk/client-lambda";
 import multer from "multer";
-import { resources, resourceTags } from "../db/schema";
+import { apiKeys, resources, resourceTags } from "../db/schema";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/db_connect";
 import AppError from "../utils/AppError";
 import path from "path";
 import { validateTransformations } from "../utils/transformations";
 import { tags } from "../db/schema";
+import { generateApiKey, generateApiSecret } from "../utils/apiKeyHandler";
 
 
 export const getAllResources = async (
@@ -95,7 +96,7 @@ const s3 = new S3Client({
 // };
 
 const SUPPORTED_TYPES: Record<string, string[]> = {
-  image: ["auto","jpg", "jpeg", "png", "gif", "webp", "svg"],
+  image: ["auto", "jpg", "jpeg", "png", "gif", "webp", "svg"],
   video: ["mp4", "avi", "mov", "mkv", "webm"],
   audio: ["mp3", "wav", "aac", "flac", "ogg"],
 };
@@ -109,7 +110,7 @@ export function toCamelCase(obj: Record<string, any>) {
   return newObj;
 }
 
- 
+
 export const uploadResources = async (
   req: Request,
   res: Response,
@@ -119,7 +120,7 @@ export const uploadResources = async (
   try {
     const { bucket_name, resource_type } = req.params;
     let { accountId: userAccountId } = req.user
-    console.log(bucket_name,"bucketName");
+    console.log(bucket_name, "bucketName");
     // here we check that bucket present or not?(if it in db then must it is s3)
     const [existingBucket] = await db.select().from(resources).where(and(
       eq(resources.name, bucket_name),
@@ -147,7 +148,7 @@ export const uploadResources = async (
         eq(resources.type, "folder")
       ))
       .limit(1);
-      
+
 
     if (!folder) {
       return res.status(400).json({ message: "Folder not exist!", success: false });
@@ -156,16 +157,16 @@ export const uploadResources = async (
 
     // in req imagePath comes like /default/abc.png but it convert to default/abc.png because this type path support in s3
     // 👇Todo:  💀💀💀💀 if we use get call from api dashboard then file path comes like /original/default/subhamPandeySir.png (you also need to convert to(remove /original/) default/subhamPandeySir.png)
-    const normalizeImagePath = (originalPath:string) => {
+    const normalizeImagePath = (originalPath: string) => {
       // Remove leading/trailing slashes
       let path = originalPath.replace(/^\/+|\/+$/g, '');
-      
+
       // Remove 'original/' prefix if present
       if (path.startsWith('original/')) {
-      path = path.substring('original/'.length);
+        path = path.substring('original/'.length);
       }
-      
-      return path 
+
+      return path
     };
 
     const { t_addOn } = req.body;
@@ -216,87 +217,87 @@ export const uploadResources = async (
       console.log("❌ No file uploaded");
       return res.status(400).json({ error: "Image file is required" });
     }
-  //   const fullPath = `${correctedImagePathForS3}/${(req.file.originalname).replace(/\s/g, "")}`;
-  // console.log(fullPath,"fullPath")
+    //   const fullPath = `${correctedImagePathForS3}/${(req.file.originalname).replace(/\s/g, "")}`;
+    // console.log(fullPath,"fullPath")
     //Todo: 👉👉 file path ke according , you make changes in lambda funciton code
 
-  const ImagePathForLambda = normalizeImagePath(folder.path);
-  console.log(ImagePathForLambda,"imagep")
-   
-  const params = {
-    FunctionName: "testFunction1",
-    Payload: JSON.stringify({
-      body: JSON.stringify({
-        image: req.file.buffer.toString("base64"),
-        imagePath: `${ImagePathForLambda}/${(file.originalname).replace(/\s/g, "")}`,
-        originalImageBucketName: originalBucket,
-        // transformedBucket,
-        t_addOn :t_addOn || '',
-        contentType: req.file.mimetype,
-      }),
-    }), // ✅ Corrected: Wrapped in `body`
-  };
+    const ImagePathForLambda = normalizeImagePath(folder.path);
+    console.log(ImagePathForLambda, "imagep")
 
-  console.log("Sending Payload to Lambda:", params);
+    const params = {
+      FunctionName: "testFunction1",
+      Payload: JSON.stringify({
+        body: JSON.stringify({
+          image: req.file.buffer.toString("base64"),
+          imagePath: `${ImagePathForLambda}/${(file.originalname).replace(/\s/g, "")}`,
+          originalImageBucketName: originalBucket,
+          // transformedBucket,
+          t_addOn: t_addOn || '',
+          contentType: req.file.mimetype,
+        }),
+      }), // ✅ Corrected: Wrapped in `body`
+    };
 
-  const result = await lambda.send(new InvokeCommand(params));
+    console.log("Sending Payload to Lambda:", params);
 
-  const payloadString = result.Payload
-    ? new TextDecoder().decode(result.Payload)
-    : "{}";
+    const result = await lambda.send(new InvokeCommand(params));
 
-  console.log("Lambda Response Payload:", payloadString);
+    const payloadString = result.Payload
+      ? new TextDecoder().decode(result.Payload)
+      : "{}";
 
-  const payload = JSON.parse(payloadString);
+    console.log("Lambda Response Payload:", payloadString);
 
-  // ✅ Check if Lambda returned an error
-  if (payload.statusCode !== 200) {
-    return res.status(payload.statusCode).json(JSON.parse(payload.body));
-  }
+    const payload = JSON.parse(payloadString);
 
-  // ---------------------------------
-  // ✅ Save file info to PostgreSQL (resources table)
-  const fileUrl = payload.fileUrl;
-  const fileType = file.mimetype;
-  const fileName = (file.originalname).replace(/\s/g, "");
-  const accountId =
-    req.user.accountId;
+    // ✅ Check if Lambda returned an error
+    if (payload.statusCode !== 200) {
+      return res.status(payload.statusCode).json(JSON.parse(payload.body));
+    }
 
-  const insertedResource = await db
-    .insert(resources)
-    .values({
-      accountId,
-      parentResourceId: folderId || null,
-      type: "file",
-      name: fileName,
-      path: `${folder.path}/${fileName}`, // We save path with including bucket(to mentain the parent child relationship hirirechi)
-      visibility: "public",
-      inheritPermissions: true,
-      overridePermissions: false,
-      metadata: {
-        size: file.size,
-        mimetype: fileType,
-      },
-      resourceTypeDetails: {
-        format: fileType,
-        dimensions: payload.dimensions || null, // Assuming Lambda provides this
-      },
-      status: "active",
-    })
-    .returning();
+    // ---------------------------------
+    // ✅ Save file info to PostgreSQL (resources table)
+    const fileUrl = payload.fileUrl;
+    const fileType = file.mimetype;
+    const fileName = (file.originalname).replace(/\s/g, "");
+    const accountId =
+      req.user.accountId;
 
-  if (!res.headersSent) {
-    // ✅ **FIXED: Prevents "Cannot set headers after they are sent" issue**
-    // return res.status(payload.statusCode || 500).json(payload);
-    return res.status(200).json({
-      success: true,
-       data:{...payload,url:`${process.env.SERVER_BASE_URL}/api/v1/resource/${bucket_name}/image/upload/${fileName}`}
-    });
-    
-    
-    
-  }
-  
+    const insertedResource = await db
+      .insert(resources)
+      .values({
+        accountId,
+        parentResourceId: folderId || null,
+        type: "file",
+        name: fileName,
+        path: `${folder.path}/${fileName}`, // We save path with including bucket(to mentain the parent child relationship hirirechi)
+        visibility: "public",
+        inheritPermissions: true,
+        overridePermissions: false,
+        metadata: {
+          size: file.size,
+          mimetype: fileType,
+        },
+        resourceTypeDetails: {
+          format: fileType,
+          dimensions: payload.dimensions || null, // Assuming Lambda provides this
+        },
+        status: "active",
+      })
+      .returning();
+
+    if (!res.headersSent) {
+      // ✅ **FIXED: Prevents "Cannot set headers after they are sent" issue**
+      // return res.status(payload.statusCode || 500).json(payload);
+      return res.status(200).json({
+        success: true,
+        data: { ...payload, url: `${process.env.SERVER_BASE_URL}/api/v1/resource/${bucket_name}/image/upload/${fileName}` }
+      });
+
+
+
+    }
+
   } catch (error) {
     console.error("❌ Error invoking Lambda:", error);
     if (!res.headersSent) {
@@ -318,8 +319,8 @@ export const uploadResourcess = async (
     const t_addOn = req.body.t_addOn;
     const folderId = req.body.folderId || req.headers['x-folder-id'] || req.query.folderId;
     const { accountId: userAccountId } = req.user;
-  console.log(folderId,"folderIdd")
-  console.log(req.files)
+    console.log(folderId, "folderIdd")
+    console.log(req.files)
     const [existingBucket] = await db.select().from(resources).where(
       and(eq(resources.name, bucket_name), eq(resources.accountId, userAccountId))
     ).limit(1);
@@ -378,7 +379,7 @@ export const uploadResourcess = async (
             image: file.buffer.toString("base64"),
             imagePath: `${ImagePathForLambda}/${fileName}`,
             originalImageBucketName: originalBucket,
-            t_addOn :t_addOn||'',
+            t_addOn: t_addOn || '',
             contentType: file.mimetype,
           }),
         }),
@@ -388,14 +389,14 @@ export const uploadResourcess = async (
         const result = await lambda.send(new InvokeCommand(lambdaParams));
         console.log("Lambda Raw Result:", result);
 
-      
+
         const payloadString = result.Payload ? new TextDecoder().decode(result.Payload) : null;
         console.log("Decoded Payload String:", payloadString);
         if (!payloadString) {
           throw new Error("Empty or undefined payload received from Lambda");
         }
 
-      
+
         let payload: any;
         try {
           payload = JSON.parse(payloadString);
@@ -438,10 +439,10 @@ export const uploadResourcess = async (
           },
           status: "active",
         });
-      
-        const fullPath =  `${folder.path}/${fileName}`;
-        console.log("fullpath",fullPath)
-        console.log("fullpath replace",fullPath.replace("/original/default/", ""))
+
+        const fullPath = `${folder.path}/${fileName}`;
+        console.log("fullpath", fullPath)
+        console.log("fullpath replace", fullPath.replace("/original/default/", ""))
         uploadedFiles.push({
           fileName,
           success: true,
@@ -482,7 +483,7 @@ export const findAndOptimizeResource = async (
 
   const { bucket, transformations, path } = req.params;
   const overallStart = Date.now();
-console.log(req.params,"params")
+  console.log(req.params, "params")
   try {
     // ⏱ Step 1: DB validation
     const dbStart = Date.now();
@@ -499,16 +500,16 @@ console.log(req.params,"params")
       return res.status(404).send();
       // return res.status(404).json({ error: "Invalid bucket environment" });
     }
-   
+
 
     // ⏱ Step 2: Transformation validation
     const validateStart = Date.now();
     if (transformations && transformations !== 'original') {
       const { valid, error } = validateTransformations(transformations);
       const validateEnd = Date.now();
-      console.log("transformations",transformations)
+      console.log("transformations", transformations)
       console.log(`🔍 Transformation validation took ${validateEnd - validateStart}ms`);
-     console.log("valid",valid)
+      console.log("valid", valid)
       if (!valid) {
         if (process.env.NODE_ENV === 'development') {
           return res.status(400).json({ error });
@@ -516,7 +517,7 @@ console.log(req.params,"params")
         return res.status(404).send();
       }
     }
-console.log("chaaaall2")
+    console.log("chaaaall2")
     // ⏱ Step 3: Lambda Invocation
     const lambdaPayload = {
       bucket,
@@ -541,7 +542,7 @@ console.log("chaaaall2")
     const parsedResponse = JSON.parse(responseText);
     const parseEnd = Date.now();
     console.log(`📦 Lambda response parse took ${parseEnd - parseStart}ms`);
-     console.log("parsedResponse",parsedResponse)
+    console.log("parsedResponse", parsedResponse)
     if (!parsedResponse.statusCode) {
       throw new Error('Lambda response missing statusCode');
     }
@@ -569,51 +570,51 @@ console.log("chaaaall2")
 
 
     // ✅ Step 5: Send final response ---------------------------
-const { statusCode, body, headers, isBase64Encoded } = parsedResponse;
+    const { statusCode, body, headers, isBase64Encoded } = parsedResponse;
 
-// ⛔ Handle 404: Image not found
-if (statusCode === 404) {
-  const errorBody = typeof body === "string" ? JSON.parse(body) : body;
-  // return res.status(404).json({
-  //   error: "Image not found",
-  //   message: errorBody?.message || "Requested file does not exist in S3",
-  //   duration: `${totalDuration}ms`,
-  // });
-  console.log('bucket key does not exist')
-  return res.status(404).send()
-}
+    // ⛔ Handle 404: Image not found
+    if (statusCode === 404) {
+      const errorBody = typeof body === "string" ? JSON.parse(body) : body;
+      // return res.status(404).json({
+      //   error: "Image not found",
+      //   message: errorBody?.message || "Requested file does not exist in S3",
+      //   duration: `${totalDuration}ms`,
+      // });
+      console.log('bucket key does not exist')
+      return res.status(404).send()
+    }
 
-// ⛔ Handle other non-200 errors
-if (statusCode !== 200) {
-  const errorBody = typeof body === "string" ? JSON.parse(body) : body;
-  return res.status(statusCode).json({
-    error: "Image processing failed",
-    message: errorBody?.message || "An error occurred during processing",
-    duration: `${totalDuration}ms`,
-    ...(process.env.NODE_ENV === 'development' && {
-      details: errorBody?.stack,
-    }),
-  });
-}
+    // ⛔ Handle other non-200 errors
+    if (statusCode !== 200) {
+      const errorBody = typeof body === "string" ? JSON.parse(body) : body;
+      return res.status(statusCode).json({
+        error: "Image processing failed",
+        message: errorBody?.message || "An error occurred during processing",
+        duration: `${totalDuration}ms`,
+        ...(process.env.NODE_ENV === 'development' && {
+          details: errorBody?.stack,
+        }),
+      });
+    }
 
-// ✅ Success response
-if (isBase64Encoded) {
-  return res
-    .status(statusCode)
-    .set(headers || {})
-    .send(Buffer.from(body, 'base64'));
-}
+    // ✅ Success response
+    if (isBase64Encoded) {
+      return res
+        .status(statusCode)
+        .set(headers || {})
+        .send(Buffer.from(body, 'base64'));
+    }
 
-// ✅ JSON response
-// return res
-//   .status(statusCode)
-//   .set(headers || {})
-//   .json({
-//     ...(typeof body === "string" ? JSON.parse(body) : body),
-//     duration: `${totalDuration}ms`,
-//   });
+    // ✅ JSON response
+    // return res
+    //   .status(statusCode)
+    //   .set(headers || {})
+    //   .json({
+    //     ...(typeof body === "string" ? JSON.parse(body) : body),
+    //     duration: `${totalDuration}ms`,
+    //   });
 
-  return res.status(404).send()
+    return res.status(404).send()
 
 
   } catch (err) {
@@ -1159,7 +1160,7 @@ export const createFolder = async (
 ): Promise<any> => {
   try {
     // we always have one folder which is default and all folders comes under this it means always folderId comes for creating folder;
-console.log("create folder me aaay")
+    console.log("create folder me aaay")
     const {
       parentFolderId: parentResourceId,
       folderName: name,
@@ -1199,9 +1200,9 @@ console.log("create folder me aaay")
       .limit(1);
 
     if (existingFolder) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: "A folder with this name already exists."
-        ,success:false
+        , success: false
       });
     }
 
@@ -1234,7 +1235,7 @@ console.log("create folder me aaay")
 
     // Send response
     res.status(200).json({
-     success:true,
+      success: true,
       data: newFolder,
     });
   } catch (error) {
@@ -1286,22 +1287,22 @@ export const getRootFolderOfBucketOfAccount = async (req: Request, res: Response
   }
 }
 
-export const deleteFolderOfBucketWhithAllChildItems = async (req:Request, res:Response, next:NextFunction):Promise<any>=>{
+export const deleteFolderOfBucketWhithAllChildItems = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-          
-    const {folderId,bucketId} = req.params;
-    if(!folderId || !bucketId){
-      return res.status(400).json({message:'folderId and bucketId required'});
+
+    const { folderId, bucketId } = req.params;
+    if (!folderId || !bucketId) {
+      return res.status(400).json({ message: 'folderId and bucketId required' });
     }
-    const {accountId} = req.user;
+    const { accountId } = req.user;
     // Check if folder exists and belongs to the given bucket
     const [folder] = await db
       .select()
       .from(resources)
       .where(and(
-      eq(resources.resourceId, folderId),
-      eq(resources.type, "folder"),
-      eq(resources.accountId, accountId) // ownership check
+        eq(resources.resourceId, folderId),
+        eq(resources.type, "folder"),
+        eq(resources.accountId, accountId) // ownership check
       ))
       .limit(1);
 
@@ -1311,97 +1312,97 @@ export const deleteFolderOfBucketWhithAllChildItems = async (req:Request, res:Re
 
 
 
-     // We also have an option for soft delete.
-   
-     // if we use where clouse then cascade feature not work 
-   const ress =   await db
-     .delete(resources)
-     .where(and(eq(resources.resourceId, folderId)
-    ));
-   
-  
+    // We also have an option for soft delete.
+
+    // if we use where clouse then cascade feature not work 
+    const ress = await db
+      .delete(resources)
+      .where(and(eq(resources.resourceId, folderId)
+      ));
+
+
 
     return res.status(200).json({
-      success: true, 
+      success: true,
       message: "Folder and all contents permanently deleted",
       ress
     });
   } catch (error) {
-    
+
   }
 }
 
 
-export const deleteSingleAsset = async (req:Request,res:Response,next:NextFunction):Promise<any>=>{
-try {
-  const {bucketId,folderId,assetId} = req.params;
-  if(!bucketId || !folderId || !assetId){
-    return res.json({message:"required parameters are absent",success:false});
-  }
-  const { accountId } = req.user;
-console.log(bucketId,folderId,assetId)
-  // Check if bucket exists
-  const [bucket] = await db
-    .select()
-    .from(resources)
-    .where(and(
-      eq(resources.resourceId, bucketId),
-      eq(resources.type, "bucket"),
-      eq(resources.accountId, accountId)
-    ))
-    .limit(1);
-console.log(bucket)
-  if (!bucket) {
-    return res.status(404).json({ message: "Bucket not found" ,success:false});
-  }
-
-  const [asset] = await db.select().from(resources).
-    where(and(
-      eq(resources.resourceId, assetId),
-      eq(resources.type, "file"),
-      eq(resources.parentResourceId, folderId),
-      eq(resources.accountId, accountId)
-    )).limit(1);
-
-  
-  if (!asset) {
-    return res.status(404).json({ message: "Asset not found or invalid relationship" });
-  }
-  
-  const s3Key = asset.path.replace(/^\/?original\//, "");
-  
-  // delete from s3 first then db
+export const deleteSingleAsset = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    await s3.send(new DeleteObjectCommand({
-      Bucket: `${accountId}-original`,
-      Key: s3Key,
-    }));
-  
-    const deletedData = await db
-    .delete(resources)
-    .where(and(
-      eq(resources.resourceId, assetId),
-      eq(resources.type, "file"),
-      eq(resources.parentResourceId, folderId),
-      eq(resources.accountId, accountId)
-    ))
-  
-console.log("deleted data",deletedData)
-  if (!deletedData) {
-    return res.status(404).json({ message: "Asset not found or invalid relationship" });
-  }
-    return res.status(200).json({ message: "Asset deleted successfully" });
-  
-  } catch (err) {
-    console.error("deletion error during assets delete", err);
-    return res.status(500).json({ message: "Failed to delete asset from storage. Try again later." });
-  }
-  
+    const { bucketId, folderId, assetId } = req.params;
+    if (!bucketId || !folderId || !assetId) {
+      return res.json({ message: "required parameters are absent", success: false });
+    }
+    const { accountId } = req.user;
+    console.log(bucketId, folderId, assetId)
+    // Check if bucket exists
+    const [bucket] = await db
+      .select()
+      .from(resources)
+      .where(and(
+        eq(resources.resourceId, bucketId),
+        eq(resources.type, "bucket"),
+        eq(resources.accountId, accountId)
+      ))
+      .limit(1);
+    console.log(bucket)
+    if (!bucket) {
+      return res.status(404).json({ message: "Bucket not found", success: false });
+    }
 
-} catch (error) {
-  console.log(error)
-  throw (new AppError("Server error during asset deletion",500))
-}
+    const [asset] = await db.select().from(resources).
+      where(and(
+        eq(resources.resourceId, assetId),
+        eq(resources.type, "file"),
+        eq(resources.parentResourceId, folderId),
+        eq(resources.accountId, accountId)
+      )).limit(1);
+
+
+    if (!asset) {
+      return res.status(404).json({ message: "Asset not found or invalid relationship" });
+    }
+
+    const s3Key = asset.path.replace(/^\/?original\//, "");
+
+    // delete from s3 first then db
+    try {
+      await s3.send(new DeleteObjectCommand({
+        Bucket: `${accountId}-original`,
+        Key: s3Key,
+      }));
+
+      const deletedData = await db
+        .delete(resources)
+        .where(and(
+          eq(resources.resourceId, assetId),
+          eq(resources.type, "file"),
+          eq(resources.parentResourceId, folderId),
+          eq(resources.accountId, accountId)
+        ))
+
+      console.log("deleted data", deletedData)
+      if (!deletedData) {
+        return res.status(404).json({ message: "Asset not found or invalid relationship" });
+      }
+      return res.status(200).json({ message: "Asset deleted successfully" });
+
+    } catch (err) {
+      console.error("deletion error during assets delete", err);
+      return res.status(500).json({ message: "Failed to delete asset from storage. Try again later." });
+    }
+
+
+  } catch (error) {
+    console.log(error)
+    throw (new AppError("Server error during asset deletion", 500))
+  }
 }
 
 
@@ -1423,7 +1424,7 @@ console.log("deleted data",deletedData)
 //       )
 //     )
 //     .limit(1);
-  
+
 //   if (!bucket) {
 //     return res.status(400).json({ message: "bucket does not exist", success: false });
 //   }
@@ -1450,7 +1451,7 @@ console.log("deleted data",deletedData)
 // );
 // console.log(files.rowCount,"count");
 //  res.status(200).json({success:true,data:files.rows})
-    
+
 //   } catch (error) {
 //     console.log("something error during getallassets");
 //     new AppError("Error during fetching all assets", 500)
@@ -1529,7 +1530,7 @@ const transformRowKeys = (row: any) => {
 //         WHERE type = 'file';
 //       `
 //     );
-    
+
 //     // Transform rows to camelCase
 //     const transformedFiles = files.rows.map((file: any) => transformRowKeys(file));
 
@@ -1554,9 +1555,9 @@ export const getAllAssetsOfParticularAccount = async (
     const tags = typeof req.query.tags === "string" ? req.query.tags : undefined;
     const search = typeof req.query.search === "string" ? req.query.search : "";
     const sorted_by = typeof req.query.sorted_by === "string" ? req.query.sorted_by : "created_at desc";
-    
+
     const tagList = tags ? tags.split(",") : [];
-    
+
     if (!bucketId || !accountId) {
       return res.status(400).json({ message: "bucket or account does not exist", success: false });
     }
@@ -1629,9 +1630,9 @@ export const getAllAssetsOfParticularAccount = async (
   ${search ? sql`AND rt.name ILIKE ${'%' + search + '%'}` : sql``}
 
   -- Optional filter by tags
-  ${tagList.length > 0 
-    ? sql`AND LOWER(t.tag_name) IN (${sql.join(tagList.map(t => sql`${t.toLowerCase()}`), sql`,`)})`
-    : sql``}
+  ${tagList.length > 0
+        ? sql`AND LOWER(t.tag_name) IN (${sql.join(tagList.map(t => sql`${t.toLowerCase()}`), sql`,`)})`
+        : sql``}
 
   ORDER BY ${sql.raw(sorted_by)};
 `;
@@ -1651,10 +1652,10 @@ export const getAllAssetsOfParticularAccount = async (
 
 
 
-export const AddTagsOnResourceFile = async (req: Request, res: Response, next: NextFunction):Promise<any> => {
+export const AddTagsOnResourceFile = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
-    const tagValue: string[] = req.body.tags;
-    const { resourceId ,bucketId} = req.params;
+    let tagValue: string[] = req.body.tags;
+    const { resourceId, bucketId } = req.params;
     const { accountId, userId } = req.user;
     console.log("Saving tags:", {
       accountId: accountId,
@@ -1663,6 +1664,8 @@ export const AddTagsOnResourceFile = async (req: Request, res: Response, next: N
       tagValue,
 
     });
+
+    tagValue = tagValue.map(tag => tag.toLowerCase());
 
     if (!Array.isArray(tagValue) || tagValue.length === 0) {
       return res.status(400).json({ success: false, message: "tags array is required" });
@@ -1763,3 +1766,105 @@ export const getAllTagsOfAccount = async (req: Request, res: Response, next: Nex
     return res.status(500).json({ message: "Server error" });
   }
 }
+
+
+export const createApiKeyAndSecret = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    const { accountId, userId } = req.user;
+
+    const apiKey = generateApiKey();
+    const apiSecret = generateApiSecret();
+
+    const result = await db.insert(apiKeys).values({
+      accountId,
+      userId,
+      apiKey,
+      apiSecret// Hashed value
+    });
+    if (!result) {
+      res.status(400).json({ message: "Server errr during api creation", success: false });
+    }
+    return res.status(201).json({ data: { apiKey, apiSecret } });
+  } catch (err) {
+    console.error("Error creating API key:", err);
+    res.status(500).json({ error: "Failed to create API key" });
+  }
+};
+
+
+
+export const deleteApiKeyById = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    const { apiKeyId } = req.params;
+    const { accountId } = req.user;
+
+    // Delete the API key only if it belongs to the user's account
+    const result = await db.delete(apiKeys)
+      .where(and(
+        eq(apiKeys.apiKeyId, apiKeyId),
+        eq(apiKeys.accountId, accountId)
+      ));
+
+    if (!result) {
+      return res.status(404).json({ 
+        success: false,
+        message: "API key not found or you don't have permission to delete it" 
+      });
+    }
+
+    return res.status(200).json({
+      success: true, 
+      message: "API key deleted successfully"
+    });
+
+  } catch (err) {
+    console.error("Error deleting API key:", err);
+    next(new AppError("Failed to delete API key", 500));
+  }
+};
+
+export const toggleApiKeyStatus = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    const { apiKeyId } = req.params;
+    const { accountId } = req.user;
+    const { active } = req.body;
+
+    if (typeof active !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: "Active status must be a boolean value"
+      });
+    }
+
+    const result = await db
+      .update(apiKeys)
+      .set({
+        isActive:active,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(apiKeys.apiKeyId, apiKeyId),
+          eq(apiKeys.accountId, accountId)
+        )
+      )
+      .returning();
+
+    if (!result.length) {
+      return res.status(404).json({
+        success: false,
+        message: "API key not found or you don't have permission to modify it"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `API key ${active ? 'activated' : 'deactivated'} successfully`,
+      data: result[0]
+    });
+
+  } catch (error) {
+    console.error("Error toggling API key status:", error);
+    next(new AppError("Failed to update API key status", 500));
+  }
+};

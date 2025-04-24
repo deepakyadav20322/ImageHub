@@ -420,6 +420,7 @@ export const userRegister = async (
       // Create API key and secret for the account
       await tx.insert(apiKeys).values({
         accountId,
+        userId:newUser[0].userId,
         apiKey: generateApiKey(),
         apiSecret: generateApiSecret(), // Hashed value
       });
