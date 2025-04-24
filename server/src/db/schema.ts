@@ -89,10 +89,11 @@ export const emailVerificationTokens = pgTable('email_verification_tokens', {
   isUsed: boolean('is_used').default(false).notNull(),
 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-},(table) => {
+}, (table) => {
   return {
     uniqueUserAccount: unique().on(table.userId, table.accountId),
-  }}
+  }
+}
 );
 export const PasswordResetToken = pgTable('email_verification_tokens', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -109,10 +110,11 @@ export const PasswordResetToken = pgTable('email_verification_tokens', {
 
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 },
-(table) => {
-  return {
-    uniqueUserAccount: unique().on(table.userId, table.accountId),
-  }}
+  (table) => {
+    return {
+      uniqueUserAccount: unique().on(table.userId, table.accountId),
+    }
+  }
 );
 // 🔹 Accounts Table
 export const accounts = pgTable("accounts", {
@@ -220,6 +222,7 @@ export const apiKeys = pgTable("api_keys", {
   apiKey: text("api_key").notNull().unique(),
   apiSecret: text("api_secret").notNull(), // Securely hashed
   isActive: boolean("is_active").default(true).notNull(),
+  userId: uuid("user_id").references(() => users.userId, { onDelete: "cascade" }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -283,24 +286,25 @@ export const resources = pgTable("resources", {
 
 
 export const tags = pgTable("tags", {
-  tagId:  uuid("tag_id").primaryKey().defaultRandom(),
+  tagId: uuid("tag_id").primaryKey().defaultRandom(),
   accountId: uuid("account_id")
-  .references(() => accounts.accountId, { onDelete: "cascade" })
-  .notNull(),
+    .references(() => accounts.accountId, { onDelete: "cascade" })
+    .notNull(),
   userId: uuid("user_id").references(() => users.userId, { onDelete: "cascade" })
-  .notNull(),
+    .notNull(),
   tagName: text("tag_name").notNull(),
   usageCount: integer("usage_count").default(0), // For tracking popularity
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 }, (table) => {
   return {
-  // Case-sensitive uniqueness (exact matches)
-  uniqueAccountTag: unique("unique_account_tag")
-    .on(table.accountId, table.tagName),
-  
-  // Index for fast account-scoped tag searches
-  accountTagNameIdx: index("account_tag_name_idx")
-    .on(table.accountId, sql`lower(${table.tagName})`),
+    // Case-sensitive uniqueness (exact matches)
+    uniqueAccountTag: unique("unique_account_tag")
+      .on(table.accountId, table.tagName),
+
+    // Index for fast account-scoped tag searches
+
+
+
   };
 });
 
