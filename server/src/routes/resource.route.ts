@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express'
 
-import  {findAndOptimizeResource, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, deleteFolderOfBucketWhithAllChildItems, uploadResourcess, deleteSingleAsset, getAllAssetsOfParticularAccount, AddTagsOnResourceFile, getAllTagsOfAccount, toggleApiKeyStatus, deleteApiKeyById, createApiKeyAndSecret} from '../controlers/resource.controler'
+import  {findAndOptimizeResource, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources,createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, deleteFolderOfBucketWhithAllChildItems, uploadResourcess, deleteSingleAsset, getAllAssetsOfParticularAccount, AddTagsOnResourceFile, getAllTagsOfAccount, toggleApiKeyStatus, deleteApiKeyById, createApiKeyAndSecret, getAllApiKeys, updateApiKeyName} from '../controlers/resource.controler'
 import authMiddleware from '../middlewares/auth.middleware';
 import { authenticateApiKey } from '../middlewares/authenticateApiKey.middleware';
 import multer from 'multer';
@@ -46,9 +46,11 @@ router.delete('/folder/delete-asset/:bucketId/:folderId/:assetId',authMiddleware
 router.get('/:bucketId/:accountId/getAll-assets',authMiddleware,getAllAssetsOfParticularAccount);
 router.post('/:bucketId/addtags/:resourceId/',authMiddleware,AddTagsOnResourceFile);
 router.get('/:bucketId/getAllTags',authMiddleware,getAllTagsOfAccount);
-router.get('/create-apiKey',authMiddleware,createApiKeyAndSecret);
-router.get('/delete-apiKey',authMiddleware,deleteApiKeyById);
-router.get('/toggle-api-key',authMiddleware,toggleApiKeyStatus);
+router.post('/create-apiKey',authMiddleware,createApiKeyAndSecret);
+router.delete('/delete-apiKey/:apiKeyId',authMiddleware,deleteApiKeyById);
+router.put('/toggle-api-key',authMiddleware,toggleApiKeyStatus);
+router.get('/get-apiKey',authMiddleware,getAllApiKeys);
+router.patch('/update-apiKey/:apiKeyId',authMiddleware,updateApiKeyName);
 
 
 

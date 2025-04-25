@@ -1750,6 +1750,7 @@ export const getAllTagsOfAccount = async (req: Request, res: Response, next: Nex
         tagName: tags.tagName,
         usageCount: tags.usageCount,
         createdAt: tags.createdAt,
+        
       })
       .from(tags)
       .where(eq(tags.accountId, accountId))
@@ -1771,15 +1772,40 @@ export const getAllTagsOfAccount = async (req: Request, res: Response, next: Nex
 export const createApiKeyAndSecret = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
     const { accountId, userId } = req.user;
+    const {apiName} = req.body;
 
     const apiKey = generateApiKey();
     const apiSecret = generateApiSecret();
 
+    let finalApiName = apiName;
+    if (!apiName) {
+      // Get all untitled API keys for this account
+      const untitledKeys = await db
+      .select({ name: apiKeys.name })
+      .from(apiKeys)
+      .where(and(
+        eq(apiKeys.accountId, accountId),
+        sql`${apiKeys.name} LIKE 'Untitled%'`
+      ));
+
+      // Find the next available number
+      const numbers = untitledKeys
+      .map(k => parseInt(k.name.replace('Untitled', '')) || 0)
+      .filter(n => !isNaN(n));
+      
+      const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
+      finalApiName = `Untitled${nextNumber}`;
+    }
+
     const result = await db.insert(apiKeys).values({
       accountId,
       userId,
+      name: finalApiName,
       apiKey,
-      apiSecret// Hashed value
+      apiSecret,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
     });
     if (!result) {
       res.status(400).json({ message: "Server errr during api creation", success: false });
@@ -1866,5 +1892,95 @@ export const toggleApiKeyStatus = async (req: Request, res: Response, next: Next
   } catch (error) {
     console.error("Error toggling API key status:", error);
     next(new AppError("Failed to update API key status", 500));
+  }
+};
+
+export const getAllApiKeys = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    const { accountId } = req.user;
+
+    if (!accountId) {
+      return res.status(400).json({
+        success: false,
+        message: "Account ID is required"
+      });
+    }
+
+    const result = await db
+      .select({
+        apiKeyId: apiKeys.apiKeyId,
+        name:apiKeys.name,
+        apiKey: apiKeys.apiKey,
+        apiSecret: apiKeys.apiSecret,
+        isActive: apiKeys.isActive,
+        createdAt: apiKeys.createdAt,
+        updatedAt: apiKeys.updatedAt
+      })
+      .from(apiKeys)
+      .where(eq(apiKeys.accountId, accountId))
+      .orderBy(desc(apiKeys.createdAt));
+
+    if (result.length === 0) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: "No API keys found for this account"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: result
+    });
+
+  } catch (error) {
+    console.error("Error fetching API keys:", error);
+    next(new AppError("Failed to fetch API keys", 500));
+  }
+};
+
+export const updateApiKeyName = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    const { apiKeyId } = req.params;
+    const { accountId } = req.user;
+    const { apiName:name } = req.body;
+
+    if (!name || typeof name !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: "A valid name is required"
+      });
+    }
+
+    const result = await db
+      .update(apiKeys)
+      .set({
+        name,
+        updatedAt: new Date()
+      })
+      .where(
+        and(
+          eq(apiKeys.apiKeyId, apiKeyId),
+          eq(apiKeys.accountId, accountId)
+        )
+      )
+      .returning();
+
+    if (!result.length) {
+      return res.status(404).json({
+        success: false,
+        message: "API key not found or you don't have permission to modify it"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "API key name updated successfully",
+      data: result[0]
+    });
+
+  } catch (error) {
+    console.error("Error updating API key name:", error);
+    next(new AppError("Failed to update API key name", 500));
   }
 };

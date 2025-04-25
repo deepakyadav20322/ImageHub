@@ -220,6 +220,7 @@ export const apiKeys = pgTable("api_keys", {
     .references(() => accounts.accountId, { onDelete: "cascade" })
     .notNull(),
   apiKey: text("api_key").notNull().unique(),
+  name: text("name").notNull(),
   apiSecret: text("api_secret").notNull(), // Securely hashed
   isActive: boolean("is_active").default(true).notNull(),
   userId: uuid("user_id").references(() => users.userId, { onDelete: "cascade" }),
