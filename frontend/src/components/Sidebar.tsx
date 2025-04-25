@@ -488,7 +488,7 @@ const navItems = [
   { icon: Image, label: "Media", path: "media" },
   { icon: Radio, label: "Broadcasts", path: "/broadcasts" },
   { icon: Radio, label: "Media", path: "/media/home" },
-  { icon: Key, label: "Product Setting", path: "settings/product-environment" },
+  { icon: Key, label: "Product Setting", path: "settings/product" },
   { icon: Key, label: "Account Setting", path: "settings/account" },
 
   // { icon: BarChart2, label: "Metrics", path: "/metrics" },

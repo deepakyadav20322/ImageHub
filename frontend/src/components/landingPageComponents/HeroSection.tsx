@@ -58,7 +58,7 @@ export default function HeroSection() {
               size="lg"
               className="gap-2 bg-[#155dfc] text-white transition-all duration-300 hover:bg-[#0e4ad0] hover:shadow-lg hover:shadow-[#155dfc]/20"
             >
-              <Link to="#pricing">
+              <Link to="/login">
                 Get Started Free <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -68,7 +68,7 @@ export default function HeroSection() {
               variant="outline"
               className="gap-2 border-[#155dfc] bg-[#155dfc]/5 text-[#155dfc] backdrop-blur-sm transition-all duration-300 hover:border-[#155dfc]/50 hover:bg-[#155dfc]/10 hover:text-[#0e4ad0] hover:shadow-lg hover:shadow-[#155dfc]/10 dark:text-[#6b9fff] dark:hover:text-white"
             >
-              <Link to="#features">
+              <Link to="edit-vizulization">
                 <ImageIcon className="h-4 w-4" /> See How It Works
               </Link>
             </Button>

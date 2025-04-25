@@ -217,12 +217,93 @@ const folderApi = authApi.injectEndpoints({
   ],
 }),
 
+createApiKey: builder.mutation<
+  { success: boolean; data: any },
+  { token: string; name: string }
+>({
+  query: ({ token, name }) => ({
+    url: `/resource/create-apiKey`,
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: { apiName:name }
+  }),
+  transformResponse: (response: { success: boolean; data: any }) => response
+}),
 
+deleteApiKey: builder.mutation<
+  { success: boolean,message:string },
+  {  keyId: string; token: string }
+>({
+  query: ({ keyId, token }) => ({
+    url: `/resource/delete-apiKey/${keyId}`,
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+}),
+
+getAllApiKeys: builder.query<
+{ success: boolean; data: any[] },
+{ token: string }
+>({
+query: ({ token }) => ({
+  url: `/resource/get-apiKey`,
+  method: 'GET',
+  headers: {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+}),
+transformResponse: (response: { success: boolean; data: any[] }) => response
+}),
+
+updateApiKeyName: builder.mutation<
+  {
+      message?: string; success: boolean; data: any 
+},
+  { keyId: string; token: string; name: string }
+>({
+  query: ({ keyId, token, name }) => ({
+    url: `/resource/update-apiKey/${keyId}`,
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: { apiName: name }
+  }),
+  transformResponse: (response: { success: boolean; data: any }) => response,
+ 
+}),
+
+toggleApiKeyStatus: builder.mutation<
+  { success: boolean; message: string },
+  { keyId: string; token: string }
+>({
+  query: ({ keyId, token }) => ({
+    url: `/resource/toggle-apiKeys/${keyId}`,
+    method: 'PATCH',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  })
+}),
 
   })
 });
 
 export const {
+  useUpdateApiKeyNameMutation,
+  useToggleApiKeyStatusMutation,
+  useCreateApiKeyMutation,
+  useDeleteApiKeyMutation,
+  useGetAllApiKeysQuery,
   useAddTagsToAccountMutation,
   useGetAllTagsOfAccountQuery,
   useLazyGetAllAssetsOfParticularAccountQuery,

@@ -1,18 +1,71 @@
 
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+
+import ApiKeyManagement from "@/components/api-key-management"
+
 const ProductEnvironmentSetting = () => {
   return (
     <div>
  <div>
       <nav className="w-full border-b">
         <div className="flex justify-between items-center p-4">
-          <h2 className="text-xl font-semibold">Account Settings</h2>
+          <h2 className="text-xl font-semibold">Product Settings</h2>
           <div className="space-x-4">
-            <button className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">Profile</button>
+            <button className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">API Management</button>
             <button className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">Security</button>
-            <button className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">Notifications</button>
+           
           </div>
         </div>
       </nav>
+
+<Tabs defaultValue="account" className="sm:w-full w-[90%] p-2 mx-auto">
+      <TabsList className="grid w-full grid-cols-2 relative gap-x-1">
+        <TabsTrigger value="account"  className="px-2 rounded-md transition-all dark:data-[state=active]:bg-zinc-600/70 dark:data-[state=active]:text-white cursor-pointer">API Management</TabsTrigger>
+        <TabsTrigger value="password"  className="px-2 rounded-md transition-all dark:data-[state=active]:bg-zinc-600/70 dark:data-[state=active]:text-white cursor-pointer">Security</TabsTrigger>
+      </TabsList>
+      <TabsContent value="account" className="w-full overflow-auto">
+      <ApiKeyManagement cloudName="heldfiieo"/>
+      </TabsContent>
+      <TabsContent value="password">
+        <Card>
+          <CardHeader>
+            <CardTitle>Password</CardTitle>
+            <CardDescription>
+              Change your password here. After saving, you'll be logged out.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div className="space-y-1">
+              <Label htmlFor="current">Current password</Label>
+              <Input id="current" type="password" />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="new">New password</Label>
+              <Input id="new" type="password" />
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button>Save password</Button>
+          </CardFooter>
+        </Card>
+      </TabsContent>
+    </Tabs>
     </div>
 
     </div>
@@ -20,3 +73,5 @@ const ProductEnvironmentSetting = () => {
 }
 
 export default ProductEnvironmentSetting
+
+

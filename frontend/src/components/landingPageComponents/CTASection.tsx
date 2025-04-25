@@ -69,7 +69,7 @@ export default function CTASection() {
               size="lg"
               className="gap-2 bg-[#155dfc] text-white transition-all duration-300 hover:bg-[#0e4ad0] hover:shadow-lg hover:shadow-[#155dfc]/20"
             >
-              <Link to="#pricing">
+              <Link to="/login">
                 Get Started Free <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
