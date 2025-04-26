@@ -7,6 +7,7 @@ import multer from 'multer';
 import { determineAuthType } from '../middlewares/DetermineRequestAuthType.middleware';
 import { checkWithTransformOrNot } from '../middlewares/checkTransFormationOrNot.middleware';
 import { handleUploadMulterErrors } from '../middlewares/handleMulterError.middleware';
+import { authorize } from '../middlewares/authPermission.middleware';
 const router  = express.Router();
 
 // const upload = multer({
