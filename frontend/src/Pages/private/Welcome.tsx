@@ -67,7 +67,7 @@ const WelcomeForm = () => {
   const handleUserInfoSubmit = async (data: UserInfoFormValues) => {
     const finalData = { ...formData, ...data };
     setFormData(finalData);
-    alert(finalData)
+    alert(JSON.stringify(finalData))
     try {
     await onboarding({
         organization: finalData.organization,

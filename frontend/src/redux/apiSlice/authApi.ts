@@ -112,13 +112,13 @@ baseQuery:customBaseQuery,
     }),
 
     welcomeOnboarding: builder.mutation({
-      query: ({ interest, organization,token }) => ({
+      query: ({ interest='', organization,token }) => ({
         url: '/user/welcome',
         method: 'PATCH',
         body: { interest, organization },
         credentials: 'include',
         headers: {
-          Authrization:token,
+          Authorization:token,
           'Content-Type': 'application/json'
         }
       }),
