@@ -110,10 +110,26 @@ baseQuery:customBaseQuery,
         },
       }),
     }),
+
+    welcomeOnboarding: builder.mutation({
+      query: ({ interest, organization,token }) => ({
+        url: '/user/welcome',
+        method: 'PATCH',
+        body: { interest, organization },
+        credentials: 'include',
+        headers: {
+          Authrization:token,
+          'Content-Type': 'application/json'
+        }
+      }),
+      transformErrorResponse: (response: any) => {
+        return response.data;
+      }
+    }),
     
     
   }),
 });
 
-export const { useLoginMutation,useSignUpMutation,useForgetPasswordMutation,useResetPasswordMutation } = authApi;
+export const { useLoginMutation,useSignUpMutation,useForgetPasswordMutation,useResetPasswordMutation ,useWelcomeOnboardingMutation} = authApi;
 export default authApi;

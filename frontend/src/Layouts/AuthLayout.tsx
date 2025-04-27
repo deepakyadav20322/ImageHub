@@ -6,7 +6,7 @@ import { RootState } from "@/redux/store";
 const AuthLayout = () => {
   const { user, loading } = useSelector((state: RootState) => state.auth);
   // console.log(user)
-console.log(location)
+
   const isAuthPage = [
     "/login",
     "/signup",

@@ -1,32 +1,22 @@
-
-// import { Button } from "@/components/ui/button"
-// import { logout } from "@/redux/features/authSlice";
-// import { RootState } from "@/redux/store"
-// import { useDispatch, useSelector } from "react-redux"
-
-// const Welcome = () => {
-//   const {user} = useSelector((state:RootState)=>state.auth);
-//   const dispatch = useDispatch()
-//   return (
-//     <>
-//     <div className="pb-4">Welcome Page, {JSON.stringify(user,null,2)}</div>
-//        <Button onClick={()=>dispatch(logout())}>Logout</Button>
-//     </>
-//   )
-// }
-
-// export default Welcome
-
-
-
-import { useState } from "react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { z } from "zod"
-import { motion, AnimatePresence } from "framer-motion"
-import { Code, Image, User, Mail, Building, ChevronRight, CheckCircle } from "lucide-react"
-import { Link } from "react-router"
-
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Code,
+  Image,
+  User,
+  Mail,
+  Building,
+  ChevronRight,
+  CheckCircle,
+} from "lucide-react";
+import { Link } from "react-router";
+import { useWelcomeOnboardingMutation } from "@/redux/apiSlice/authApi";
+import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 // Form schemas
 const interestSchema = z.object({
@@ -34,9 +24,11 @@ const interestSchema = z.object({
 });
 
 const userInfoSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email"),
-  organization: z.string().min(2, "Organization name must be at least 2 characters"),
+  // name: z.string().min(2, "Name must be at least 2 characters"),
+  // email: z.string().email("Please enter a valid email"),
+  organization: z
+    .string()
+    .min(2, "Organization name must be at least 2 characters"),
 });
 
 // Form types
@@ -44,10 +36,13 @@ type InterestFormValues = z.infer<typeof interestSchema>;
 type UserInfoFormValues = z.infer<typeof userInfoSchema>;
 type FormData = InterestFormValues & UserInfoFormValues;
 
-export default function WelcomeForm() {
+const WelcomeForm = () => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<FormData>>({});
 
+  const [onboarding, { isLoading }] = useWelcomeOnboardingMutation();
+
+  const { token } = useSelector((state: RootState) => state.auth);
   // Interest step form
   const interestForm = useForm<InterestFormValues>({
     resolver: zodResolver(interestSchema),
@@ -60,8 +55,6 @@ export default function WelcomeForm() {
   const userInfoForm = useForm<UserInfoFormValues>({
     resolver: zodResolver(userInfoSchema),
     defaultValues: {
-      name: formData.name || "",
-      email: formData.email || "",
       organization: formData.organization || "",
     },
   });
@@ -71,10 +64,21 @@ export default function WelcomeForm() {
     setStep(2);
   };
 
-  const handleUserInfoSubmit = (data: UserInfoFormValues) => {
+  const handleUserInfoSubmit = async (data: UserInfoFormValues) => {
     const finalData = { ...formData, ...data };
     setFormData(finalData);
-    console.log("Form submitted with data:", finalData);
+    alert(finalData)
+    try {
+    await onboarding({
+        organization: finalData.organization,
+        interest: finalData.interest,
+        token:token
+      })
+      console.log("Form submitted with data:", finalData);
+    } catch (error) {
+      toast.error("Something error during onboarding"+error);
+      console.log(error);
+    }
     setStep(3);
   };
 
@@ -92,7 +96,9 @@ export default function WelcomeForm() {
         <div className="p-8">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <h2 className="text-center font-bold text-2xl underline">Image Hub</h2>
+            <h2 className="text-center font-bold text-2xl underline">
+              MediaHub
+            </h2>
           </div>
 
           {/* Progress Indicator */}
@@ -103,7 +109,9 @@ export default function WelcomeForm() {
                   <div
                     key={i}
                     className={`h-2 w-8 rounded-full transition-all duration-300 ${
-                      step >= i ? "bg-indigo-500" : "bg-gray-200 dark:bg-slate-700"
+                      step >= i
+                        ? "bg-indigo-500"
+                        : "bg-gray-200 dark:bg-slate-700"
                     }`}
                   />
                 ))}
@@ -131,7 +139,10 @@ export default function WelcomeForm() {
                     What's your main interest?
                   </h1>
 
-                  <form onSubmit={interestForm.handleSubmit(handleInterestSubmit)} className="space-y-4">
+                  <form
+                    onSubmit={interestForm.handleSubmit(handleInterestSubmit)}
+                    className="space-y-4"
+                  >
                     <div className="space-y-4 mb-8">
                       {/* Option 1 */}
                       <label
@@ -171,8 +182,14 @@ export default function WelcomeForm() {
                           {...interestForm.register("interest")}
                           className="sr-only"
                           onChange={() => {
-                            interestForm.setValue("interest", "asset-management");
-                            setFormData({ ...formData, interest: "asset-management" });
+                            interestForm.setValue(
+                              "interest",
+                              "asset-management"
+                            );
+                            setFormData({
+                              ...formData,
+                              interest: "asset-management",
+                            });
                           }}
                         />
                         <Image className="h-6 w-6 text-indigo-500 dark:text-indigo-400 mr-4" />
@@ -227,61 +244,9 @@ export default function WelcomeForm() {
                     Tell us about yourself
                   </h1>
 
-                  <form onSubmit={userInfoForm.handleSubmit(handleUserInfoSubmit)}>
-                    {/* Name field */}
-                    <div className="mb-5">
-                      <label
-                        htmlFor="name"
-                        className="flex items-center text-sm font-medium mb-2 text-gray-700 dark:text-gray-300 transition-colors duration-300"
-                      >
-                        <User className="h-4 w-4 mr-2" />
-                        <span>Full Name</span>
-                      </label>
-                      <input
-                        id="name"
-                        type="text"
-                        className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white ${
-                          userInfoForm.formState.errors.name
-                            ? "border-red-500 dark:border-red-400"
-                            : "border-gray-300 dark:border-slate-600"
-                        }`}
-                        placeholder="Enter your name"
-                        {...userInfoForm.register("name")}
-                      />
-                      {userInfoForm.formState.errors.name && (
-                        <p className="text-red-500 dark:text-red-400 text-sm mt-1 transition-colors duration-300">
-                          {userInfoForm.formState.errors.name.message}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Email field */}
-                    <div className="mb-5">
-                      <label
-                        htmlFor="email"
-                        className="flex items-center text-sm font-medium mb-2 text-gray-700 dark:text-gray-300 transition-colors duration-300"
-                      >
-                        <Mail className="h-4 w-4 mr-2" />
-                        <span>Email Address</span>
-                      </label>
-                      <input
-                        id="email"
-                        type="email"
-                        className={`w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors bg-white dark:bg-slate-800 text-gray-900 dark:text-white ${
-                          userInfoForm.formState.errors.email
-                            ? "border-red-500 dark:border-red-400"
-                            : "border-gray-300 dark:border-slate-600"
-                        }`}
-                        placeholder="Enter your email"
-                        {...userInfoForm.register("email")}
-                      />
-                      {userInfoForm.formState.errors.email && (
-                        <p className="text-red-500 dark:text-red-400 text-sm mt-1 transition-colors duration-300">
-                          {userInfoForm.formState.errors.email.message}
-                        </p>
-                      )}
-                    </div>
-
+                  <form
+                    onSubmit={userInfoForm.handleSubmit(handleUserInfoSubmit)}
+                  >
                     {/* Organization field */}
                     <div className="mb-5">
                       <label
@@ -289,7 +254,7 @@ export default function WelcomeForm() {
                         className="flex items-center text-sm font-medium mb-2 text-gray-700 dark:text-gray-300 transition-colors duration-300"
                       >
                         <Building className="h-4 w-4 mr-2" />
-                        <span>Organization Name</span>
+                        <span>Organization/company Name</span>
                       </label>
                       <input
                         id="organization"
@@ -350,10 +315,14 @@ export default function WelcomeForm() {
                   </h1>
 
                   <p className="text-gray-600 dark:text-gray-400 mb-8 text-center max-w-xs transition-colors duration-300">
-                    Your Cloudinary workspace is ready. We've tailored it based on your preferences.
+                    Your MediaHub workspace is ready. We've tailored it based on
+                    your preferences.
                   </p>
 
-                  <Link to={'/dashboard'} className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-md font-medium transition-colors duration-300">
+                  <Link
+                    to={"/dashboard"}
+                    className="px-6 py-2.5 bg-indigo-500 hover:bg-indigo-600 dark:bg-indigo-600 dark:hover:bg-indigo-700 text-white rounded-md font-medium transition-colors duration-300"
+                  >
                     Go to Dashboard
                   </Link>
                 </motion.div>
@@ -364,4 +333,6 @@ export default function WelcomeForm() {
       </div>
     </div>
   );
-}
+};
+
+export default WelcomeForm;
