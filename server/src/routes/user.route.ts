@@ -9,6 +9,7 @@ import {
   deleteUser,
   welcome,
   deleteAccount,
+  updatePreference,
 } from "../controlers/user.controler";
 import { authorize } from "../middlewares/authPermission.middleware";
 
@@ -22,6 +23,7 @@ route.delete(
   deleteAccount
 );
 route.get("/welcome", authMiddleware, welcome);
+route.patch("/welcome", authMiddleware, updatePreference);
 // route.get("/:id", getUserById);
 // // 👉 Todo: implement role and permission based routr or api endpoint handling (think any better dynamic apprach )
 // route.post("/",authMiddleware, inviteUserCreation);

@@ -145,6 +145,43 @@ export const welcome = async (
     res.status(500).json({ error: "Failed to save data." });
   }
 };
+export const updatePreference = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  const { intrest, organization=''} = req.body;
+
+  try {
+    const accountId = req.user?.accountId;
+    if (!accountId) {
+      throw new AppError("AccountId is required", 400);
+    }
+
+    const result = await db
+      .update(accounts)
+      .set({
+        preferences: {
+          intrest,
+          companyName:organization,
+          domain:"",
+        },
+      })
+      .where(eq(accounts.accountId, accountId))
+      .returning();
+
+    if (!result.length) {
+      throw new AppError("Account not found", 404);
+    }
+
+    res.status(201).json({ message: "Data saved successfully", data: result });
+  } catch (error) {
+    console.error("Error saving data:", error);
+    res.status(500).json({ error: "Failed to save data." });
+  }
+};
+
+
 
 
 export const s3Client = new S3Client({
