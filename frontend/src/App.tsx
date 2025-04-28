@@ -12,16 +12,17 @@ import MediaTopNavLayout from "./Layouts/MediaTopNavLayout";
 import Folders from "./Pages/private/Media/Folders";
 import Folders2 from "./Pages/private/Media/Folders2";
 import AccountSetting from "./Pages/private/Settings/AccountSetting";
-import TestPage from '@/Pages/TestPage'
+// import TestPage from '@/Pages/TestPage'
 import ForgotPasswordPage from "./Pages/ForgotPasswordPage";
 import ResetPasswordPage from "./Pages/ResetPasswordPage";
 import VerifyEmailPage from "./Pages/VerifyEmailPage";
 import TransformationVisulizationPage from "./Pages/TransformVisulizationPage";
+import AllAssetsManagerTable from "./components/AllAssetsTableComponents/AssetsTableList";
 const App = () => {
   return (
     <Routes>
       <Route path="/" index element={<Home />} />
-      <Route path="/test" index element={<TestPage />} />
+
       {/* <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -50,7 +51,7 @@ const App = () => {
       <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<MediaHome />} />
         <Route path="folders" element={<Folders2 />} />
-        <Route path="assets" element={<TestPage/>} />
+        <Route path="assets" element={<AllAssetsManagerTable/>} />
         <Route path="folders/:folderId" element={<Folders />} />
         <Route path="*" element={<GetStarted />} />
       </Route>

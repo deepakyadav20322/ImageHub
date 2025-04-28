@@ -2,6 +2,7 @@
 
  type LoginResponse = {
     data:{
+    welcome: boolean;
     user:any,
     permissions:any,
     token:string

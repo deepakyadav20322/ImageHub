@@ -57,8 +57,12 @@ const LoginForm = () => {
         permissions:response.data.permissions
       }));
     }
-      // On success, redirect to welcome
+      // On success, redirect to welcome if(not submited prefrece previousaly)
+ if(response.data?.welcome){
       navigate("/welcome");
+ }else{
+  navigate("/dashboard")
+ }
     } catch (error:any) {
       // setError("Invalid email or password. Please try again.");
       setError(error.message);

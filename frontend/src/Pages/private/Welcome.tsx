@@ -67,14 +67,13 @@ const WelcomeForm = () => {
   const handleUserInfoSubmit = async (data: UserInfoFormValues) => {
     const finalData = { ...formData, ...data };
     setFormData(finalData);
-    alert(JSON.stringify(finalData))
     try {
     await onboarding({
         organization: finalData.organization,
         interest: finalData.interest,
         token:token
       })
-      console.log("Form submitted with data:", finalData);
+      // console.log("Form submitted with data:", finalData);
     } catch (error) {
       toast.error("Something error during onboarding"+error);
       console.log(error);

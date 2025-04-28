@@ -1,18 +1,18 @@
 // columns.ts or wherever you're defining it
 import { ColumnDef } from "@tanstack/react-table";
-import AssetsActions from "./AssetsActions";
+import AssetsActions from "../AssetsActions";
 import { Resource } from "@/lib/types";
-import { Badge } from "./ui/badge";
+import { Badge } from "../ui/badge";
 import { ChevronDown, File, FileText, Film, Folder, FolderClosedIcon, Image, Music } from "lucide-react";
 import { Link } from "react-router";
-import { Checkbox } from "./ui/checkbox";
+import { Checkbox } from "../ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 
 
 
@@ -237,5 +237,5 @@ export const getColumns = ({
         size: 40,
       },
 
-  // 📌 Add rest of your column definitions here, no changes needed
+  
 ];

@@ -203,7 +203,7 @@ const { token } = useSelector((state: RootState) => state.auth);
       }
   };
 
-  const environmentVariable = `CLOUDINARY_URL=cloudinary://<your_api_key>:<your_api_secret>@${cloudName}`;
+  const environmentVariable = `MEDIAHUB_URL=mediaHub://<your_api_key>:<your_api_secret>@${activeBucket??cloudName}`;
 
   const toggleSecretVisibility = (id: string) => {
     setVisibleSecrets((prev) => ({
@@ -282,7 +282,7 @@ const { token } = useSelector((state: RootState) => state.auth);
   return (
     <Card className="w-full min-w-2xl overflow-auto">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-2xl font-bold">API Keys</CardTitle>
+        <CardTitle className="text-2xl font-bold text-brand">API Keys</CardTitle>
         <div className="rounded-md bg-slate-100 px-3 py-1 dark:bg-slate-800">
          <strong> bucket name:- </strong> {activeBucket}
         </div>
@@ -322,7 +322,8 @@ const { token } = useSelector((state: RootState) => state.auth);
               </div>
               <Button
                 onClick={handleCreateApiKey}
-                className="bg-primary text-white md:self-end dark:bg-gray-200 dark:text-black cursor-pointer"
+                // className="bg-primary text-white md:self-end dark:bg-gray-200 dark:text-black cursor-pointer"
+                className="bg-blue-600 hover:bg-blue-700 whitespace-nowrap md:self-end  cursor-pointer dark:text-white"
               >
                 <Plus className="mr-1 h-4 w-4" />
                 Generate New API Key
@@ -477,7 +478,7 @@ const { token } = useSelector((state: RootState) => state.auth);
                 <TableRow className="bg-gray-200 dark:bg-slate-800">
       <TableCell colSpan={6} className="text-center py-8 ">
         <div className="flex flex-col items-center justify-center space-y-2">
-          <h2 className="text-lg font-medium">No API keys available</h2>
+          <h2 className="text-lg font-medium">😊 No API keys available !</h2>
           <p className="text-sm text-muted-foreground">
             Create your first API key to get started
           </p>

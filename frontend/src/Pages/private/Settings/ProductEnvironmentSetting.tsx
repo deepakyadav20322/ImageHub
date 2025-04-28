@@ -28,7 +28,7 @@ const ProductEnvironmentSetting = () => {
           <h2 className="text-xl font-semibold">Product Settings</h2>
           <div className="space-x-4">
             <button className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">API Management</button>
-            <button className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">Security</button>
+            <button className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">Bill Payment</button>
            
           </div>
         </div>
@@ -40,14 +40,14 @@ const ProductEnvironmentSetting = () => {
         <TabsTrigger value="password"  className="px-2 rounded-md transition-all dark:data-[state=active]:bg-zinc-600/70 dark:data-[state=active]:text-white cursor-pointer">Security</TabsTrigger>
       </TabsList>
       <TabsContent value="account" className="w-full overflow-auto">
-      <ApiKeyManagement cloudName="heldfiieo"/>
+      <ApiKeyManagement cloudName="your-bucket-name"/>
       </TabsContent>
       <TabsContent value="password">
         <Card>
           <CardHeader>
             <CardTitle>Password</CardTitle>
             <CardDescription>
-              Change your password here. After saving, you'll be logged out.
+             Dummy section. work on progress
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
