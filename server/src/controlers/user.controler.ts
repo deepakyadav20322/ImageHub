@@ -150,22 +150,23 @@ export const updatePreference = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const { intrest, organization=''} = req.body;
-
+  const { interest, organization=''} = req.body;
+  
   try {
     const accountId = req.user?.accountId;
     if (!accountId) {
       throw new AppError("AccountId is required", 400);
-    }
+    }console.log(interest,organization)
 
     const result = await db
       .update(accounts)
       .set({
         preferences: {
-          intrest,
+          interest,
           companyName:organization,
           domain:"",
         },
+        gettingStarted:false
       })
       .where(eq(accounts.accountId, accountId))
       .returning();

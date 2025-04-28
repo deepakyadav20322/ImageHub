@@ -154,10 +154,25 @@ export const userLogin = async (
       .from(resources)
       .where(eq(resources.accountId, safeUser.accountId));
 
+       // check user already your prefreces submited(if not then show welcome page when login)
+        const welcomeData = await db
+          .select({
+            gettingStarted: accounts.gettingStarted
+          })
+          .from(accounts)
+          .where(eq(accounts.accountId, user[0].accountId))
+          .limit(1);
+
+
+
+
+
     res.status(200).json({
       status: "success",
+    
       data: {
         message: "Login successful",
+        welcome:welcomeData[0].gettingStarted,
         user: safeUser,
         token: accessToken,
         permissions: formattedPermissions,

@@ -148,7 +148,7 @@ export const accounts = pgTable("accounts", {
   companyName: text("company_name"),
   website: text("website"),
   phone: text("phone"),
-  gettingStarted: boolean("getting_started").notNull().default(false),
+  gettingStarted: boolean("getting_started").notNull().default(true), // according to preferences set or not
   signupSource: text("signup_source").notNull().default("Unknown"),
 });
 
