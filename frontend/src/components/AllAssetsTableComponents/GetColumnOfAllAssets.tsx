@@ -44,7 +44,7 @@ export const getColumns = ({
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
-          className="translate-y-[2px]"
+          className="translate-y-[2px] dark:border-zinc-600 border-gray-500"
         />
       ),
       cell: ({ row }) => (
@@ -197,11 +197,20 @@ export const getColumns = ({
       header: "Last Modified",
       size: 150,
       minSize: 120,
-      cell: ({ row }) => (
-        <div className="text-muted-foreground">
-          {new Date(row.getValue("updatedAt")).toLocaleDateString()}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const dateStr = row.getValue("updatedAt") as string;
+        const date = new Date(dateStr);
+  
+        return isNaN(date.getTime()) ? (
+          <span className="text-muted-foreground">Invalid Date</span>
+        ) : (
+          date.toLocaleDateString("en-IN", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+        )
+        },
     },
     {
       accessorKey: "createdAt",

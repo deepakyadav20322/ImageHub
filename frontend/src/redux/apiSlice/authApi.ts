@@ -27,15 +27,7 @@ const customBaseQuery: BaseQueryFn<any, unknown, unknown> = async (
   //   // Log the detailed error structure HERE
   //   console.error('Error received in customBaseQuery:', JSON.stringify(result.error, null, 2));
   // }
-  if (
-    result.error &&
-    result.error.status === 401 &&
-    (result.error.data as any)?.message?.includes('Session expired. Please log in again.')
-  ) {
-    // Auto logout on token expiration
-    api.dispatch(logout());
-    window.location.href = '/login'; // redirect to login page
-  }
+  
 
   if (
     result.error &&

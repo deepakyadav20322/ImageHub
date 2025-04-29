@@ -505,6 +505,10 @@ const AssetDrawer = ({
           </div>
         ) : (
           <div className="text-center text-muted-foreground py-8 text-sm">
+           
+            <div className="text-center w-full flex justify-center">
+            <img src="/hand-illustration.svg" alt="" height={154} width={144}  />
+            </div>
             Please select exactly one item to preview and edit its details.
           </div>
         )}
@@ -512,7 +516,7 @@ const AssetDrawer = ({
         {allSelectedAssets.length !== 1 && (
           <DrawerFooter className="pt-6">
             <DrawerClose asChild>
-              <Button variant="outline" className="w-full">
+              <Button variant="outline" className="w-full cursor-pointer">
                 Close
               </Button>
             </DrawerClose>
