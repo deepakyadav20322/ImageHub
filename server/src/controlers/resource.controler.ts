@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { InvokeCommand, Lambda } from "@aws-sdk/client-lambda";
 import multer from "multer";
-import { apiKeys, resources, resourceTags } from "../db/schema";
+import { apiKeys, credits, resources, resourceTags, storage } from "../db/schema";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/db_connect";
 import AppError from "../utils/AppError";
@@ -440,6 +440,40 @@ export const uploadResourcess = async (
           status: "active",
         });
 
+        // 🔽 1. Update usedStorageBytes
+        const fileSize = file.size; // already in bytes
+        const [existingStorage] = await db
+          .select()
+          .from(storage)
+          .where(eq(storage.accountId, userAccountId))
+          .limit(1);
+
+        if (existingStorage) {
+          const currentUsed = parseInt(existingStorage.usedStorageBytes || "0", 10);
+          const newUsed = currentUsed + fileSize;
+
+          await db
+            .update(storage)
+            .set({
+              usedStorageBytes: newUsed.toString(),
+              updatedAt: new Date()
+            })
+            .where(eq(storage.accountId, userAccountId));
+        }
+
+        // 🔽 2. Deduct 1 credit if t_addOn is used
+        if (t_addOn && t_addOn.trim() !== "") {
+          await db
+            .update(credits)
+            .set({
+              usedCredits: sql`${credits.usedCredits} + 1`,
+              updatedAt: new Date()
+            })
+            .where(eq(credits.accountId, userAccountId));
+        }
+
+
+
         const fullPath = `${folder.path}/${fileName}`;
         console.log("fullpath", fullPath)
         console.log("fullpath replace", fullPath.replace("/original/default/", ""))
@@ -518,6 +552,32 @@ export const findAndOptimizeResource = async (
       }
     }
     console.log("chaaaall2")
+
+    // 🧾 Step 2.5: Check credits BEFORE Lambda if transformation applied
+    let existingCredit: typeof credits.$inferSelect | undefined;
+
+    if (transformations && transformations !== "original") {
+      const accountId = existingBucket.accountId;
+
+      const [fetchedCredit] = await db
+        .select()
+        .from(credits)
+        .where(eq(credits.accountId, accountId))
+        .limit(1);
+
+      if (!fetchedCredit) {
+        return res.status(403).json({ error: "Credit information not found" });
+      }
+
+      existingCredit = fetchedCredit;
+
+      const availableCredits = existingCredit.totalCredits - existingCredit.usedCredits;
+      if (availableCredits <= 0) {
+        return res.status(403).json({ error: "Insufficient credits for transformation" });
+      }
+    }
+
+
     // ⏱ Step 3: Lambda Invocation
     const lambdaPayload = {
       bucket,
@@ -550,23 +610,6 @@ export const findAndOptimizeResource = async (
     const totalDuration = Date.now() - overallStart;
     console.log(`✅ Total request handled in ${totalDuration}ms`);
 
-    // ✅ Step 5: Send final response---------------------------
-    // if (parsedResponse.isBase64Encoded) {
-    //   return res
-    //     .status(parsedResponse.statusCode)
-    //     .set(parsedResponse.headers || {})
-    //     .send(Buffer.from(parsedResponse.body, 'base64'));
-    // }
-
-
-
-    // return res
-    //   .status(parsedResponse.statusCode)
-    //   .set(parsedResponse.headers || {})
-    //   .json({
-    //     ...parsedResponse.body,
-    //     duration: `${totalDuration}ms`,
-    //   });
 
 
     // ✅ Step 5: Send final response ---------------------------
@@ -597,6 +640,23 @@ export const findAndOptimizeResource = async (
       });
     }
 
+    // 🧾 Deduct 1 credit only if transformation is applied and lambda give response------
+    if (statusCode === 200) {
+
+      if (transformations && existingCredit) {
+        await db
+          .update(credits)
+          .set({
+            usedCredits: existingCredit.usedCredits + 1,
+            updatedAt: new Date(),
+          })
+          .where(eq(credits.accountId, existingBucket.accountId));
+
+        console.log("✅ 1 credit deducted");
+      }
+
+    }
+
     // ✅ Success response
     if (isBase64Encoded) {
       return res
@@ -605,14 +665,6 @@ export const findAndOptimizeResource = async (
         .send(Buffer.from(body, 'base64'));
     }
 
-    // ✅ JSON response
-    // return res
-    //   .status(statusCode)
-    //   .set(headers || {})
-    //   .json({
-    //     ...(typeof body === "string" ? JSON.parse(body) : body),
-    //     duration: `${totalDuration}ms`,
-    //   });
 
     return res.status(404).send()
 
@@ -1750,7 +1802,7 @@ export const getAllTagsOfAccount = async (req: Request, res: Response, next: Nex
         tagName: tags.tagName,
         usageCount: tags.usageCount,
         createdAt: tags.createdAt,
-        
+
       })
       .from(tags)
       .where(eq(tags.accountId, accountId))
@@ -1772,7 +1824,7 @@ export const getAllTagsOfAccount = async (req: Request, res: Response, next: Nex
 export const createApiKeyAndSecret = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
     const { accountId, userId } = req.user;
-    const {apiName} = req.body;
+    const { apiName } = req.body;
 
     const apiKey = generateApiKey();
     const apiSecret = generateApiSecret();
@@ -1781,18 +1833,18 @@ export const createApiKeyAndSecret = async (req: Request, res: Response, next: N
     if (!apiName) {
       // Get all untitled API keys for this account
       const untitledKeys = await db
-      .select({ name: apiKeys.name })
-      .from(apiKeys)
-      .where(and(
-        eq(apiKeys.accountId, accountId),
-        sql`${apiKeys.name} LIKE 'Untitled%'`
-      ));
+        .select({ name: apiKeys.name })
+        .from(apiKeys)
+        .where(and(
+          eq(apiKeys.accountId, accountId),
+          sql`${apiKeys.name} LIKE 'Untitled%'`
+        ));
 
       // Find the next available number
       const numbers = untitledKeys
-      .map(k => parseInt(k.name.replace('Untitled', '')) || 0)
-      .filter(n => !isNaN(n));
-      
+        .map(k => parseInt(k.name.replace('Untitled', '')) || 0)
+        .filter(n => !isNaN(n));
+
       const nextNumber = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
       finalApiName = `Untitled${nextNumber}`;
     }
@@ -1832,14 +1884,14 @@ export const deleteApiKeyById = async (req: Request, res: Response, next: NextFu
       ));
 
     if (!result) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         success: false,
-        message: "API key not found or you don't have permission to delete it" 
+        message: "API key not found or you don't have permission to delete it"
       });
     }
 
     return res.status(200).json({
-      success: true, 
+      success: true,
       message: "API key deleted successfully"
     });
 
@@ -1865,7 +1917,7 @@ export const toggleApiKeyStatus = async (req: Request, res: Response, next: Next
     const result = await db
       .update(apiKeys)
       .set({
-        isActive:active,
+        isActive: active,
         updatedAt: new Date()
       })
       .where(
@@ -1909,7 +1961,7 @@ export const getAllApiKeys = async (req: Request, res: Response, next: NextFunct
     const result = await db
       .select({
         apiKeyId: apiKeys.apiKeyId,
-        name:apiKeys.name,
+        name: apiKeys.name,
         apiKey: apiKeys.apiKey,
         apiSecret: apiKeys.apiSecret,
         isActive: apiKeys.isActive,
@@ -1943,7 +1995,7 @@ export const updateApiKeyName = async (req: Request, res: Response, next: NextFu
   try {
     const { apiKeyId } = req.params;
     const { accountId } = req.user;
-    const { apiName:name } = req.body;
+    const { apiName: name } = req.body;
 
     if (!name || typeof name !== 'string') {
       return res.status(400).json({

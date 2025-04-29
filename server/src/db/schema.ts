@@ -8,8 +8,7 @@ import {
   json,
   uniqueIndex,
   unique,
-  serial,
-  bigint,
+
   index,
   integer,
   primaryKey,
@@ -146,6 +145,12 @@ export const accounts = pgTable("accounts", {
   twitterProfile: text("twitter_profile"),
   facebookPage: text("facebook_page"),
   companyName: text("company_name"),
+
+  planId: uuid('plan_id')
+    .references(() => plans.planId),
+  billingStart: timestamp('billing_start', { withTimezone: true }).defaultNow().notNull(),
+  nextBillingDate: timestamp('next_billing_date', { withTimezone: true }),
+
   website: text("website"),
   phone: text("phone"),
   gettingStarted: boolean("getting_started").notNull().default(true), // according to preferences set or not
@@ -329,6 +334,60 @@ export const resourceTags = pgTable("resource_tags", {
     tagIndex: index("resource_tags_tag_id_idx").on(table.tagId),
   };
 });
+
+export const plans = pgTable('plans', {
+  planId: uuid('plan_id').primaryKey().defaultRandom(),
+  name: text('name').notNull().unique(), // e.g., 'Free', 'Pro', 'Business'
+  monthlyCredits: integer('monthly_credits').notNull(), // e.g., 100, 1000, etc.
+  maxStorageBytes: text('max_storage_bytes').notNull(),
+// make it not null
+  price: integer('price').notNull(), // Optional: in cents or dollars
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+
+export const credits = pgTable('credits', {
+  creditId: uuid('credit_id').primaryKey().defaultRandom(),
+
+  accountId: uuid('account_id')
+    .notNull()
+    .references(() => accounts.accountId, { onDelete: 'cascade' })
+    .unique(), // One credit record per account
+
+  totalCredits: integer('total_credits').notNull(),
+  usedCredits: integer('used_credits').default(0).notNull(),
+
+  // Optional: for trial period or renewals
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const storage = pgTable('storage', {
+  storageId: uuid('storage_id').primaryKey().defaultRandom(),  
+  
+  accountId: uuid('account_id') 
+    .notNull()
+    .references(() => accounts.accountId, { onDelete: 'cascade' }),
+
+  planId: uuid('plan_id')  
+    .notNull()
+    .references(() => plans.planId, { onDelete: 'cascade' }),
+
+    usedStorageBytes: text('used_storage_bytes')  // Convert to text (string) instead of bigint
+    .default('0')  // Default value as a string
+    .notNull(),
+
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow() 
+    .notNull(),
+
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()  
+    .notNull(),
+});
+
+
 
 
 // <<<===================Below thing use when we want to apply individula file/resource permission provide when it public =================>>>>
