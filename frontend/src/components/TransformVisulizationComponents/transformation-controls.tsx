@@ -25,7 +25,7 @@ export function TransformationControls({ transformations, onChange, onReset }: T
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden ">
       <div className="p-4 flex justify-between items-center border-b">
         <h3 className="text-lg font-semibold">Transformation Controls</h3>
         <Button variant="outline" size="sm" onClick={onReset} className="flex items-center cursor-pointer">
@@ -95,7 +95,7 @@ export function TransformationControls({ transformations, onChange, onReset }: T
                 />
               </div>
             </div>
-
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <TooltipProvider>
                 <Tooltip>
@@ -152,6 +152,7 @@ export function TransformationControls({ transformations, onChange, onReset }: T
                   ))}
                 </SelectContent>
               </Select>
+            </div>
             </div>
           </AccordionContent>
         </AccordionItem>
@@ -226,7 +227,7 @@ export function TransformationControls({ transformations, onChange, onReset }: T
         </AccordionItem>
 
         <AccordionItem value="effects">
-          <AccordionTrigger className="px-4">Effects</AccordionTrigger>
+          <AccordionTrigger className="px-4 text-blue-600">Effects -----------------</AccordionTrigger>
           <AccordionContent className="px-4 pb-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center justify-between space-x-2">
@@ -296,21 +297,21 @@ export function TransformationControls({ transformations, onChange, onReset }: T
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <div className="flex items-center">
+                      {/* <div className="flex items-center">
                         <Label htmlFor="auto-orient">Auto Orient</Label>
                         <Info className="h-4 w-4 ml-1 text-gray-400" />
-                      </div>
+                      </div> */}
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Automatically orient image based on EXIF data</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <Switch
+                {/* <Switch
                   id="auto-orient"
                   checked={transformations.e_auto_orient || false}
                   onCheckedChange={(checked) => updateTransformation("e_auto_orient", checked)}
-                />
+                /> */}
               </div>
             </div>
 

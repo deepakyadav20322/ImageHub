@@ -18,6 +18,7 @@ import ResetPasswordPage from "./Pages/ResetPasswordPage";
 import VerifyEmailPage from "./Pages/VerifyEmailPage";
 import TransformationVisulizationPage from "./Pages/TransformVisulizationPage";
 import AllAssetsManagerTable from "./components/AllAssetsTableComponents/AssetsTableList";
+import Billing from "./Pages/private/Settings/Billing";
 const App = () => {
   return (
     <Routes>
@@ -43,6 +44,7 @@ const App = () => {
         <Route path="/dashboard" element={<SidebarLayout />}>
         <Route index element={<Navigate to="media" replace />} />
           <Route path="settings/product" element={<ProductEnvironmentSetting />} />
+          <Route path="settings/product/billing" element={<Billing />} />
           <Route path="settings/account" element={<AccountSetting />} />
           <Route path="getting-started" element={<GetStarted />} />
 

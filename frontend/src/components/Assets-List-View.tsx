@@ -7,6 +7,7 @@ import {
   ImageIcon,
   FileText,
   UploadIcon,
+  ImagePlay,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +33,7 @@ import { useAssetUploader } from "@/hooks/useAssetsUploader";
 import { useSelector } from "react-redux";
 
 import { RootState } from "@/redux/store";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import {
   useDeleteAssetOfFolderMutation,
   useGetAllAssetsOfParticularAccountQuery,
@@ -51,7 +52,7 @@ const AssetList = ({
   assets,
   selectedAssets,
   onAssetSelect,
-  onSelectAll
+  onSelectAll,
 }: AssetListProps) => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const { user, token } = useSelector((state: RootState) => state.auth);
@@ -60,34 +61,30 @@ const AssetList = ({
     (state: RootState) => state.items
   ) as { folders: Resource[] };
 
-const { folderId: currentopenOrSelectedFolder } = useParams();
-
-
-
+  const { folderId: currentopenOrSelectedFolder } = useParams();
 
   // if you are using set then its look is O(1) than array lookup in O(n)---
-  const selectedIds = useMemo(() => 
-    new Set(selectedAssets.map(a => a.resourceId)),
+  const selectedIds = useMemo(
+    () => new Set(selectedAssets.map((a) => a.resourceId)),
     [selectedAssets]
   );
 
   // Memoized selection checker
-  const isAssetSelected = useCallback((assetId: string) => 
-    selectedIds.has(assetId),
+  const isAssetSelected = useCallback(
+    (assetId: string) => selectedIds.has(assetId),
     [selectedIds]
   );
 
-const toggleAsset = (assetId: string) => {
-  const asset = assets.find(a => a.resourceId === assetId);
-  if (asset) {
-    onAssetSelect(asset, !isAssetSelected(assetId));
-  }
-};
+  const toggleAsset = (assetId: string) => {
+    const asset = assets.find((a) => a.resourceId === assetId);
+    if (asset) {
+      onAssetSelect(asset, !isAssetSelected(assetId));
+    }
+  };
 
-const toggleAllAssets = (checked: boolean) => {
-  onSelectAll(assets, checked);
-};
-
+  const toggleAllAssets = (checked: boolean) => {
+    onSelectAll(assets, checked);
+  };
 
   const { refetch } = useGetAssetsOfFolderQuery({
     folderId: currentopenOrSelectedFolder || "",
@@ -249,7 +246,9 @@ const toggleAllAssets = (checked: boolean) => {
                   // className="group hover:bg-blue-100/45 hover:dark:bg-blue-400/20 h-[60px]"
                   className={cn(
                     "group h-[60px] border-b border-slate-300 dark:border-slate-700", // bottom border
-                    selectedAssets?.some(selected => selected.resourceId === asset.resourceId)
+                    selectedAssets?.some(
+                      (selected) => selected.resourceId === asset.resourceId
+                    )
                       ? "bg-blue-100 dark:bg-blue-800/40 border-b-white dark:border-slate-500"
                       : "hover:bg-blue-100/45 hover:dark:bg-blue-400/20"
                   )}
@@ -271,30 +270,45 @@ const toggleAllAssets = (checked: boolean) => {
                           className="h-full w-full object-cover"
                         /> */}
                       </div>
-                     
-                      
-                      <TooltipProvider>
-  <Tooltip>
-    <TooltipTrigger>
-    <span
-                        className="font-medium truncate"
-                        style={{
-                          maxWidth: "200px",
-                          display: "inline-block",
-                          overflow: "hidden",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {asset.name}
-                      </span>
-    </TooltipTrigger>
-    {asset.name.length>32 &&
-    <TooltipContent>
-        {asset.name}
-    </TooltipContent>
-}
-  </Tooltip>
-</TooltipProvider>
+                      <div className="relative w-full">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <span
+                                className="font-medium truncate"
+                                style={{
+                                  maxWidth: "200px",
+                                  display: "inline-block",
+                                  overflow: "hidden",
+                                  whiteSpace: "nowrap",
+                                }}
+                              >
+                                {asset.name}
+                              </span>
+                            </TooltipTrigger>
+                            {asset.name.length > 32 && (
+                              <TooltipContent>{asset.name}</TooltipContent>
+                            )}
+                          </Tooltip>
+                        </TooltipProvider>
+                        {/* Edit icon (shows on hover) */}
+                        <Link to={`/edit-vizulization?resourcePath=${(asset.path).replace("/original/default/", "")}`}
+                                className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                // onClick={() => handleEdit(asset)} // You can define this function
+                              >
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                            
+                                <ImagePlay className="w-4 h-4 text-blue-400 hover:text-blue-500 cursor-pointer" />
+                              
+                            </TooltipTrigger>
+
+                            <TooltipContent>{"Edit"}</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        </Link>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">

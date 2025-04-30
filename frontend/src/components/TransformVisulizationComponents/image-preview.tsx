@@ -3,6 +3,7 @@ import type React from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { TransformationParams } from "./image-transformer"
+import { useState } from "react"
 
 interface ImagePreviewProps {
   originalImage: string
@@ -106,25 +107,57 @@ export function ImagePreview({ originalImage, transformations, transformationUrl
 
     return style
   }
+  const [isLoaded, setIsLoaded] = useState(false)
 
   return (
+    <div> 
     <Card>
       <CardContent className="p-6">
         <Tabs defaultValue="side-by-side" className="w-full">
+         
           <TabsList className="grid w-full grid-cols-3 mb-4">
+            <TabsTrigger className="cursor-pointer" value="transformed">Transformed</TabsTrigger>
             <TabsTrigger className="cursor-pointer" value="side-by-side">Side by Side</TabsTrigger>
             <TabsTrigger className="cursor-pointer" value="original">Original</TabsTrigger>
-            <TabsTrigger className="cursor-pointer" value="transformed">Transformed</TabsTrigger>
           </TabsList>
+          <TabsContent value="transformed" className="mt-0">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Transformed</p>
+              <div
+                className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden"
+                style={getPositionStyle()}
+              >
+                <img src={originalImage || "/NoImageFound.png"} alt="Transformed" style={getTransformStyles()} />
+                {transformations.f && (
+                  <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 text-xs rounded">
+                    Format: {transformations.f.toUpperCase()}
+                  </div>
+                )}
+                {transformations.q && (
+                  <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 text-xs rounded">
+                    Quality: {transformations.q}%
+                  </div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
           <TabsContent value="side-by-side" className="mt-0">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Original</p>
                 <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden">
+                {!isLoaded && (
+        <div className="absolute inset-0 flex items-center justify-center z-10">
+          <div className="w-10 h-10 border-4 border-dashed rounded-full animate-spin border-gray-600 dark:border-white"></div>
+        </div>
+      )}
                   <img
-                    src={originalImage || "/placeholder.svg"}
+                    src={ originalImage?.trim() ? originalImage : "/NoImageFound.png"}
                     alt="Original"
                     className="w-full h-full object-contain"
+                     onLoad={() => setIsLoaded(true)}
+                     onError={() => setIsLoaded(true)} 
+                     loading="lazy"
                   />
                 </div>
               </div>
@@ -161,30 +194,11 @@ export function ImagePreview({ originalImage, transformations, transformationUrl
               </div>
             </div>
           </TabsContent>
-          <TabsContent value="transformed" className="mt-0">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Transformed</p>
-              <div
-                className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden"
-                style={getPositionStyle()}
-              >
-                <img src={originalImage || "/placeholder.svg"} alt="Transformed" style={getTransformStyles()} />
-                {transformations.f && (
-                  <div className="absolute bottom-2 right-2 bg-black/70 text-white px-2 py-1 text-xs rounded">
-                    Format: {transformations.f.toUpperCase()}
-                  </div>
-                )}
-                {transformations.q && (
-                  <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 text-xs rounded">
-                    Quality: {transformations.q}%
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-          <p>This image has been scaled down for viewing purpose </p>
+         
+          <p className="text-sm text-gray-800 pt-1 dark:text-gray-200">This image has been scaled down for viewing purpose. </p>
         </Tabs>
       </CardContent>
     </Card>
+    </div>
   )
 }

@@ -17,7 +17,8 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-import ApiKeyManagement from "@/components/api-key-management"
+import ApiKeyManagement from "@/components/ApiKey-management"
+import { Link } from "react-router"
 
 const ProductEnvironmentSetting = () => {
   return (
@@ -28,7 +29,7 @@ const ProductEnvironmentSetting = () => {
           <h2 className="text-xl font-semibold">Product Settings</h2>
           <div className="space-x-4">
             <button className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">API Management</button>
-            <button className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">Bill Payment</button>
+            <Link to={'/dashboard/settings/product/billing'} className="px-4 py-2 bg-gray-100 rounded-md hover:bg-gray-200">Bill Payment</Link>
            
           </div>
         </div>

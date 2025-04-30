@@ -63,10 +63,10 @@ export function TagFilterDropdown({
     <div className="space-y-2">
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" size={'sm'} className="flex items-center gap-2 hover:border-blue-500 border-[1px] cursor-pointer relative ">
+          <Button variant="outline"  className={`flex p-2 px-4 border-gray-500 items-center gap-2 hover:border-blue-500 border-[1px] cursor-pointer relative ${selectedTags.length > 0 && 'border-blue-500'} `}>
             Tags
             {selectedTags.length > 0 && (
-              <span className="absolute bg-blue-200 dark:bg-blue-100 text-blue-600 rounded-full text-xs min-w-[20px] h-[20px] border border-blue-600 flex items-center justify-center px-1 pb-[1px] -top-2 -right-2">
+              <span className="absolute bg-blue-200 dark:bg-[#1d3247] text-blue-600 dark:text-blue-200 rounded-full text-xs min-w-[20px] h-[20px] border-2 dark:border-blue-300 border-blue-600 flex items-center justify-center px-1 pb-[1px] -top-2 -right-2 font-bold">
                 {selectedTags.length}
               </span>
             )}

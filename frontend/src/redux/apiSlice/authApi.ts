@@ -29,16 +29,20 @@ const customBaseQuery: BaseQueryFn<any, unknown, unknown> = async (
   // }
   
 
-  if (
-    result.error &&
-    result.error.status === 401 &&
-    (result.error.data as any)?.message?.includes('Authorization token is required')
-  ) {
-    // Auto logout on missing or invalid token
-    api.dispatch(logout());
-    window.location.href = '/login'; // redirect to login page
-  }
 
+  if (result.error && result.error.status === 401) {
+    const message = (result.error.data as any)?.message || "";
+
+    if (
+      message.includes("Authorization token is required") || 
+      message.includes("Session expired. Please log in again.") || 
+      message.includes("Session expired") ||
+      message.includes("Unauthorized")
+    ) {
+      api.dispatch(logout());
+      window.location.href = "/login"; // Redirect user to login page
+    }
+  }
   return result;
 };
 
