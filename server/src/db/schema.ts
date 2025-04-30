@@ -353,6 +353,10 @@ export const credits = pgTable('credits', {
     .notNull()
     .references(() => accounts.accountId, { onDelete: 'cascade' })
     .unique(), // One credit record per account
+    planId: uuid('plan_id')
+    .notNull()
+    .references(() => plans.planId, { onDelete: 'cascade' }),
+
 
   totalCredits: integer('total_credits').notNull(),
   usedCredits: integer('used_credits').default(0).notNull(),

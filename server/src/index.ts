@@ -5,6 +5,7 @@ import cors from 'cors'
 import {pool,db} from './db/db_connect'
 import authRoute from './routes/auth.route'
 import userRoute from './routes/user.route'
+import billingRoute from './routes/billing.route'
 import resourceRoute from './routes/resource.route'
 import globalErrorHandler from './middlewares/globalErrorHandler.middleware';
 import notFoundHandler from './middlewares/notFoundApi.middleware';
@@ -31,6 +32,7 @@ app.use(express.json());
 app.use('/api/v1/resource', resourceRoute);
 app.use('/api/v1/auth', authRoute);
 app.use('/api/v1/user', userRoute);
+app.use('/api/v1/billing', billingRoute);
 
 
 // it is only for test purpose===============================================

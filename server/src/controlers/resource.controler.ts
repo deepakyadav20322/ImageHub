@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, DeleteObjectsCommand, ListObjectsV2Command, ListObjectsV2CommandOutput, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { InvokeCommand, Lambda } from "@aws-sdk/client-lambda";
 import multer from "multer";
 import { apiKeys, credits, resources, resourceTags, storage } from "../db/schema";
@@ -589,7 +589,7 @@ export const findAndOptimizeResource = async (
 
     const lambdaStart = Date.now();
     const lambdaResponse = await lambda.send(new InvokeCommand({
-      FunctionName: process.env.IMAGE_PROCESSOR_LAMBDA!,
+      FunctionName: process.env.IMAGE_PROCESSOR_LAMBDA_GET!,
       InvocationType: "RequestResponse",
       Payload: Buffer.from(JSON.stringify(lambdaPayload)),
     }));
@@ -1339,15 +1339,107 @@ export const getRootFolderOfBucketOfAccount = async (req: Request, res: Response
   }
 }
 
-export const deleteFolderOfBucketWhithAllChildItems = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
-  try {
+// export const deleteFolderOfBucketWhithAllChildItems = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+//   try {
 
+//     const { folderId, bucketId } = req.params;
+//     if (!folderId || !bucketId) {
+//       return res.status(400).json({ message: 'folderId and bucketId required' });
+//     }
+//     const { accountId } = req.user;
+//     // Check if folder exists and belongs to the given bucket
+//     const [folder] = await db
+//       .select()
+//       .from(resources)
+//       .where(and(
+//         eq(resources.resourceId, folderId),
+//         eq(resources.type, "folder"),
+//         eq(resources.accountId, accountId) // ownership check
+//       ))
+//       .limit(1);
+
+//     if (!folder) {
+//       return res.status(404).json({ message: "Folder not found or access denied" });
+//     }
+
+    
+//     // We also have an option for soft delete.-------
+//     // if we use where clouse then cascade feature not work 
+//     const ress = await db
+//       .delete(resources)
+//       .where(and(eq(resources.resourceId, folderId)
+//       ));
+
+//       const start = Date.now(); // Start time
+
+//       // delete the floder and resorces from s3 also (Todo: when it larf=ge use background process system like queues )
+//    // 2. Delete from S3
+
+//    const deleteEntireFolderRecursively = async (bucket: string, folderPrefix: string) => {
+//     let continuationToken: string | undefined = undefined;
+//     const deletedKeys: string[] = [];
+//     const start = Date.now(); // Start time
+  
+//     const deleteBatch = async (objects: { Key: string }[]) => {
+//       if (objects.length === 0) return;
+//       await s3.send(
+//         new DeleteObjectCommand ({
+//           Bucket: bucket,
+//           Delete: { Objects: objects },
+//         })
+//       );
+//       deletedKeys.push(...objects.map(obj => obj.Key!));
+//     };
+  
+//     do {
+//       const list = await s3.send(
+//         new ListObjectsV2Command({
+//           Bucket: bucket,
+//           Prefix: folderPrefix,
+//           ContinuationToken: continuationToken,
+//         })
+//       );
+  
+//       const objects = list.Contents?.map(obj => ({ Key: obj.Key! })) || [];
+//       await deleteBatch(objects);
+  
+//       continuationToken = list.IsTruncated ? list.NextContinuationToken : undefined;
+//     } while (continuationToken);
+  
+//     const end = Date.now(); // End time
+  
+//     console.log(`⏱️ Time taken to delete: ${(end - start) / 1000}s`);
+//     console.log(`🧹 Deleted ${deletedKeys.length} objects from S3:`);
+//     console.log(deletedKeys);
+//   };
+  
+//   // Correct the path replacement
+//   const s3Prefix = folder.path.replace('/original/', '').replace(/^\/+/, ''); 
+
+//   await deleteEntireFolderRecursively(`${accountId}-original`, s3Prefix);
+
+
+//     return res.status(200).json({
+//       success: true,
+//       message: "Folder and all contents permanently deleted",
+//       ress
+//     });
+//   } catch (error) {
+//     console.log(error)
+//     return res.status(500).json({ message: "Internal Server Error", error });
+//   }
+// }
+
+export const deleteFolderOfBucketWithAllChildItems = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
     const { folderId, bucketId } = req.params;
     if (!folderId || !bucketId) {
-      return res.status(400).json({ message: 'folderId and bucketId required' });
+      return res.status(400).json({ message: 'folderId and bucketId are required' });
     }
+
     const { accountId } = req.user;
-    // Check if folder exists and belongs to the given bucket
+
+    // Check if the folder exists and belongs to the given bucket
     const [folder] = await db
       .select()
       .from(resources)
@@ -1362,27 +1454,70 @@ export const deleteFolderOfBucketWhithAllChildItems = async (req: Request, res: 
       return res.status(404).json({ message: "Folder not found or access denied" });
     }
 
-
-
-    // We also have an option for soft delete.
-
-    // if we use where clouse then cascade feature not work 
+    // Soft delete (optional, for handling lifecycle status)
     const ress = await db
       .delete(resources)
-      .where(and(eq(resources.resourceId, folderId)
-      ));
+      .where(and(eq(resources.resourceId, folderId)));
 
+    // S3 Deletion Logic
+    const deleteEntireFolderRecursively = async (bucket: string, folderPrefix: string) => {
+      let continuationToken: string | undefined = undefined;
+      const deletedKeys: string[] = [];
+      const start = Date.now(); // Start time
 
+      const deleteBatch = async (objects: { Key: string }[]) => {
+        if (objects.length === 0) return;
+        await s3.send(
+          new DeleteObjectsCommand({
+            Bucket: bucket,
+            Delete: { Objects: objects },
+          })
+        );
+        deletedKeys.push(...objects.map(obj => obj.Key!));
+      };
 
+      // Loop to handle S3 file deletion with continuation token
+      do {
+        const list:ListObjectsV2CommandOutput = await s3.send(
+          new ListObjectsV2Command({
+            Bucket: bucket,
+            Prefix: folderPrefix,
+            ContinuationToken: continuationToken,
+          })
+        );
+
+        const objects = list.Contents?.map(obj => ({ Key: obj.Key! })) || [];
+        await deleteBatch(objects);
+
+        continuationToken = list.IsTruncated ? list.NextContinuationToken : undefined;
+      } while (continuationToken);
+
+      const end = Date.now(); // End time
+      console.log(`⏱️ Time taken to delete: ${(end - start) / 1000}s`);
+      console.log(`🧹 Deleted ${deletedKeys.length} objects from S3:`);
+      console.log(deletedKeys);
+    };
+
+    // Correct path replacement to match S3 folder structure
+    const s3Prefix = folder.path.replace('/original/', '').replace(/^\/+/, ''); // Remove leading slashes
+
+    // Deleting folder and its contents from S3
+    await deleteEntireFolderRecursively(`${accountId}-original`, s3Prefix);
+
+    // Return response after successful deletion
     return res.status(200).json({
       success: true,
       message: "Folder and all contents permanently deleted",
-      ress
+      ress,
     });
-  } catch (error) {
 
+  } catch (error) {
+    console.error(error); // Log the error for debugging
+    return res.status(500).json({ message: "Internal Server Error", error });
   }
-}
+};
+
+
 
 
 export const deleteSingleAsset = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
