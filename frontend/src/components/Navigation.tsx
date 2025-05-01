@@ -47,11 +47,11 @@ const Navbar = () => {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">MH</span>
+            <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center border-2 ">
+              <span className="dark:text-primary-foreground text-blue-600  font-bold">MH</span>
             </div>
             <span className="font-bold text-xl hidden sm:inline-block">
-              Media Hub
+             <span className="dark:text-white text-blue-600"> Media Hub</span>
             </span>
           </Link>
         </div>
@@ -126,13 +126,13 @@ const Navbar = () => {
               <div className="hidden sm:flex items-center gap-2">
                 <Link
                   to={"/login"}
-                  className="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors dark:hover:bg-muted hover:bg-slate-100 bg-slate-50 dark:bg-black hover:border-gray-300 border-2"
+                  className="inline-flex text-white h-9 items-center justify-center rounded-md px-4 text-sm font-medium transition-colors dark:hover:bg-muted hover:bg-blue-700 bg-blue-600 dark:bg-black hover:border-blue-800 dark:hover:border-slate-600 border-2"
                 >
                   Login
                 </Link>
                 <Link
                   to={"/signup"}
-                  className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                  className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 "
                 >
                   Sign up
                 </Link>

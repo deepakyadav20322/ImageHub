@@ -176,7 +176,7 @@ const SignUpForm = ()=> {
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full" disabled={isSignupLoading}>
+          <Button type="submit" className="w-full text-white hover:bg-blue-700 bg-blue-600 dark:bg-black hover:border-blue-800" disabled={isSignupLoading}>
             {isSignupLoading ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />

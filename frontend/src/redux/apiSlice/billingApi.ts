@@ -15,12 +15,12 @@ export const billingApi = authApi.injectEndpoints({
                 },
             }),
             transformResponse: (response: { success: boolean; data: any }) => {
-                return response.data;
+                return response;
             },
+            providesTags: [{ type: 'BillingPlan' }],
         }),
 
-        getCurrentPlan: builder.query<
-            { success: boolean, data: any },
+        getCurrentPlan: builder.query<unknown,
             { accountId: string; access_token: string }
         >({
             query: ({ accountId, access_token }) => ({
@@ -33,10 +33,11 @@ export const billingApi = authApi.injectEndpoints({
             transformResponse: (response: { success: boolean; data: any }) => {
                 return response.data;
             },
+            providesTags: [{ type: 'BillingPlan' }],
         }),
 
         getCreditAndStorage: builder.query<
-            { success: boolean, data: any },
+        any,
             { accountId: string; access_token: string }
         >({
             query: ({ accountId, access_token }) => ({
@@ -49,6 +50,7 @@ export const billingApi = authApi.injectEndpoints({
             transformResponse: (response: { success: boolean; data: any }) => {
                 return response.data;
             },
+            providesTags: [{ type: 'BillingPlan' }],
         }),
 
     }),

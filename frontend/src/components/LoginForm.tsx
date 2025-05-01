@@ -155,7 +155,7 @@ const LoginForm = () => {
             )}
           />
          
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full text-white hover:bg-blue-700 bg-blue-600 dark:bg-black hover:border-blue-800" disabled={isLoading}>
             {isLoading ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />

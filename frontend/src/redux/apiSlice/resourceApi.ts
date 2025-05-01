@@ -91,7 +91,7 @@ export const resourceApi = authApi.injectEndpoints({
       query: (resourceId) => `/resources/${resourceId}`,
       providesTags: ["Resources"],
     }),
-
+ // use for creating bucket -=----------
     createResource: builder.mutation<Resource, Partial<Resource>>({
       query: (resource) => ({
         url: "/resources",

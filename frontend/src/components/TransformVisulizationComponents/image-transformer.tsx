@@ -152,7 +152,7 @@ export type TransformationParams = {
   a_ignore?: boolean
 }
 
-export function ImageTransformer() {
+const ImageTransformerVisulization =  () => {
   const [searchParams] = useSearchParams();
   const resourcePath = searchParams.get("resourcePath");
   console.log(resourcePath)
@@ -267,3 +267,5 @@ export function ImageTransformer() {
     </div>
   )
 }
+
+export default ImageTransformerVisulization

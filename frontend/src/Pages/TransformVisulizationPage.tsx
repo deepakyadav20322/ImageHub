@@ -1,4 +1,4 @@
-import { ImageTransformer } from "@/components/TransformVisulizationComponents/image-transformer"
+import  ImageTransformerVisulization  from "@/components/TransformVisulizationComponents/image-transformer"
 
  const TransformationVisulizationPage  = ()=> {
   return (
@@ -14,7 +14,7 @@ import { ImageTransformer } from "@/components/TransformVisulizationComponents/i
         {/* <p className="text-center mb-8 text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
           Upload an image and apply transformations in real-time. Generate a URL with your selected parameters.
         </p> */}
-        <ImageTransformer />
+        <ImageTransformerVisulization />
       </div>
     </main>
   )

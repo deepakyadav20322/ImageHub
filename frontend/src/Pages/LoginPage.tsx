@@ -14,11 +14,12 @@ const LoginPage = () => {
               alt="Acme Inc. Logo"
               className="h-6 w-6"
             /> */}
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold">MH</span>
+          <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center border-2 ">
+              <span className="dark:text-primary-foreground text-blue-600  font-bold">MH</span>
             </div>
           </div>
-          <h1 className="text-2xl font-bold">Welcome to MediaHub.</h1>
+          <h1 className="text-2xl font-bold">Welcome to <span className="text-blue-600 dark:text-white">MediaHub</span>
+          </h1>
           <p className="text-sm text-muted-foreground">
             Don&apos;t have an account?{" "}
             <Link

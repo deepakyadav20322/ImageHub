@@ -490,6 +490,7 @@ const navItems = [
   { icon: Radio, label: "Media", path: "/media/home" },
   { icon: Key, label: "Product Setting", path: "settings/product" },
   { icon: Key, label: "Account Setting", path: "settings/account" },
+  { icon: Key, label: "Billing Plan", path: "settings/product/billing" },
 
   // { icon: BarChart2, label: "Metrics", path: "/metrics" },
   // { icon: Globe, label: "Domains", path: "/domains" },
@@ -509,7 +510,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { logout } from "@/redux/features/authSlice";
-import { useIsMobile } from "@/hooks/use-mobile";
+import {motion} from 'framer-motion'
 
 interface ISidebarProps {
   collapsed: boolean;
@@ -537,7 +538,7 @@ const Sidebar = ({
     dispatch(logout());
     navigate("/login");
   };
-  const isMobile = useIsMobile();
+
   // Initialize environments when resources load
   useEffect(() => {
     if (resources && resources.length > 0) {
@@ -603,12 +604,13 @@ const Sidebar = ({
 
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-zinc-900/90 bg-opacity-100 z-40 lg:hidden"
           onClick={toggleMobileSidebar}
         />
       )}
 
-      <aside
+      <motion.aside
+      
         className={`
           fixed top-0 left-0 z-40 h-full bg-white dark:bg-black border-r dark:border-r-slate-400 border-gray-200 dark:border-black transition-transform duration-200 
           ${mobileOpen ? "translate-x-0" : "-translate-x-[115%]"} 
@@ -617,7 +619,7 @@ const Sidebar = ({
         `}
       >
         <button
-          className="absolute -right-3 top-20 bg-white dark:bg-black border border-gray-200 dark:border-gray-100 rounded-full p-1 shadow-md lg:flex"
+          className="absolute -right-3 top-20 bg-white dark:bg-black border border-gray-200 dark:border-gray-100 rounded-full p-1 shadow-md lg:flex cursor-pointer"
           onClick={toggleSidebar}
           aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -642,16 +644,16 @@ const Sidebar = ({
         </div>
 
         {/* Environment Selector */}
-        <div className="px-2 py-3 border-b border-gray-200 dark:border-black">
+        {/* <div className="px-2 py-3 border-b border-gray-200 dark:border-black">
           {!collapsed ? (
-            <div className="relative">
+            <div className="relative p-1">
               <button
                 onClick={toggleEnvironmentDropdown}
-                className="w-full flex items-center justify-between px-2 py-1 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+                className={`w-full flex items-center justify-between px-2 py-1 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer ${environmentDropdownOpen?'dark:bg-gray-800 bg-gray-100':''} `}
               >
                 <div className="flex items-center">
                   <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs font-medium rounded-md mr-2">
-                    {selectedEnvironment?.name?.charAt(0) || "E"}
+                    {(selectedEnvironment?.name?.charAt(0)) || "E"}
                   </span>
                   <span className="font-medium">
                     {selectedEnvironment?.name.split("-").pop() ||
@@ -667,13 +669,13 @@ const Sidebar = ({
               </button>
 
               {environmentDropdownOpen && (
-                <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg">
+                <div className="absolute z-50 mt-1 w-[98%] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg">
                   <div className="p-2 border-b border-gray-200 dark:border-gray-700">
                     <h3 className="text-xs font-medium text-gray-800 dark:text-gray-300">
                       Product environments
                     </h3>
                   </div>
-                  <ul className="max-h-60 overflow-auto">
+                  <ul className="max-h-60 overflow-auto cursor-pointer">
                     {environments.map((env) => (
                       <li key={env.resourceId}>
                         <button
@@ -722,7 +724,77 @@ const Sidebar = ({
               </span>
             </button>
           )}
-        </div>
+        </div> */}
+
+<div className="px-2 py-3 border-b border-gray-200 dark:border-gray-800">
+      {!collapsed ? (
+        <DropdownMenu>
+          <DropdownMenuTrigger className="w-full flex items-center justify-between px-2 py-1 text-sm text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md cursor-pointer">
+            <div className="flex items-center">
+              <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs font-medium rounded-md mr-2">
+                {(selectedEnvironment?.name?.charAt(0)) || "E"}
+              </span>
+              <span className="font-medium">
+                {selectedEnvironment?.name.split("-").pop() || "No environments"}
+              </span>
+            </div>
+            <ChevronDown
+              size={16}
+              className={`transition-transform ${environmentDropdownOpen ? "rotate-180" : ""}`}
+            />
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent className="mt-1 w-[98%] bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg">
+            <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+              <DropdownMenuLabel className="text-xs font-medium text-gray-800 dark:text-gray-300">
+                Product environments
+              </DropdownMenuLabel>
+            </div>
+
+            <ul className="max-h-60 overflow-auto cursor-pointer">
+              {environments.map((env) => (
+                <DropdownMenuItem
+                  key={env.resourceId}
+                  onClick={() => selectEnvironment(env.resourceId)}
+                  className="flex items-center justify-between px-2 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800  cursor-pointer"
+                >
+                  <div className="flex items-center  ">
+                    <span className="flex items-center justify-center w-6 h-6 bg-blue-600 text-white text-xs font-medium rounded-md mr-2 ">
+                      {env.name.charAt(0)}
+                    </span>
+                    <span className="font-medium">{env.name.split("-").pop()}</span>
+                  </div>
+                  {env.isSelected && <Check size={16} className="text-blue-600" />}
+                </DropdownMenuItem>
+              ))}
+            </ul>
+
+            <div className=" p-1 border-t border-gray-200 dark:border-gray-700">
+              <button
+                className="w-full flex items-center text-sm text-gray-800 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 p-2 rounded-md cursor-not-allowed"
+                onClick={openCreateModal}
+                disabled
+              >
+                <Plus size={16} className="mr-2" />
+                <span className=" whitespace-pre mr-1">Add a new environment</span>
+                <span className="ml-auto flex items-center justify-center w-5 h-5 text-orange-400 rounded-full">
+                  <Crown />
+                </span>
+              </button>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ) : (
+        <button
+          className="w-full flex justify-center"
+          onClick={toggleEnvironmentDropdown}
+        >
+          <span className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white text-xs font-medium rounded-md">
+            {selectedEnvironment?.name?.charAt(0) || "E"}
+          </span>
+        </button>
+      )}
+    </div>
 
         <nav className="p-2">
           <ul className="space-y-1">
@@ -822,7 +894,7 @@ const Sidebar = ({
             )} */}
           </div>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Create Environment Modal */}
       {createModalOpen && (

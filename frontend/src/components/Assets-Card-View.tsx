@@ -320,18 +320,13 @@ import {
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "./ui/dropdown-menu";
+
 import { Resource } from "@/lib/types";
 import AssetActions from "./AssetsActions";
 import { RootState } from "@/redux/store";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router";
-import UploadDialog from "./UploadDialog";
+import UploadDialog from "@/components/UploadDialogComponents/UploadDialogMain";
 import { useGetAllAssetsOfParticularAccountQuery, useGetAssetsOfFolderQuery } from "@/redux/apiSlice/itemsApi";
 import { useAssetUploader } from "@/hooks/useAssetsUploader";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";

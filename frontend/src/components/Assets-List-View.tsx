@@ -28,7 +28,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AnimatePresence, motion } from "framer-motion";
 import { Resource } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import UploadDialog from "./UploadDialog";
+import UploadDialog from "@/components/UploadDialogComponents/UploadDialogMain";
 import { useAssetUploader } from "@/hooks/useAssetsUploader";
 import { useSelector } from "react-redux";
 

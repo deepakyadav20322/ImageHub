@@ -1,5 +1,5 @@
-import BillingInfo from '@/components/BillingInfo'
 import React from 'react'
+import BillingInfo from '@/components/BillingInfo'
 
 const Billing = () => {
   return (

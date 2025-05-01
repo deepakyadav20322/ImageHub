@@ -50,7 +50,7 @@ const customBaseQuery: BaseQueryFn<any, unknown, unknown> = async (
 export const authApi = createApi({
   reducerPath: "authSlice",
 baseQuery:customBaseQuery,
-  tagTypes: ['Auth','Resources','Folder', 'Asset','AllAssets','Tags'], // For cache invalidation
+  tagTypes: ['Auth','Resources','Folder', 'Asset','AllAssets','Tags','BillingPlan'], // For cache invalidation
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginCredentials>({
       query: (credentials) => ({

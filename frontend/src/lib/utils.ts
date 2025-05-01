@@ -38,3 +38,14 @@ export const buildFolderTree = (flatData: FolderTreeData[]): FolderTreeData[] =>
 
 
 
+// utils/getDaysLeft.ts-----------------------------
+export function getDaysLeft(expiryDateString: string): number {
+  const now = new Date();
+  const expiryDate = new Date(expiryDateString);
+
+  // Get the difference in milliseconds and convert to full days
+  const diffInMs = expiryDate.getTime() - now.getTime();
+  const diffInDays = Math.ceil(diffInMs / (1000 * 60 * 60 * 24));
+
+  return diffInDays;
+}

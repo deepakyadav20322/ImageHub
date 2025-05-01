@@ -1,7 +1,6 @@
 import { Resource } from "@/lib/types";
 import authApi from "./authApi";
-import { boolean } from "zod";
-import { url } from "inspector";
+
 
 
 const folderApi = authApi.injectEndpoints({
@@ -133,6 +132,7 @@ const folderApi = authApi.injectEndpoints({
       invalidatesTags: (result, error, arg) => [
         { type: "Asset", id: arg.folderId },
         { type: "AllAssets", id:arg.folderId }, // ✅ This will refresh account-level assets of the bucket
+        { type: "BillingPlan" }, // ✅ Revalidate billing plan when assets are uploaded
       ],
      
     }),

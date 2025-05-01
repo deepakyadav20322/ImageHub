@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate, useOutletContext, useParams } from "react-router";
 import { Link } from "react-router";
-import UploadDialog from "./UploadDialog";
+// import UploadDialog from "./UploadDialog";
+import UploadDialog from "./UploadDialogComponents/UploadDialogMain";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { Resource } from "@/lib/types";
@@ -124,7 +125,17 @@ console.log("iserror",isError);
         
         </div>
       </div>
-      <UploadDialog
+      {/* <UploadDialog
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUpload={handleUpload}
+        maxSizeMB={5}
+        allowedTypes={["image/jpeg", "image/png","image/jpg","image/webp"]}
+        multiple={true}
+        maxFiles={5}
+      /> */}
+
+     <UploadDialog
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
         onUpload={handleUpload}
@@ -133,6 +144,7 @@ console.log("iserror",isError);
         multiple={true}
         maxFiles={5}
       />
+
     </div>
   );
 };
