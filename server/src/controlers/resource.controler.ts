@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { S3Client, DeleteObjectsCommand, ListObjectsV2Command, ListObjectsV2CommandOutput, DeleteObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, DeleteObjectsCommand, ListObjectsV2Command, ListObjectsV2CommandOutput, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3'
 import { InvokeCommand, Lambda } from "@aws-sdk/client-lambda";
 import multer from "multer";
 import { apiKeys, credits, resources, resourceTags, storage } from "../db/schema";
@@ -1362,7 +1362,7 @@ export const getRootFolderOfBucketOfAccount = async (req: Request, res: Response
 //       return res.status(404).json({ message: "Folder not found or access denied" });
 //     }
 
-    
+
 //     // We also have an option for soft delete.-------
 //     // if we use where clouse then cascade feature not work 
 //     const ress = await db
@@ -1379,7 +1379,7 @@ export const getRootFolderOfBucketOfAccount = async (req: Request, res: Response
 //     let continuationToken: string | undefined = undefined;
 //     const deletedKeys: string[] = [];
 //     const start = Date.now(); // Start time
-  
+
 //     const deleteBatch = async (objects: { Key: string }[]) => {
 //       if (objects.length === 0) return;
 //       await s3.send(
@@ -1390,7 +1390,7 @@ export const getRootFolderOfBucketOfAccount = async (req: Request, res: Response
 //       );
 //       deletedKeys.push(...objects.map(obj => obj.Key!));
 //     };
-  
+
 //     do {
 //       const list = await s3.send(
 //         new ListObjectsV2Command({
@@ -1399,20 +1399,20 @@ export const getRootFolderOfBucketOfAccount = async (req: Request, res: Response
 //           ContinuationToken: continuationToken,
 //         })
 //       );
-  
+
 //       const objects = list.Contents?.map(obj => ({ Key: obj.Key! })) || [];
 //       await deleteBatch(objects);
-  
+
 //       continuationToken = list.IsTruncated ? list.NextContinuationToken : undefined;
 //     } while (continuationToken);
-  
+
 //     const end = Date.now(); // End time
-  
+
 //     console.log(`⏱️ Time taken to delete: ${(end - start) / 1000}s`);
 //     console.log(`🧹 Deleted ${deletedKeys.length} objects from S3:`);
 //     console.log(deletedKeys);
 //   };
-  
+
 //   // Correct the path replacement
 //   const s3Prefix = folder.path.replace('/original/', '').replace(/^\/+/, ''); 
 
@@ -1478,7 +1478,7 @@ export const deleteFolderOfBucketWithAllChildItems = async (req: Request, res: R
 
       // Loop to handle S3 file deletion with continuation token
       do {
-        const list:ListObjectsV2CommandOutput = await s3.send(
+        const list: ListObjectsV2CommandOutput = await s3.send(
           new ListObjectsV2Command({
             Bucket: bucket,
             Prefix: folderPrefix,
@@ -2171,3 +2171,115 @@ export const updateApiKeyName = async (req: Request, res: Response, next: NextFu
     next(new AppError("Failed to update API key name", 500));
   }
 };
+
+export const renameFileResource = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
+  try {
+    const { bucketName } = req.params;
+    const {resourceId} = req.body
+    console.log("bucketName and resorceId- ",bucketName,resourceId);
+
+    if (!bucketName || !resourceId) {
+      res.status(400).json({ message: "bucketName and resorceId required", success: false });
+    }
+    console.log(resourceId)
+
+    const { newName } = req.body;
+
+    if (!newName) {
+      return res.status(400).json({
+        message: "New name is required",
+        success: false
+      });
+    }
+
+    const [bucket] = await db.select().from(resources).where(and(eq(resources.name, bucketName), eq(resources.type, 'bucket'))).limit(1);
+
+    if (!bucket) {
+      return res.status(400).json({ message: "bucket not present", success: false });
+    }
+    const start1 = Date.now(); // Start time
+    const [resource] = await db
+      .select()
+      .from(resources)
+      .where(and(
+        eq(resources.resourceId, resourceId),
+        eq(resources.type, 'file'),
+        eq(resources.accountId, req.user.accountId)
+      ))
+      .limit(1);
+
+    if (!resource) {
+      return res.status(404).json({
+        message: "Resource not found or you don't have permission to modify it",
+        success: false
+      });
+    }
+    const duration1 = Date.now() - start1; 
+    console.log("Db resorce find duration:",duration1)
+    // update the resorce name in bucket 
+    function getRenamedS3Key(oldPath: string, newNameVal: string): string {
+      // Remove leading /original/ from the path
+      const actualKey = oldPath.replace(/^\/?original\//, "");
+
+      // Extract file extension
+      const extension = actualKey.split(".").pop();
+
+      // Extract folder path without the filename
+      const baseFolder = actualKey.split("/").slice(0, -1).join("/");
+
+      // Build new S3 key with new file name
+      return `${baseFolder}/${newNameVal}.${extension}`;
+    }
+    const start = Date.now(); // Start time
+    const BUCKET_NAME = `${req.user.accountId}-original`
+    const dbStorePath = resource.path; // e.g., "bucket-folder/oldname.pdf"
+    const newKey = getRenamedS3Key(dbStorePath, newName);
+    const sourceKey = `${BUCKET_NAME}/${dbStorePath.replace(/^\/?original\//, "")}`
+    const oldKey = `${dbStorePath.replace(/^\/?original\//, "")}`
+console.log("BUCKET_NAME",BUCKET_NAME)
+console.log("dbStorePath",dbStorePath)
+console.log("newKey",newKey)
+console.log("oldKey",oldKey)
+    // Step 1: Copy to new name
+    await s3.send(
+      new CopyObjectCommand({
+        Bucket: BUCKET_NAME,
+        CopySource: sourceKey,
+        Key: newKey,
+      })
+    );
+    console.log('pass2')
+
+    // Step 2: Delete original file
+    await s3.send(
+      new DeleteObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: oldKey,
+      })
+    );
+    console.log('pass3')
+    // Update the resource name in db
+    const [updatedResource] = await db
+      .update(resources)
+      .set({
+        name: newName+'.'+dbStorePath.split(".").pop(),
+        displayName:  newName+'.'+dbStorePath.split(".").pop(),
+        path: `/original/${newKey}`,
+        updatedAt: new Date()
+      })
+      .where(eq(resources.resourceId, resourceId))
+      .returning();
+      const duration = Date.now() - start; // End time - Start time
+      console.log("s3 rename duration:",duration)
+
+    return res.status(200).json({
+      message: "Resource renamed successfully",
+      success: true,
+      data: updatedResource
+    });
+
+  } catch (error) {
+    console.log(error);
+    return new AppError('Something went wrong during rename file',500)
+  }
+}
