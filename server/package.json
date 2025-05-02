@@ -4,6 +4,8 @@
   "main": "index.js",
   "scripts": {
     "start": "tsc && node dist/index.js",
+    "drizzle:studio": "drizzle-kit studio --config=src/drizzle.config.ts",
+     "dbml": "tsx ./src/dbml.ts",
     "dev": "nodemon src/index.ts",
     "migration:push:both": "node scripts/pushBoth.js",
     "migration:generate": "npx drizzle-kit generate --config=src/drizzle.config.ts",
@@ -40,11 +42,12 @@
     "@types/node": "^22.14.0",
     "@types/nodemailer": "^6.4.17",
     "@types/pg": "^8.11.11",
+    "drizzle-dbml-generator": "^0.10.0",
     "drizzle-kit": "^0.30.5",
     "ngrok": "^5.0.0-beta.2",
     "nodemon": "^3.1.9",
     "ts-node": "^10.9.2",
-    "tsx": "^4.19.3",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.2"
   }
 }

@@ -49,8 +49,7 @@ export const users = pgTable("users", {
 
   roleId: uuid("role_id") // Reference roles table
     .notNull()
-    .references(() => roles.roleId, { onDelete: "set null" })
-    .notNull(),
+    .references(() => roles.roleId, { onDelete: "set null" }),
   invitedBy: uuid("invited_by").references((): any => users.userId, {
     onDelete: "set null",
   }),
@@ -94,7 +93,7 @@ export const emailVerificationTokens = pgTable('email_verification_tokens', {
   }
 }
 );
-export const PasswordResetToken = pgTable('email_verification_tokens', {
+export const PasswordResetToken = pgTable('password_reset_tokens', {
   id: uuid('id').primaryKey().defaultRandom(),
 
   userId: uuid('user_id').notNull().references(() => users.userId, { onDelete: 'cascade' }),
@@ -340,7 +339,7 @@ export const plans = pgTable('plans', {
   name: text('name').notNull().unique(), // e.g., 'Free', 'Pro', 'Business'
   monthlyCredits: integer('monthly_credits').notNull(), // e.g., 100, 1000, etc.
   maxStorageBytes: text('max_storage_bytes').notNull(),
-// make it not null
+  // make it not null
   price: integer('price').notNull(), // Optional: in cents or dollars
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -353,7 +352,7 @@ export const credits = pgTable('credits', {
     .notNull()
     .references(() => accounts.accountId, { onDelete: 'cascade' })
     .unique(), // One credit record per account
-    planId: uuid('plan_id')
+  planId: uuid('plan_id')
     .notNull()
     .references(() => plans.planId, { onDelete: 'cascade' }),
 
@@ -368,26 +367,26 @@ export const credits = pgTable('credits', {
 });
 
 export const storage = pgTable('storage', {
-  storageId: uuid('storage_id').primaryKey().defaultRandom(),  
-  
-  accountId: uuid('account_id') 
+  storageId: uuid('storage_id').primaryKey().defaultRandom(),
+
+  accountId: uuid('account_id')
     .notNull()
     .references(() => accounts.accountId, { onDelete: 'cascade' }),
 
-  planId: uuid('plan_id')  
+  planId: uuid('plan_id')
     .notNull()
     .references(() => plans.planId, { onDelete: 'cascade' }),
 
-    usedStorageBytes: text('used_storage_bytes')  // Convert to text (string) instead of bigint
+  usedStorageBytes: text('used_storage_bytes')  // Convert to text (string) instead of bigint
     .default('0')  // Default value as a string
     .notNull(),
 
   createdAt: timestamp('created_at', { withTimezone: true })
-    .defaultNow() 
+    .defaultNow()
     .notNull(),
 
   updatedAt: timestamp('updated_at', { withTimezone: true })
-    .defaultNow()  
+    .defaultNow()
     .notNull(),
 });
 

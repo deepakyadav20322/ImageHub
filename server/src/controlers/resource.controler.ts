@@ -1141,63 +1141,81 @@ export const getAssetsOfParticularFolder = async (
       return;
     }
 
-    // Fetch folder and parent hierarchy using ORM
-    const getFolderHierarchy = async (
-      currentFolderId: string
-    ): Promise<any[]> => {
-      const currentFolder = await db
-        .select()
-        .from(resources)
-        .where(
-          and(
-            eq(resources.resourceId, currentFolderId),
-            eq(resources.type, "folder")
-          )
-        );
+    // // Fetch folder and parent hierarchy using ORM
+    // const getFolderHierarchy = async (
+    //   currentFolderId: string
+    // ): Promise<any[]> => {
+    //   const currentFolder = await db
+    //     .select()
+    //     .from(resources)
+    //     .where(
+    //       and(
+    //         eq(resources.resourceId, currentFolderId),
+    //         eq(resources.type, "folder")
+    //       )
+    //     );
 
-      // If folder not found, return empty
-      if (currentFolder.length === 0) return [];
+    //   // If folder not found, return empty
+    //   if (currentFolder.length === 0) return [];
 
-      // Recursively fetch child folders
-      const childFolders = await db
-        .select()
-        .from(resources)
-        .where(
-          and(
-            eq(resources.parentResourceId, currentFolderId),
-            eq(resources.type, "folder")
-          )
-        );
+    //   // Recursively fetch child folders
+    //   const childFolders = await db
+    //     .select()
+    //     .from(resources)
+    //     .where(
+    //       and(
+    //         eq(resources.parentResourceId, currentFolderId),
+    //         eq(resources.type, "folder")
+    //       )
+    //     );
 
-      // Recursively get subfolders
-      const nestedFolders = await Promise.all(
-        childFolders.map((folder) => getFolderHierarchy(folder.resourceId))
-      );
+    //   // Recursively get subfolders
+    //   const nestedFolders = await Promise.all(
+    //     childFolders.map((folder) => getFolderHierarchy(folder.resourceId))
+    //   );
 
-      // Flatten nested arrays and combine with current folder
-      return [currentFolder[0], ...nestedFolders.flat()];
-    };
+    //   // Flatten nested arrays and combine with current folder
+    //   return [currentFolder[0], ...nestedFolders.flat()];
+    // };
 
-    // Get folder hierarchy
-    const folderHierarchy = await getFolderHierarchy(folderId);
+    // // Get folder hierarchy
+    // const folderHierarchy = await getFolderHierarchy(folderId);
 
-    // Get files from all retrieved folders
-    const folderIds = folderHierarchy.map((folder) => folder.resourceId);
+    // // Get files from all retrieved folders
+    // const folderIds = folderHierarchy.map((folder) => folder.resourceId);
 
+    // const filesInFolder = await db
+    //   .select()
+    //   .from(resources)
+    //   .where(
+    //     and(
+    //       eq(resources.type, "file"),
+    //       inArray(resources.parentResourceId, folderIds)
+    //     )
+    //   );
+
+    // res.status(200).json({
+    //   success: true,
+    //   data: filesInFolder,
+    // });
+
+    // ======================================
+          
+    // Fetch only files directly in this folder
     const filesInFolder = await db
-      .select()
-      .from(resources)
-      .where(
-        and(
-          eq(resources.type, "file"),
-          inArray(resources.parentResourceId, folderIds)
-        )
-      );
+    .select()
+    .from(resources)
+    .where(
+      and(
+        eq(resources.type, "file"),
+        eq(resources.parentResourceId, folderId)
+      )
+    );
 
-    res.status(200).json({
-      success: true,
-      data: filesInFolder,
-    });
+  res.status(200).json({
+    success: true,
+    data: filesInFolder,
+  });
   } catch (error) {
     next(
       new AppError("Something went wrong during fetching assets of folder", 500)
