@@ -296,10 +296,30 @@ toggleApiKeyStatus: builder.mutation<
 
 }),
 
+rename_resorcefile: builder.mutation<
+  { success: boolean; message: string },
+  {resourceId:string,bucketName:string, newName:string,token: string }
+>({
+  query: ({resourceId, bucketName, newName,token }) => ({
+    url: `/resource/rename_resourcefile/${bucketName}`,
+    method: 'PATCH',
+    body:{
+      resourceId,
+      newName
+    },
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    }
+  }),
+
+}),
+
   })
 });
 
 export const {
+  useRename_resorcefileMutation,
   useUpdateApiKeyNameMutation,
   useToggleApiKeyStatusMutation,
   useCreateApiKeyMutation,

@@ -37,8 +37,6 @@ const Folders = () => {
   if (reduxIsLoading) return <div>Loading...</div>;
   if (reduxError) return <div>Error</div>;
 
-  // if (isLoading) return <div>Loading...</div>;
-  // if (error) return <div>Error: {`folder page`} </div>;
 
   return (
     <div>

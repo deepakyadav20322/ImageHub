@@ -35,7 +35,6 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { Link, useParams } from "react-router";
 import {
-  useDeleteAssetOfFolderMutation,
   useGetAllAssetsOfParticularAccountQuery,
   useGetAssetsOfFolderQuery,
 } from "@/redux/apiSlice/itemsApi";
@@ -264,53 +263,55 @@ const AssetList = ({
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="h-10 w-10 overflow-hidden rounded-md bg-muted dark:bg-slate-500 flex-shrink-0">
-                        {/* <img
-                          src={asset?.path || "/placeholder.svg"}
-                          alt={asset.name}
-                          className="h-full w-full object-cover"
-                        /> */}
+                        {/* Optional image */}
                       </div>
-                      <div className="relative w-full">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <span
-                                className="font-medium truncate"
-                                style={{
-                                  maxWidth: "200px",
-                                  display: "inline-block",
-                                  overflow: "hidden",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {asset.name}
-                              </span>
-                            </TooltipTrigger>
-                            {asset.name.length > 32 && (
-                              <TooltipContent>{asset.name}</TooltipContent>
-                            )}
-                          </Tooltip>
-                        </TooltipProvider>
-                        {/* Edit icon (shows on hover) */}
-                        <Link to={`/edit-vizulization?resourcePath=${(asset.path).replace("/original/default/", "")}`}
-                                className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1"
-                                // onClick={() => handleEdit(asset)} // You can define this function
-                              >
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger>
-                            
-                                <ImagePlay className="w-4 h-4 text-blue-400 hover:text-blue-500 cursor-pointer" />
-                              
-                            </TooltipTrigger>
 
-                            <TooltipContent>{"Edit"}</TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                        </Link>
+                      {/* Name + Icon Wrapper */}
+                      <div className="relative w-full pr-6">
+                        <div className=" flex items-center justify-between">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="font-medium truncate max-w-[14rem] inline-block whitespace-nowrap overflow-hidden">
+                                  {asset.name}
+                                </span>
+                              </TooltipTrigger>
+                              {asset.name.length > 32 && (
+                                <TooltipContent>{asset.name}</TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
+
+                          {/* Edit Icon */}
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Link
+                                  to={`/edit-vizulization?resourcePath=${asset.path.replace(
+                                    "/original/default/",
+                                    ""
+                                  )}`}
+                                  className={cn(
+                                    "ml-2 p-1 transition-opacity",
+                                    selectedAssets?.some(
+                                      (selected) =>
+                                        selected.resourceId === asset.resourceId
+                                    )
+                                      ? "opacity-100"
+                                      : "opacity-0 group-hover:opacity-100"
+                                  )}
+                                >
+                                  <ImagePlay className="w-4 h-4 text-blue-400 hover:text-blue-500 cursor-pointer" />
+                                </Link>
+                              </TooltipTrigger>
+                              <TooltipContent>Edit</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                     </div>
                   </TableCell>
+
                   <TableCell className="hidden md:table-cell">
                     {
                       AllfolderData.find(
