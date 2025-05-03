@@ -317,7 +317,8 @@ export const uploadResourcess = async (
     const { bucket_name, resource_type } = req.params;
     console.log(req.headers)
     const t_addOn = req.body.t_addOn;
-    const folderId = req.body.folderId || req.headers['x-folder-id'] || req.query.folderId;
+    let folderId;  // if folderId not present then it save data in root folder('default)🦒
+    folderId = req.body.folderId || req.headers['x-folder-id'] || req.query.folderId;
     const { accountId: userAccountId } = req.user;
     console.log(folderId, "folderIdd")
     console.log(req.files)
@@ -333,12 +334,41 @@ export const uploadResourcess = async (
       return res.status(400).json({ message: "Only image type is supported currently." });
     }
 
-    const [folder] = await db.select().from(resources).where(
-      and(eq(resources.resourceId, folderId), eq(resources.type, "folder"))
-    ).limit(1);
-
-    if (!folder) {
-      return res.status(400).json({ message: "Folder does not exist!", success: false });
+    //  =====> 🦒 // If folderId not present then we save in default folder that here we get that Id 
+    let folder;
+    if(folderId){
+      console.log('folder if me aaya hai 👍')
+      let [folderObj] = await db.select().from(resources).where(
+        and(eq(resources.resourceId, folderId), eq(resources.type, "folder"))
+      ).limit(1);
+      
+      if (!folderObj) {
+        return res.status(400).json({ message: "Folder does not exist!", success: false });
+      }
+      folder=folderObj // assign folderdat in folder variable that we use it in outer scope
+      console.log('🦒🦒🦒🦒🦒------------------->folderId',folderId)
+      // console.log('🦒🦒🦒🦒🦒------------------->folderData',folderObj)
+    }else{
+      console.log('folder else me aaya hai 👍👍')
+      let [folderObj] = await db
+        .select()
+        .from(resources)
+        .where(
+          and(
+            eq(resources.accountId, userAccountId),
+            eq(resources.name, "default"),
+            eq(resources.parentResourceId, existingBucket.resourceId),
+            eq(resources.type, "folder")
+          )
+        )
+        .limit(1);
+        folder = folderObj // assign folderdat in folder variable that we use it in outer scope
+        folderId = folderObj.resourceId
+      if (!folderObj) {
+        return res.status(400).json({ message: "Default folder does not exist!", success: false });
+      }
+      console.log('🦒🦒🦒🦒🦒✅------------------->folderId',folderId)
+      console.log('🦒🦒🦒🦒🦒✅------------------->folderData',folderObj)
     }
 
     if (!Array.isArray(req.files) || req.files.length === 0) {
