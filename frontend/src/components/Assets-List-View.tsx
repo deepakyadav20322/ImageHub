@@ -41,6 +41,7 @@ import {
 import AssetActions from "./AssetsActions";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { Badge } from "./ui/badge";
 interface AssetListProps {
   assets: Resource[];
   selectedAssets: Resource[];
@@ -225,7 +226,7 @@ const AssetList = ({
                 Size
               </TableHead>
               <TableHead className="hidden lg:table-cell sticky top-0 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-r">
-                Dimensions
+                Created At
               </TableHead>
               <TableHead className="hidden lg:table-cell sticky top-0 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-r">
                 Access control
@@ -238,17 +239,18 @@ const AssetList = ({
               {assets.map((asset, index) => (
                 <motion.tr
                   key={asset.resourceId}
+                  onDoubleClick={() => toggleAsset(asset.resourceId)} // 👈 double click selection on row
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.2 }}
                   // className="group hover:bg-blue-100/45 hover:dark:bg-blue-400/20 h-[60px]"
                   className={cn(
-                    "group h-[60px] border-b border-slate-300 dark:border-slate-700", // bottom border
+                    "group h-[60px] border-b border-slate-300 dark:border-slate-700 ", // bottom border
                     selectedAssets?.some(
                       (selected) => selected.resourceId === asset.resourceId
                     )
-                      ? "bg-blue-100 dark:bg-blue-800/40 border-b-white dark:border-slate-500"
+                      ? "bg-blue-100 dark:bg-blue-800/40 border-b-white dark:border-slate-500 select-none"
                       : "hover:bg-blue-100/45 hover:dark:bg-blue-400/20"
                   )}
                 >
@@ -331,26 +333,40 @@ const AssetList = ({
                     </div>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
-                    {typeof asset.metadata === "string"
-                      ? asset.metadata
-                      : asset.metadata
-                      ? JSON.stringify(asset.metadata.mimetype)
-                      : "-"}
+                  <Badge variant="outline" className="capitalize">
+            {String(asset?.metadata?.mimetype).split("/").pop()}
+          </Badge>
                   </TableCell>
                   <TableCell className="hidden md:table-cell">
                     {typeof asset.metadata === "string"
                       ? asset.metadata
                       : asset.metadata
-                      ? JSON.stringify(asset.metadata.size) + " bits"
+                      ? (<Badge variant="outline" className="">{(Number(asset.metadata.size) / (1024 * 1024)).toFixed(2)} MB</Badge>)
                       : "-"}
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
+                  <TableCell>
+                  {
+                    (() => {
+                      const date = new Date(asset?.createdAt);
+                      return isNaN(date.getTime()) ? (
+                        <span className="text-muted-foreground">Invalid Date</span>
+                      ) : (
+                        date.toLocaleDateString("en-IN", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        })
+                      );
+                    })()
+                  }
+                  </TableCell>
+                  {/* <TableCell className="hidden md:table-cell">
                     {typeof asset.metadata === "string"
                       ? asset.metadata
                       : asset.metadata
                       ? "null"
                       : "-"}
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell className="hidden lg:table-cell">
                     <div className="flex items-center gap-2">
                       <Upload className="h-4 w-4 text-muted-foreground" />
@@ -372,6 +388,7 @@ const AssetList = ({
                     </div>
                   </TableCell>
                   <TableCell>
+                
                     {/* <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">

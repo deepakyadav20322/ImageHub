@@ -26,18 +26,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  ChevronDown,
-  Download,
-  Trash2,
-  Share2,
-  Search,
-  X,
-} from "lucide-react";
+import { ChevronDown, Download, Trash2, Share2, Search, X } from "lucide-react";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { RootState } from "@/redux/store";
 import { useSelector } from "react-redux";
 import {
+  useGetAllAssetsOfParticularAccountQuery,
   useLazyGetAllAssetsOfParticularAccountQuery,
 } from "@/redux/apiSlice/itemsApi";
 import { AnimatePresence } from "framer-motion";
@@ -47,6 +41,7 @@ import AssetDrawer from "@/components/AssetsInfoDrawer";
 import { Input } from "@/components/ui/input";
 import { TagFilterDropdown } from "@/components/TagFilterDropdown";
 import { getColumns } from "./GetColumnOfAllAssets";
+import { SortDropdown } from "./TableShortDropdown";
 
 type ViewMode = "list" | "card";
 
@@ -59,9 +54,7 @@ const AssetsManagerTable = () => {
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const { user, token } = useSelector((state: RootState) => state.auth);
   const { activeBucket } = useSelector((state: RootState) => state.resource);
-  const [sorting, setSorting] = useState([
-    { id: "createdAt", desc: true },
-  ]);
+  const [sorting, setSorting] = useState([{ id: "createdAt", desc: true }]);
 
   const [search, setSearch] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -69,18 +62,14 @@ const AssetsManagerTable = () => {
 
   const [allAssets, setAllAssets] = useState<Resource[]>([]);
   const singleScrollContainerRef = useRef<HTMLDivElement>(null);
-  
+
   // View mode state
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  
+
   // Track column resizing
   const [columnSizing, setColumnSizing] = useState({});
   const [tableWidth, setTableWidth] = useState(0);
 
-  const clearSearch = () => {
-    setSearch("");
-  };
-  
   const [getAllAssets, { isLoading }] =
     useLazyGetAllAssetsOfParticularAccountQuery();
 
@@ -103,6 +92,37 @@ const AssetsManagerTable = () => {
       setAllAssets([]);
     }
   };
+
+  const clearSearch = () => {
+    setSearch("");
+    console.log("run fer");
+    // fetchAssets() -------- not work because setsearch immidiatly not updated
+    getAllAssets({
+      accountId: user?.accountId,
+      token: token ?? "",
+      bucketId: activeBucket,
+      search: "", // Explicit empty string
+      tags: selectedTags,
+      sort_by: sortBy,
+    })
+      .unwrap()
+      .then((response) => {
+        setAllAssets(response || []);
+      })
+      .catch((error) => {
+        console.error("Error fetching assets:", error);
+        setAllAssets([]);
+      });
+  };
+
+  //   // Effect to handle search changes with debounce
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     fetchAssets();
+  //   }, 300);
+
+  //   return () => clearTimeout(timer);
+  // }, [search, selectedTags, sortBy, activeBucket]);
 
   const showingText = () => {
     const start = pagination.pageIndex * pagination.pageSize + 1;
@@ -161,6 +181,20 @@ const AssetsManagerTable = () => {
     setTableWidth(width);
   }, [columnSizing, table]);
 
+  const handleSortChange = (sortValue: string) => {
+    const [id, desc] = sortValue.includes(":")
+      ? sortValue.split(":")
+      : [sortValue, undefined];
+
+    setSortBy(sortValue);
+
+    // Update the table sorting state
+    setSorting([{ id, desc: desc === "desc" }]);
+
+    // Trigger the API call with the new sorting
+    fetchAssets();
+  };
+
   return (
     <div className="mt-14 p-2 py-1">
       <AnimatePresence>
@@ -195,10 +229,18 @@ const AssetsManagerTable = () => {
                   <Button
                     onClick={() => fetchAssets()}
                     size="sm"
-                    className="bg-blue-500 text-white px-4 py-1 rounded"
+                    className="hover:bg-brand bg-blue-600 transition-colors text-white px-4 py-1 rounded cursor-pointer"
                   >
                     Apply
                   </Button>
+                </div>
+                <div className="mx-2">
+                  <SortDropdown
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                    columns={columns} // Pass the columns from your table
+                    onSortChange={handleSortChange}
+                  />
                 </div>
                 <AssetDrawer
                   allSelectedAssets={table
@@ -210,7 +252,7 @@ const AssetsManagerTable = () => {
             </div>
           </div>
         </header>
-        
+
         <motion.div className="flex flex-col h-[calc(100vh-7.8rem)] space-y-1 transition-all">
           {/* Batch actions bar */}
           <motion.div
@@ -218,7 +260,8 @@ const AssetsManagerTable = () => {
             animate={{
               height: table.getSelectedRowModel().rows.length > 0 ? "auto" : 0,
               opacity: table.getSelectedRowModel().rows.length > 0 ? 1 : 0,
-              marginBottom: table.getSelectedRowModel().rows.length > 0 ? 16 : 0,
+              marginBottom:
+                table.getSelectedRowModel().rows.length > 0 ? 16 : 0,
             }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="overflow-hidden"
@@ -247,12 +290,15 @@ const AssetsManagerTable = () => {
           </motion.div>
 
           {/* Single scrollable table container */}
-          <div className="flex-1 overflow-hidden relative rounded border border-[#e7e3e4] dark:border-zinc-500">
-            <div 
-              ref={singleScrollContainerRef} 
-              className="h-full overflow-auto custom-scrollbar"
+          <div className="flex-1 overflow-hidden relative rounded border border-gray-200 dark:border-gray-700 h-full">
+            <div
+              ref={singleScrollContainerRef}
+              className="h-full overflow-auto custom-scrollbar flex-1 flex flex-col"
             >
-              <Table style={{ width: tableWidth > 0 ? `${tableWidth}px` : "100%" }}>
+              <Table
+                style={{ width: tableWidth > 0 ? `${tableWidth}px` : "100%" }}
+                className="h-full "
+              >
                 {/* Fixed table header */}
                 <TableHeader className="sticky top-0 z-10 bg-background">
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -275,15 +321,11 @@ const AssetsManagerTable = () => {
                               onMouseDown={header.getResizeHandler()}
                               onTouchStart={header.getResizeHandler()}
                               className={`
-                                absolute right-0 top-0 h-full w-1
-                                bg-border cursor-col-resize select-none touch-none
-                                hover:bg-primary hover:w-1.5 transition-colors
-                                ${
-                                  header.column.getIsResizing()
-                                    ? "bg-primary w-1.5"
-                                    : ""
-                                }
-                              `}
+                      absolute right-0 top-0 h-full w-1
+                      bg-border cursor-col-resize select-none touch-none
+                      hover:bg-primary hover:w-1.5 transition-colors
+                      ${header.column.getIsResizing() ? "bg-primary w-1.5" : ""}
+                      `}
                             />
                           )}
                         </TableHead>
@@ -291,14 +333,14 @@ const AssetsManagerTable = () => {
                     </TableRow>
                   ))}
                 </TableHeader>
-                
+
                 {/* Table body in the same container */}
-                <TableBody>
+                <TableBody className="h-full min-h-full">
                   {isLoading ? (
                     [...Array(12)].map((_, idx) => (
                       <TableRow key={idx} className="animate-pulse">
                         {table.getAllColumns().map((col, colIndex) => (
-                          <TableCell 
+                          <TableCell
                             key={colIndex}
                             style={{ width: col.getSize() }}
                           >
@@ -308,22 +350,25 @@ const AssetsManagerTable = () => {
                       </TableRow>
                     ))
                   ) : table.getRowModel().rows.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={columns.length}>
+                    <TableRow className="h-inherit dark:hover:bg-black">
+                      <TableCell colSpan={columns.length} className="h-full">
                         <motion.div
-                          className="flex flex-col items-center justify-center py-6 gap-2"
+                          className="flex flex-col items-center justify-center py-6 gap-2 h-full "
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ duration: 0.4 }}
                         >
                           <img
-                            src="/no-data.png"
+                            src="/Empty_State_Illustration_1.svg"
                             alt="No Data"
-                            className="h-32 w-32 opacity-70"
+                            className="h-64 w-64 opacity-95"
                           />
                           <p className="text-sm text-muted-foreground">
                             No assets found
                           </p>
+                          <h2 className="text-lg font-semibold dark:text-slte-100">
+                            Upload assets to this folder
+                          </h2>
                         </motion.div>
                       </TableCell>
                     </TableRow>
@@ -331,7 +376,7 @@ const AssetsManagerTable = () => {
                     table.getRowModel().rows.map((row) => (
                       <TableRow key={row.id}>
                         {row.getVisibleCells().map((cell) => (
-                          <TableCell 
+                          <TableCell
                             key={cell.id}
                             style={{ width: cell.column.getSize() }}
                           >

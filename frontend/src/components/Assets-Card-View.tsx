@@ -493,13 +493,15 @@ const AssetCard: React.FC<AssetCardProps> = ({
         {assets.map((asset) => (
           <motion.div
             key={asset.resourceId}
+            onDoubleClick={() => toggleAsset(asset.resourceId)}
             layout
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="overflow-hidden shadow-sm relative group border-2 hover:border-blue-300  dark:hover:border-slate-600">
+            <Card className={`overflow-hidden shadow-sm relative group border-2 hover:border-blue-300  dark:hover:border-slate-600 ${  selectedAssets?.some(
+                      (selected) => selected.resourceId === asset.resourceId)?'border-blue-300 select-none':''}`}>
               {/* Checkbox + Menu */}
               <div className="absolute top-0 left-2 z-10">
                 <Checkbox
