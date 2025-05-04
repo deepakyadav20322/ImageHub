@@ -19,10 +19,12 @@ import VerifyEmailPage from "./Pages/VerifyEmailPage";
 import TransformationVisulizationPage from "./Pages/TransformVisulizationPage";
 import AllAssetsManagerTable from "./components/AllAssetsTableComponents/AssetsTableList";
 import Billing from "./Pages/private/Settings/Billing";
+import AssetsPublicSharedPage from "./Pages/AssetsPublicSharedPage";
 const App = () => {
   return (
     <Routes>
       <Route path="/" index element={<Home />} />
+      <Route path="/assets" index element={<AssetsPublicSharedPage />} />
 
       {/* <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
