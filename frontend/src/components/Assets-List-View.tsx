@@ -193,7 +193,7 @@ const AssetList = ({
             <TableRow>
               <TableHead className="w-12  z-20 border-r border-muted">
                 <Checkbox
-                  className="border-gray-300 dark:border-zinc-600 rounded-sm text-primary focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-zinc-900"
+                  className="border-gray-300 dark:border-zinc-600 rounded-sm text-primary focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 dark:focus:ring-offset-zinc-900 mr-1"
                   checked={
                     selectedAssets.length === assets.length && assets.length > 0
                   }
@@ -210,7 +210,7 @@ const AssetList = ({
                   }}
                 />
               </TableHead>
-              <TableHead className=" bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-r">
+              <TableHead className=" bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-r pl-3">
                 Display name
               </TableHead>
               <TableHead className="hidden lg:table-cell sticky top-0 bg-white dark:bg-zinc-900 text-gray-900 dark:text-gray-100 border-r">

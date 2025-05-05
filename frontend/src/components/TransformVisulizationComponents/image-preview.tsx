@@ -4,6 +4,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { TransformationParams } from "./image-transformer"
 import { useState } from "react"
+import { Button } from "../ui/button"
+import { DownloadButton } from "./MultiOptionDownloadButtons/DownloadButton"
+import { AnimatePresence,motion } from "framer-motion"
 
 interface ImagePreviewProps {
   originalImage: string
@@ -121,7 +124,15 @@ export function ImagePreview({ originalImage, transformations, transformationUrl
             <TabsTrigger className="cursor-pointer" value="original">Original</TabsTrigger>
           </TabsList>
           <TabsContent value="transformed" className="mt-0">
-            <div className="space-y-2">
+            <AnimatePresence mode="wait">
+          <motion.div
+      key="transformed"
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+      className="space-y-2">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Transformed</p>
               <div
                 className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden"
@@ -139,10 +150,21 @@ export function ImagePreview({ originalImage, transformations, transformationUrl
                   </div>
                 )}
               </div>
-            </div>
+            </motion.div>
+</AnimatePresence>
           </TabsContent>
           <TabsContent value="side-by-side" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <AnimatePresence mode="wait">
+    <motion.div
+      key="transformed"
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.5 }}
+      className="grid grid-cols-1 md:grid-cols-2 gap-4"
+    >
+            
               <div className="space-y-2">
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Original</p>
                 <div className="relative aspect-video bg-gray-100 dark:bg-gray-800 rounded-md overflow-hidden">
@@ -180,7 +202,8 @@ export function ImagePreview({ originalImage, transformations, transformationUrl
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
+            </AnimatePresence>
           </TabsContent>
           <TabsContent value="original" className="mt-0">
             <div className="space-y-2">
@@ -196,6 +219,11 @@ export function ImagePreview({ originalImage, transformations, transformationUrl
           </TabsContent>
          
           <p className="text-sm text-gray-800 pt-1 dark:text-gray-200">This image has been scaled down for viewing purpose. </p>
+          {/* <Button variant={"default"}>Rich download options</Button> */}
+          <DownloadButton
+              imageUrl={transformationUrl}
+              filename={ "image"}
+            />
         </Tabs>
       </CardContent>
     </Card>
