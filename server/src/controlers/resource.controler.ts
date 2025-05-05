@@ -336,19 +336,19 @@ export const uploadResourcess = async (
 
     //  =====> 🦒 // If folderId not present then we save in default folder that here we get that Id 
     let folder;
-    if(folderId){
+    if (folderId) {
       console.log('folder if me aaya hai 👍')
       let [folderObj] = await db.select().from(resources).where(
         and(eq(resources.resourceId, folderId), eq(resources.type, "folder"))
       ).limit(1);
-      
+
       if (!folderObj) {
         return res.status(400).json({ message: "Folder does not exist!", success: false });
       }
-      folder=folderObj // assign folderdat in folder variable that we use it in outer scope
-      console.log('🦒🦒🦒🦒🦒------------------->folderId',folderId)
+      folder = folderObj // assign folderdat in folder variable that we use it in outer scope
+      console.log('🦒🦒🦒🦒🦒------------------->folderId', folderId)
       // console.log('🦒🦒🦒🦒🦒------------------->folderData',folderObj)
-    }else{
+    } else {
       console.log('folder else me aaya hai 👍👍')
       let [folderObj] = await db
         .select()
@@ -362,13 +362,13 @@ export const uploadResourcess = async (
           )
         )
         .limit(1);
-        folder = folderObj // assign folderdat in folder variable that we use it in outer scope
-        folderId = folderObj.resourceId
+      folder = folderObj // assign folderdat in folder variable that we use it in outer scope
+      folderId = folderObj.resourceId
       if (!folderObj) {
         return res.status(400).json({ message: "Default folder does not exist!", success: false });
       }
-      console.log('🦒🦒🦒🦒🦒✅------------------->folderId',folderId)
-      console.log('🦒🦒🦒🦒🦒✅------------------->folderData',folderObj)
+      console.log('🦒🦒🦒🦒🦒✅------------------->folderId', folderId)
+      console.log('🦒🦒🦒🦒🦒✅------------------->folderData', folderObj)
     }
 
     if (!Array.isArray(req.files) || req.files.length === 0) {
@@ -472,16 +472,17 @@ export const uploadResourcess = async (
 
         // 🔽 1. Update usedStorageBytes
         const fileSize = file.size; // already in bytes
+        console.log('📁 size:-', fileSize)
         const [existingStorage] = await db
           .select()
           .from(storage)
           .where(eq(storage.accountId, userAccountId))
           .limit(1);
-
+        console.log("existingStorage", existingStorage)
         if (existingStorage) {
           const currentUsed = parseInt(existingStorage.usedStorageBytes || "0", 10);
           const newUsed = currentUsed + fileSize;
-
+          console.log("currentUsed", currentUsed)
           await db
             .update(storage)
             .set({
@@ -493,6 +494,18 @@ export const uploadResourcess = async (
 
         // 🔽 2. Deduct 1 credit if t_addOn is used
         if (t_addOn && t_addOn.trim() !== "") {
+
+          // First check if credits are available
+          const [creditRecord] = await db
+            .select()
+            .from(credits)
+            .where(eq(credits.accountId, userAccountId))
+            .limit(1);
+
+          if (!creditRecord) {
+            throw new Error("No credit record found for account");
+          }
+
           await db
             .update(credits)
             .set({
@@ -1230,22 +1243,22 @@ export const getAssetsOfParticularFolder = async (
     // });
 
     // ======================================
-          
+
     // Fetch only files directly in this folder
     const filesInFolder = await db
-    .select()
-    .from(resources)
-    .where(
-      and(
-        eq(resources.type, "file"),
-        eq(resources.parentResourceId, folderId)
-      )
-    );
+      .select()
+      .from(resources)
+      .where(
+        and(
+          eq(resources.type, "file"),
+          eq(resources.parentResourceId, folderId)
+        )
+      );
 
-  res.status(200).json({
-    success: true,
-    data: filesInFolder,
-  });
+    res.status(200).json({
+      success: true,
+      data: filesInFolder,
+    });
   } catch (error) {
     next(
       new AppError("Something went wrong during fetching assets of folder", 500)
@@ -2223,8 +2236,8 @@ export const updateApiKeyName = async (req: Request, res: Response, next: NextFu
 export const renameFileResource = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
   try {
     const { bucketName } = req.params;
-    const {resourceId} = req.body
-    console.log("bucketName and resorceId- ",bucketName,resourceId);
+    const { resourceId } = req.body
+    console.log("bucketName and resorceId- ", bucketName, resourceId);
 
     if (!bucketName || !resourceId) {
       res.status(400).json({ message: "bucketName and resorceId required", success: false });
@@ -2262,8 +2275,8 @@ export const renameFileResource = async (req: Request, res: Response, next: Next
         success: false
       });
     }
-    const duration1 = Date.now() - start1; 
-    console.log("Db resorce find duration:",duration1)
+    const duration1 = Date.now() - start1;
+    console.log("Db resorce find duration:", duration1)
     // update the resorce name in bucket 
     function getRenamedS3Key(oldPath: string, newNameVal: string): string {
       // Remove leading /original/ from the path
@@ -2284,10 +2297,10 @@ export const renameFileResource = async (req: Request, res: Response, next: Next
     const newKey = getRenamedS3Key(dbStorePath, newName);
     const sourceKey = `${BUCKET_NAME}/${dbStorePath.replace(/^\/?original\//, "")}`
     const oldKey = `${dbStorePath.replace(/^\/?original\//, "")}`
-console.log("BUCKET_NAME",BUCKET_NAME)
-console.log("dbStorePath",dbStorePath)
-console.log("newKey",newKey)
-console.log("oldKey",oldKey)
+    console.log("BUCKET_NAME", BUCKET_NAME)
+    console.log("dbStorePath", dbStorePath)
+    console.log("newKey", newKey)
+    console.log("oldKey", oldKey)
     // Step 1: Copy to new name
     await s3.send(
       new CopyObjectCommand({
@@ -2310,15 +2323,15 @@ console.log("oldKey",oldKey)
     const [updatedResource] = await db
       .update(resources)
       .set({
-        name: newName+'.'+dbStorePath.split(".").pop(),
-        displayName:  newName+'.'+dbStorePath.split(".").pop(),
+        name: newName + '.' + dbStorePath.split(".").pop(),
+        displayName: newName + '.' + dbStorePath.split(".").pop(),
         path: `/original/${newKey}`,
         updatedAt: new Date()
       })
       .where(eq(resources.resourceId, resourceId))
       .returning();
-      const duration = Date.now() - start; // End time - Start time
-      console.log("s3 rename duration:",duration)
+    const duration = Date.now() - start; // End time - Start time
+    console.log("s3 rename duration:", duration)
 
     return res.status(200).json({
       message: "Resource renamed successfully",
@@ -2328,6 +2341,6 @@ console.log("oldKey",oldKey)
 
   } catch (error) {
     console.log(error);
-    return new AppError('Something went wrong during rename file',500)
+    return new AppError('Something went wrong during rename file', 500)
   }
 }

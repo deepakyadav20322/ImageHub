@@ -9,6 +9,9 @@ import {
   apiKeys,
   resources,
   PasswordResetToken,
+  credits,
+  storage,
+  plans,
 } from "../db/schema";
 import { db } from "../db/db_connect";
 import { and, eq, gt, sql } from "drizzle-orm";
@@ -307,11 +310,40 @@ export const userRegister = async (
 
     // Start a transaction
     await db.transaction(async (tx) => {
-      // Create a new account
-      const newAccount = await tx.insert(accounts).values({}).returning();
+  
+        // 1. Get the default plan (usually Free plan)
+        const [defaultPlan] = await tx
+        .select()
+        .from(plans)
+        .where(sql`${plans.name} = ${"Free"}`) // Assuming 'Free' is your default plan name
+        .limit(1);
+
+      if (!defaultPlan) {
+        throw new AppError("Default plan not found", 500);
+      }
+
+      // 2. Create a new account with the default plan
+      const newAccount = await tx.insert(accounts).values({
+        planId: defaultPlan.planId // Assign the default plan
+      }).returning();
       const accountId = newAccount[0].accountId;
 
-      // Get the super_admin role ID
+      // 3. Initialize storage and credits for the account
+      await tx.insert(storage).values({
+        accountId,
+        planId: defaultPlan.planId,
+        usedStorageBytes: "0" // Start with 0 used storage
+      });
+
+      await tx.insert(credits).values({
+        accountId,
+        planId: defaultPlan.planId,
+        totalCredits: defaultPlan.monthlyCredits,
+        usedCredits: 0 // Start with 0 used credits
+      });
+
+
+    // 4.  Get the super_admin role ID
       const roleResult = await tx
         .select()
         .from(roles)
@@ -453,8 +485,9 @@ export const userRegister = async (
           },
           s3Buckets: {
             original: originalBucketName,
-            transformed: transformedBucketName,
+            // transformed: transformedBucketName,
           },
+          plan: defaultPlan,
         },
       });
     });

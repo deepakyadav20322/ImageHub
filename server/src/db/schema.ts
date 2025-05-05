@@ -38,7 +38,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name", { length: 50 }).notNull(),
   lastName: varchar("last_name", { length: 50 }).notNull(),
   email: text("email").notNull().unique(),
-  password: text("password"), // Optional for Google users
+  password: text("password").default(''), // Optional for Google users
   emailVerified: boolean("email_verified").notNull().default(false),
   googleId: text("google_id").unique(), // Google OAuth users
   refresh_token: text("refresh_token"),
@@ -52,7 +52,7 @@ export const users = pgTable("users", {
     .references(() => roles.roleId, { onDelete: "set null" }),
   invitedBy: uuid("invited_by").references((): any => users.userId, {
     onDelete: "set null",
-  }),
+  }).default(sql`null`),
   product_environments: text("product_environments").array(), // ??this have the environment value which is cloud name/cloud display name
   userType: text("user_type", {
     enum: ["orgnization", "inviteOnly"],
@@ -99,7 +99,7 @@ export const PasswordResetToken = pgTable('password_reset_tokens', {
   userId: uuid('user_id').notNull().references(() => users.userId, { onDelete: 'cascade' }),
 
   accountId: uuid('account_id').references(() => accounts.accountId, { onDelete: 'set null' }),
-  email: varchar('email', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
   token: text('token').notNull(),
 
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
