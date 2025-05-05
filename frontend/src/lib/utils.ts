@@ -49,3 +49,35 @@ export function getDaysLeft(expiryDateString: string): number {
 
   return diffInDays;
 }
+
+
+
+ 
+
+export function formatBytesToMbAndGb(
+  bytesStr: string,
+  options: {
+    precision?: number; // Decimal places (default: 1)
+    forceGB?: boolean;  // Force GB display even for small values
+  } = {}
+): string {
+  const { precision = 1, forceGB = false } = options;
+  const bytes = parseFloat(bytesStr);
+  
+  if (isNaN(bytes)) return "0MB";
+
+  const MB = 1024 * 1024;
+  const GB = 1024 * MB;
+
+  if (forceGB || bytes >= GB) {
+    const gbValue = bytes / GB;
+    return gbValue % 1 === 0 
+      ? `${gbValue}GB` 
+      : `${gbValue.toFixed(precision)}GB`;
+  }
+
+  const mbValue = bytes / MB;
+  return mbValue % 1 === 0
+    ? `${mbValue}MB`
+    : `${mbValue.toFixed(precision)}MB`;
+}

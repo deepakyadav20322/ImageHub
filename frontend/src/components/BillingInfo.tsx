@@ -24,7 +24,7 @@ import { useGetCreditAndStorageQuery } from "@/redux/apiSlice/billingApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { motion } from "framer-motion";
-import { getDaysLeft } from "@/lib/utils";
+import { formatBytesToMbAndGb, getDaysLeft } from "@/lib/utils";
 
 interface UsageCardProps {
   icon: React.ReactNode;
@@ -368,14 +368,47 @@ const BillingInfo = () => {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-sm">
                       <div className="text-muted-foreground">Used</div>
-                      <div className="font-medium text-lg">2.1GB / 5GB</div>
+                      <div className="font-medium text-lg">{formatBytesToMbAndGb(data?.storageData.usedStorageBytes)}/ {formatBytesToMbAndGb(data?.planInfo.maxStorageBytes, { forceGB: true,precision: 2 })}</div>
                     </div>
-                    <Progress value={42} className="h-2" />
+                    {/* <Progress value={42} className="h-2" />
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <div>0GB</div>
                       <div>2.5GB</div>
-                      <div>5GB</div>
-                    </div>
+                      <div>5GB</div> */}
+                    {/* </div> */}
+                     {/** Storage Percentage Calculation */}
+      {(() => {
+        const used = parseFloat(data?.storageData.usedStorageBytes || "0");
+        const total = parseFloat(data?.planInfo.maxStorageBytes || "1");
+        const percentage = Math.min((used / total) * 100, 100);
+
+        // Tailwind-safe color classes
+        const getColor = () => {
+          if (percentage < 50) return "bg-green-500";
+          if (percentage < 90) return "bg-yellow-500";
+          return "bg-red-500";
+        };
+
+        return (
+          <>
+            <motion.div className="h-2 w-full bg-muted rounded-full overflow-hidden dark:bg-[#515154]">
+              <motion.div
+                className={`h-full ${getColor()} transition-all`}
+                style={{ width: "0%" }}
+                animate={{ width: `${percentage}%` }}
+                transition={{ duration: 1 }}
+              />
+            </motion.div>
+
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <div>0%</div>
+              <div>50%</div>
+              <div>100%</div>
+            </div>
+          </>
+        );
+      })()}
+
                   </div>
                 </CardContent>
               </Card>
