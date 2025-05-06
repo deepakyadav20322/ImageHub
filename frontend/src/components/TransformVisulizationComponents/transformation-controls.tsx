@@ -213,10 +213,10 @@ export function TransformationControls({ transformations, onChange, onReset }: T
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="text-sm text-gray-500">{transformations.q || "80"}%</span>
+                <span className="text-sm text-gray-500">{transformations.q || "100"}%</span>
               </div>
               <Slider
-                value={[Number.parseInt(transformations.q || "80")]}
+                value={[Number.parseInt(transformations.q || "100")]}
                 min={1}
                 max={100}
                 step={1}

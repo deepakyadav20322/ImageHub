@@ -22,8 +22,9 @@ import { ProgressIndicator } from "./ProgressIndicator";
 import { StatusMessage } from "./StatusMessage";
 
 import { UrlUpload } from "./UrlUpload";
-import { FileWithPreview, UploadDialogProps, UploadStatus } from "./types";
+import { FileWithPreview, GoogleDriveFile, UploadDialogProps, UploadStatus } from "./types";
 import { UploadTabs } from "./Uploadtabs";
+import { useGoogleDrive } from "@/hooks/useGoogleDrive";
 
 const UploadDialog = ({
   open,
@@ -44,6 +45,7 @@ const UploadDialog = ({
   const [fileUrl, setFileUrl] = useState("");
   const [isUrlLoading, setIsUrlLoading] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
+  const { openPicker, isGoogleApiLoaded } = useGoogleDrive();
 
   const validateFile = useCallback(
     (file: File): { valid: boolean; message?: string } => {
@@ -191,7 +193,7 @@ const UploadDialog = ({
   
     // Create FormData object
     const formData = new FormData();
-  
+
     // Add files to FormData - FIXED VERSION
     files.forEach((file) => {
       // Create a new Blob from the file data
@@ -416,7 +418,7 @@ const UploadDialog = ({
             </AnimatePresence>
           </TabsContent>
 
-          <TabsContent value="google-drive" className="min-h-[300px]">
+          {/* <TabsContent value="google-drive" className="min-h-[300px]">
             <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-400 bg-gray-50  p-6 dark:bg-gray-600/20 dark:hover:bg-blue-600/10">
               <GoogleDrive className="mb-3 h-12 w-12 text-blue-500 opacity-70" />
               <h3 className="text-lg font-medium text-gray-700 dark:text-slate-300">
@@ -429,7 +431,32 @@ const UploadDialog = ({
                 Connect Google Drive
               </Button>
             </div>
-          </TabsContent>
+          </TabsContent> */}
+
+
+// Update the Google Drive tab content
+<TabsContent value="google-drive" className="min-h-[300px]">
+  <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-400 bg-gray-50 p-6 dark:bg-gray-600/20 dark:hover:bg-blue-600/10">
+    <GoogleDrive className="mb-3 h-12 w-12 text-blue-500 opacity-70" />
+    <h3 className="text-lg font-medium text-gray-700 dark:text-slate-300">
+      Connect to Google Drive
+    </h3>
+    <p className="mt-2 text-center text-sm text-gray-500 dark:text-slate-300">
+      Access your Google Drive files and select them for upload
+    </p>
+    <Button 
+      className="mt-4 bg-blue-600 dark:text-white hover:bg-blue-700"
+      onClick={() => openPicker((file) => {
+        setFiles(prev => [...prev, file]);
+        setActiveTab('my-files');
+        toast.success(`Added "${file.name}" from Google Drive`);
+      })}
+      disabled={!isGoogleApiLoaded}
+    >
+      {isGoogleApiLoaded ? 'Select from Google Drive' : 'Loading Google Drive...'}
+    </Button>
+  </div>
+</TabsContent>
 
           <TabsContent value="dropbox" className="min-h-[300px]">
             <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-400 bg-gray-50  p-6 dark:bg-gray-600/20 dark:hover:bg-blue-600/10">

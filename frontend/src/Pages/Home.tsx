@@ -107,7 +107,7 @@ import React from 'react'
 import FeaturesSection from '@/components/landingPageComponents/FeaturesSection'
 
 import HeroSection from '@/components/landingPageComponents/HeroSection'
-
+import ShareButtonOrLink from '@/components/ShareOptionsComponents/ShareButtonOrLink'
 import { lazy, Suspense } from "react"
 import TransformationSection from '@/components/landingPageComponents/TransformationSection'
 
@@ -137,6 +137,8 @@ export default function LandingPage() {
           {/* Content sections */}
           <div className="relative">
             <HeroSection />
+           
+            
             <div className="relative">
               <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white dark:from-gray-950 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-gray-950 to-transparent" />

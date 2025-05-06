@@ -8,9 +8,21 @@ export interface FileWithPreview extends File {
     preview?: string;
     uploadProgress?: number;
     status?: "idle" | "uploading" | "success" | "error";
+    googleDriveData?: GoogleDriveFile;
+    source: "local" | "google-drive" | "dropbox" | "url";
     errorMessage?: string;
   }
   
+  export interface GoogleDriveFile {
+    id: string;
+    name: string;
+    mimeType: string;
+    thumbnailUrl?: string;
+    size?: number;
+    source: "google-drive";
+  }
+  
+
   export type UploadStatus = "idle" | "success" | "error";
   
   export interface UploadDialogProps {
