@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { S3Client, DeleteObjectsCommand, ListObjectsV2Command, ListObjectsV2CommandOutput, DeleteObjectCommand, CopyObjectCommand } from '@aws-sdk/client-s3'
 import { InvokeCommand, Lambda } from "@aws-sdk/client-lambda";
 import multer from "multer";
-import { apiKeys, credits, resources, resourceTags, storage } from "../db/schema";
+import { apiKeys, assetsPublicShare, credits, resources, resourceTags, storage } from "../db/schema";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "../db/db_connect";
 import AppError from "../utils/AppError";
@@ -2344,3 +2344,182 @@ export const renameFileResource = async (req: Request, res: Response, next: Next
     return new AppError('Something went wrong during rename file', 500)
   }
 }
+// ----------------------------------------------------------------------------------
+// Share link functionality
+export const getSharePublicLink = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { sharePublicLinkId } = req.params;
+    if (!sharePublicLinkId) {
+      return res.status(400).json({
+        message: "Share public Id required",
+        success: false
+      })
+    }
+
+    const shareLinks = await db
+      .select()
+      .from(assetsPublicShare)
+      .where(
+        and(
+          eq(assetsPublicShare.assetShareId, sharePublicLinkId),
+        )
+      );
+
+    return res.status(200).json({
+      success: true,
+      data:
+        shareLinks
+    });
+
+  } catch (error) {
+    console.error("Error getting public share links:", error);
+    next(new AppError("Failed to get share links", 500));
+  }
+};
+
+export const AddSharePublicLink = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { accountId, userId } = req.user;
+    const { resourceId, startDate, endDate, url } = req.body;
+
+    if (!resourceId) {
+      return res.status(400).json({
+        success: false,
+        message: "Resource ID is required"
+      });
+    }
+
+    // Check if resource exists and belongs to account
+    const [resource] = await db
+      .select()
+      .from(resources)
+      .where(
+        and(
+          eq(resources.resourceId, resourceId),
+          eq(resources.accountId, accountId),
+          eq(resources.type, 'file')
+        )
+      )
+      .limit(1);
+
+    if (!resource) {
+      return res.status(404).json({
+        success: false,
+        message: "Resource not found or you don't have permission to share it"
+      });
+    }
+
+    // Check if share link already exists for this resource
+    const sharePublicLink = await db
+      .select()
+      .from(assetsPublicShare)
+      .where(
+        and(
+          eq(assetsPublicShare.shareByUserId, userId),
+          eq(assetsPublicShare.resourceId, resourceId),
+          eq(assetsPublicShare.assetAccountId, accountId),
+        )
+      );
+    if (sharePublicLink) {
+      return res.status(400).json({
+        success: false,
+        message: "Share link already exists for this resource"
+      });
+    }
+    // Validate dates
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    // Validate that end is after start
+    if (end <= start) {
+      return res.status(400).json({
+        success: false,
+        message: "End date must be after start date"
+      });
+    }
+
+    if (start >= end) {
+      return res.status(400).json({
+        success: false,
+        message: "End date must be after start date"
+      });
+    }
+
+
+    // Create share link
+    const [shareLink] = await db
+      .insert(assetsPublicShare)
+      .values({
+        resourceId: resourceId,
+        shareByUserId: userId,
+        assetAccountId: accountId,
+        assetAbsolutrURL: `${process.env.SERVER_BASE_URL}/public/${url}`,
+        assetRelativeURL: url,
+        startDate: start,
+        endDate: end
+      })
+      .returning();
+
+    return res.status(200).json({
+      success: true,
+      data: shareLink
+    });
+
+  } catch (error) {
+    console.error("Error creating share link:", error);
+    next(new AppError("Failed to create share link", 500));
+  }
+};
+
+export const deletePublicShareLink = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { accountId, userId } = req.user;
+    const { assetShareId } = req.query;
+
+    if (!assetShareId) {
+      return res.status(400).json({
+        success: false,
+        message: "Asset public share ID is required"
+      });
+    }
+
+    const result = await db
+      .delete(assetsPublicShare)
+      .where(
+        and(
+          eq(assetsPublicShare.assetShareId, assetShareId as string),
+          eq(assetsPublicShare.shareByUserId, userId),
+          eq(assetsPublicShare.assetAccountId, accountId)
+        )
+      )
+      .returning();
+
+    if (!result.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Share link not found or you don't have permission to delete it"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Share link deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Error removing share link:", error);
+    next(new AppError("Failed to remove share link", 500));
+  }
+};

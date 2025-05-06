@@ -392,6 +392,22 @@ export const storage = pgTable('storage', {
 
 
 
+export const assetsPublicShare = pgTable('assetsPublicShare', {
+  assetShareId: uuid('assetShareId').primaryKey().defaultRandom(),
+  shareByUserId:uuid('user_id')
+  .references(() => users.userId, { onDelete: 'cascade' }),
+  assetAccountId:uuid('account_id').references(()=> accounts.accountId, { onDelete: 'cascade' }),
+  assetAbsolutrURL: text('assetAbsolutrURL').notNull(),
+  assetRelativeURL: text('assetRelativeURL').notNull(),
+  resourceId: uuid("resource_id")
+    .notNull()
+    .references(() => resources.resourceId, { onDelete: "cascade" }),
+  startDate: timestamp('startDate', { withTimezone: true }).notNull(),
+  endDate: timestamp('endDate', { withTimezone: true }).notNull(),
+  createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
+});
+
+
 
 // <<<===================Below thing use when we want to apply individula file/resource permission provide when it public =================>>>>
 

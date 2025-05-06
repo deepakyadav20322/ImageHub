@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express'
 
-import { findAndOptimizeResource, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources, createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, uploadResourcess, deleteSingleAsset, getAllAssetsOfParticularAccount, AddTagsOnResourceFile, getAllTagsOfAccount, toggleApiKeyStatus, deleteApiKeyById, createApiKeyAndSecret, getAllApiKeys, updateApiKeyName, deleteFolderOfBucketWithAllChildItems, renameFileResource } from '../controlers/resource.controler'
+import { findAndOptimizeResource, getAllBucketsForAccount, getAllResources, getAssetsOfParticularFolder, getCurrentFoldersWithAllParents, uploadResources, createFolder, getAllFoldersDataByAccountId, getRootFolderOfBucketOfAccount, uploadResourcess, deleteSingleAsset, getAllAssetsOfParticularAccount, AddTagsOnResourceFile, getAllTagsOfAccount, toggleApiKeyStatus, deleteApiKeyById, createApiKeyAndSecret, getAllApiKeys, updateApiKeyName, deleteFolderOfBucketWithAllChildItems, renameFileResource, getSharePublicLink, AddSharePublicLink, deletePublicShareLink } from '../controlers/resource.controler'
 import authMiddleware from '../middlewares/auth.middleware';
 import { authenticateApiKey } from '../middlewares/authenticateApiKey.middleware';
 import multer from 'multer';
@@ -50,6 +50,10 @@ router.put('/toggle-api-key', authMiddleware, toggleApiKeyStatus);
 router.get('/get-apiKey', authMiddleware, getAllApiKeys);
 router.patch('/update-apiKey/:apiKeyId', authMiddleware, updateApiKeyName);
 router.patch('/rename_resourcefile/:bucketName', authMiddleware, renameFileResource);
+
+router.get('/share-public-link',getSharePublicLink);
+router.post('/share-public-link',AddSharePublicLink);
+router.delete('/share-public-link',deletePublicShareLink)
 
 
 
