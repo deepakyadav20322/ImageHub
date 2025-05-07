@@ -118,23 +118,23 @@ const folderApi = authApi.injectEndpoints({
       Resource[],
       { bucketName: string; resourceType: string; files: FormData; token: string; folderId: string }
     >({
-      query: ({ bucketName, resourceType='image', files, token, folderId }) => ({
+      query: ({ bucketName, resourceType = 'image', files, token, folderId }) => ({
         url: `/resource/${bucketName}/${resourceType}/upload?folderId=${folderId}`,
         method: 'POST',
         body: files,
         headers: {
           Authorization: `Bearer ${token}`,
           'x-folder-id': folderId,
-         
+
         }
       }),
       transformResponse: (response: { success: boolean; data: Resource[] }) => response.data,
       invalidatesTags: (result, error, arg) => [
         { type: "Asset", id: arg.folderId },
-        { type: "AllAssets", id:arg.folderId }, // ✅ This will refresh account-level assets of the bucket
+        { type: "AllAssets", id: arg.folderId }, // ✅ This will refresh account-level assets of the bucket
         { type: "BillingPlan" }, // ✅ Revalidate billing plan when assets are uploaded
       ],
-     
+
     }),
 
     deleteAssetOfFolder: builder.mutation<
@@ -155,9 +155,9 @@ const folderApi = authApi.injectEndpoints({
 
     getAllAssetsOfParticularAccount: builder.query<
       Resource[],
-      { accountId: string; token: string; bucketId: string,search?:string,tags?:string[],sort_by?:string }
+      { accountId: string; token: string; bucketId: string, search?: string, tags?: string[], sort_by?: string }
     >({
-      query: ({ accountId, token, bucketId ,search,tags,sort_by}) => ({
+      query: ({ accountId, token, bucketId, search, tags, sort_by }) => ({
         url: `/resource/${bucketId}/${accountId}/getAll-assets?search=${search}&sort_by=${sort_by}&tags=${tags?.join(',')}`,
 
         method: 'GET',
@@ -172,153 +172,216 @@ const folderApi = authApi.injectEndpoints({
     }),
 
     addTagsToAccount: builder.mutation<
-    { success: boolean; message: string },
-    {accountId:string ,bucketId:string, resourceId: string; token: string; tags: string[] }
-  >({
-    query: ({accountId,bucketId, resourceId, token, tags }) => ({
-      url: `resource/${bucketId}/addtags/${resourceId}`,
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: { tags },
+      { success: boolean; message: string },
+      { accountId: string, bucketId: string, resourceId: string; token: string; tags: string[] }
+    >({
+      query: ({ accountId, bucketId, resourceId, token, tags }) => ({
+        url: `resource/${bucketId}/addtags/${resourceId}`,
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: { tags },
+      }),
+      // Optimistic update to append tags to the existing list of tags in the Redux state
+      // onQueryStarted: async ({ accountId, tags }, { dispatch, queryFulfilled }) => {
+      //   try {
+      //     // If the request is successful, update the tags cache
+      //     const { data } = await queryFulfilled;
+      //     dispatch(
+      //       folderApi.util.updateQueryData('getAllTagsOfAccount', { accountId, token: '' }, (draft) => {
+      //         draft.push(...tags);
+      //       })
+      //     );
+      //   } catch (err) {
+      //     console.error('Error adding tags:', err);
+      //   }
+      // },
+      invalidatesTags: (result, error, { accountId }) => [{ type: 'Tags', id: accountId }],
     }),
-    // Optimistic update to append tags to the existing list of tags in the Redux state
-    // onQueryStarted: async ({ accountId, tags }, { dispatch, queryFulfilled }) => {
-    //   try {
-    //     // If the request is successful, update the tags cache
-    //     const { data } = await queryFulfilled;
-    //     dispatch(
-    //       folderApi.util.updateQueryData('getAllTagsOfAccount', { accountId, token: '' }, (draft) => {
-    //         draft.push(...tags);
-    //       })
-    //     );
-    //   } catch (err) {
-    //     console.error('Error adding tags:', err);
-    //   }
-    // },
-    invalidatesTags: (result, error, { accountId }) => [{ type: 'Tags', id: accountId }],
+
+    getAllTagsOfAccount: builder.query<
+      { success: boolean; data: string[] }, // Assuming tags are just strings
+      { bucketId: string, accountId: string; token: string }
+    >({
+      query: ({ bucketId, accountId, token }) => ({
+        url: `resource/${bucketId}/getAllTags`,
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }),
+      transformResponse: (response: { success: boolean; data: string[] }) => ({ success: response.success, data: response.data }),
+      providesTags: (result, error, { accountId }) => [
+        { type: 'Tags', id: accountId },
+      ],
+    }),
+
+    createApiKey: builder.mutation<
+      { success: boolean; data: any },
+      { token: string; name: string }
+    >({
+      query: ({ token, name }) => ({
+        url: `/resource/create-apiKey`,
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: { apiName: name }
+      }),
+      transformResponse: (response: { success: boolean; data: any }) => response
+    }),
+
+    deleteApiKey: builder.mutation<
+      { success: boolean, message: string },
+      { keyId: string; token: string }
+    >({
+      query: ({ keyId, token }) => ({
+        url: `/resource/delete-apiKey/${keyId}`,
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+    }),
+
+    getAllApiKeys: builder.query<
+      { success: boolean; data: any[] },
+      { token: string }
+    >({
+      query: ({ token }) => ({
+        url: `/resource/get-apiKey`,
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }),
+      transformResponse: (response: { success: boolean; data: any[] }) => response
+    }),
+
+    updateApiKeyName: builder.mutation<
+      {
+        message?: string; success: boolean; data: any
+      },
+      { keyId: string; token: string; name: string }
+    >({
+      query: ({ keyId, token, name }) => ({
+        url: `/resource/update-apiKey/${keyId}`,
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: { apiName: name }
+      }),
+      transformResponse: (response: { success: boolean; data: any }) => response,
+
+    }),
+
+    toggleApiKeyStatus: builder.mutation<
+      { success: boolean; message: string },
+      { keyId: string; token: string }
+    >({
+      query: ({ keyId, token }) => ({
+        url: `/resource/toggle-apiKeys/${keyId}`,
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }),
+
+    }),
+
+    rename_resorcefile:builder.mutation<
+      { success: boolean; message: string },
+      { resourceId: string, bucketName: string, newName: string, token: string }
+    >({
+      query: ({ resourceId, bucketName, newName, token }) => ({
+        url: `/resource/rename_resourcefile/${bucketName}`,
+        method: 'PATCH',
+        body: {
+          resourceId,
+          newName
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }),
+
+    }),
+
+    addPublicShareLink: builder.mutation<any,
+      { resourceId: string; startDate?: Date; endDate?: Date; token: string; }
+    >({
+      query: ({ resourceId, startDate, endDate, token }) => ({
+        url: `/resource/share-public-link`,
+        method: 'POST',
+        body: {
+          resourceId,
+          startDate,
+          endDate
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }),
+
+    }),
+
+    deletePublickShareLink: builder.mutation<any,
+      { assetShareId: string;  token: string; }
+    >({
+      query: ({ assetShareId, token }) => ({
+        url: `/resource/share-public-link`,
+        method: 'DELETE',
+        body: {
+          assetShareId
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }),
+
+    }),
+    // this is for when we show in popup
+    getPublicLinkShare: builder.query<any, { resourceId: string; token: string }>({
+      query: ({ resourceId, token }) => ({
+        url: `/resource/share-public-link/${resourceId}`,
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+    }) ,
+      //  this is for when we show in assets page for download ----
+      getPublicLinkShareByAssetShareId: builder.query<any, { assetShareId: string; }>({
+        query: ({ assetShareId }) => ({
+          url: `/resource/getPublicLink/${assetShareId}`,
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+      })
+
   }),
+  
 
-  getAllTagsOfAccount: builder.query<
-  { success: boolean; data: string[] }, // Assuming tags are just strings
-  { bucketId:string,accountId: string; token: string }
->({
-  query: ({bucketId, accountId, token }) => ({
-    url: `resource/${bucketId}/getAllTags`,
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  }),
-  transformResponse: (response: { success: boolean; data: string[] }) => ({ success: response.success, data: response.data }),
-  providesTags: (result, error, { accountId }) => [
-    { type: 'Tags', id: accountId },
-  ],
-}),
-
-createApiKey: builder.mutation<
-  { success: boolean; data: any },
-  { token: string; name: string }
->({
-  query: ({ token, name }) => ({
-    url: `/resource/create-apiKey`,
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: { apiName:name }
-  }),
-  transformResponse: (response: { success: boolean; data: any }) => response
-}),
-
-deleteApiKey: builder.mutation<
-  { success: boolean,message:string },
-  {  keyId: string; token: string }
->({
-  query: ({ keyId, token }) => ({
-    url: `/resource/delete-apiKey/${keyId}`,
-    method: 'DELETE',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  })
-}),
-
-getAllApiKeys: builder.query<
-{ success: boolean; data: any[] },
-{ token: string }
->({
-query: ({ token }) => ({
-  url: `/resource/get-apiKey`,
-  method: 'GET',
-  headers: {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  }
-}),
-transformResponse: (response: { success: boolean; data: any[] }) => response
-}),
-
-updateApiKeyName: builder.mutation<
-  {
-      message?: string; success: boolean; data: any 
-},
-  { keyId: string; token: string; name: string }
->({
-  query: ({ keyId, token, name }) => ({
-    url: `/resource/update-apiKey/${keyId}`,
-    method: 'PATCH',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    },
-    body: { apiName: name }
-  }),
-  transformResponse: (response: { success: boolean; data: any }) => response,
- 
-}),
-
-toggleApiKeyStatus: builder.mutation<
-  { success: boolean; message: string },
-  { keyId: string; token: string }
->({
-  query: ({ keyId, token }) => ({
-    url: `/resource/toggle-apiKeys/${keyId}`,
-    method: 'PATCH',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  }),
-
-}),
-
-rename_resorcefile: builder.mutation<
-  { success: boolean; message: string },
-  {resourceId:string,bucketName:string, newName:string,token: string }
->({
-  query: ({resourceId, bucketName, newName,token }) => ({
-    url: `/resource/rename_resourcefile/${bucketName}`,
-    method: 'PATCH',
-    body:{
-      resourceId,
-      newName
-    },
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
-  }),
-
-}),
-
-  })
 });
 
 export const {
+  useGetPublicLinkShareByAssetShareIdQuery,
+  useAddPublicShareLinkMutation,
+  useDeletePublickShareLinkMutation,
+  useGetPublicLinkShareQuery,
   useRename_resorcefileMutation,
   useUpdateApiKeyNameMutation,
   useToggleApiKeyStatusMutation,

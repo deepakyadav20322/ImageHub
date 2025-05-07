@@ -107,18 +107,18 @@ export default function UseCasesSection() {
           </p>
         </motion.div>
 
-        {/* Update the card rendering to use the new styling */}
+  
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate={isInView ? "visible" : "hidden"}
-          className="mt-16 grid gap-6 sm:grid-cols-2"
+          className="mt-16 grid gap-6 sm:grid-cols-2 "
         >
           {useCases.map((useCase, index) => (
             <motion.div
               key={index}
               variants={itemVariants}
-              className="group relative overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm hover:shadow-md transition-all duration-300"
+              className="group relative overflow-hidden rounded-xl border-2 border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 p-6 shadow-sm hover:shadow-md transition-all duration-300  hover:border-blue-500"
             >
               <div
                 className={cn(

@@ -11,9 +11,10 @@ interface ShareButtonProps {
   }
   className?: string,
   type?: 'button'|'link'
+  previousPopupClose?:any
 }
 
-const ShareButton = ({ imageData, className,type='button' }: ShareButtonProps)=> {
+const ShareButtonOrLink = ({ imageData, className,type='button',previousPopupClose }: ShareButtonProps)=> {
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
@@ -37,9 +38,9 @@ const ShareButton = ({ imageData, className,type='button' }: ShareButtonProps)=>
         Share Public link
       </Button>)}
 
-      <ShareLinksModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} imageData={imageData} />
+      <ShareLinksModal isOpen={isModalOpen} onClose={() => { setIsModalOpen(false); previousPopupClose(); }} imageData={imageData} />
     </>
   )
 }
 
-export default ShareButton
+export default ShareButtonOrLink

@@ -107,7 +107,6 @@ import React from 'react'
 import FeaturesSection from '@/components/landingPageComponents/FeaturesSection'
 
 import HeroSection from '@/components/landingPageComponents/HeroSection'
-import ShareButtonOrLink from '@/components/ShareOptionsComponents/ShareButtonOrLink'
 import { lazy, Suspense } from "react"
 import TransformationSection from '@/components/landingPageComponents/TransformationSection'
 
@@ -116,6 +115,7 @@ const UseCasesSection = lazy(() => import("@/components/landingPageComponents/Us
 const PricingSection = lazy(() => import("@/components/landingPageComponents/PricingSection"))
 const CTASection = lazy(() => import("@/components/landingPageComponents/CTASection"))
 const FooterSection = lazy(() => import("@/components/landingPageComponents/FooterSection"))
+
 
 // Add loading fallbacks
 const SectionLoading = () => (
@@ -127,6 +127,7 @@ const SectionLoading = () => (
 export default function LandingPage() {
   return (
       <div className="flex min-h-screen flex-col bg-white dark:bg-gray-950">
+         
         {/* <Header /> */}
         <main className="relative flex-1">
           {/* Global background decorative elements */}
@@ -138,7 +139,7 @@ export default function LandingPage() {
           <div className="relative">
             <HeroSection />
            
-            
+          
             <div className="relative">
               <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white dark:from-gray-950 to-transparent" />
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-white dark:from-gray-950 to-transparent" />

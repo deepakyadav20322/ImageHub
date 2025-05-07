@@ -123,9 +123,25 @@ baseQuery:customBaseQuery,
       }
     }),
     
+    userProfileUpdate: builder.mutation({
+      query: ({firstName,lastName,userId,token}) => ({
+        url: `/user/profile-update/${userId}`,
+        method: 'PATCH',
+        body: {firstName,lastName},
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization:token
+        }
+      }),
+      invalidatesTags: ['Auth'],
+      transformErrorResponse: (response: any) => {
+        return response.data;
+      }
+    })
     
   }),
 });
 
-export const { useLoginMutation,useSignUpMutation,useForgetPasswordMutation,useResetPasswordMutation ,useWelcomeOnboardingMutation} = authApi;
+export const { useLoginMutation,useSignUpMutation,useForgetPasswordMutation,useResetPasswordMutation ,useWelcomeOnboardingMutation,useUserProfileUpdateMutation} = authApi;
 export default authApi;

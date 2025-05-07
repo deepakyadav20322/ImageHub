@@ -144,7 +144,13 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash2, Share2, Pencil } from "lucide-react";
+import {
+  MoreHorizontal,
+  Trash2,
+  Share2,
+  Pencil,
+  Share2Icon,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -153,15 +159,33 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useDeleteAssetOfFolderMutation, useGetAssetsOfFolderQuery, useRename_resorcefileMutation } from "@/redux/apiSlice/itemsApi";
+import {
+  useDeleteAssetOfFolderMutation,
+  useGetAssetsOfFolderQuery,
+  useRename_resorcefileMutation,
+} from "@/redux/apiSlice/itemsApi";
 import { Resource } from "@/lib/types";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { RootState } from "@/redux/store";
 import { useSelector } from "react-redux";
 
-import { Form,FormControl, FormField, FormItem, FormLabel, FormMessage } from "./ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "./ui/form";
 import { Input } from "./ui/input";
 import { useForm } from "react-hook-form";
+import ShareLinksModal from "./AttachedAndShareOptionsComponents/ShareLinksModal";
+import ShareButtonOrLink from "./AttachedAndShareOptionsComponents/ShareButtonOrLink";
 
 interface AssetActionsProps {
   asset: Resource;
@@ -170,29 +194,32 @@ interface AssetActionsProps {
   onShare?: (id: string) => void;
 }
 
-
-
-
-export default React.memo(function AssetActions({ 
-  asset, 
+export default React.memo(function AssetActions({
+  asset,
   onShare,
   bucketId,
-  folderId 
+  folderId,
 }: AssetActionsProps) {
-  const [dialogType, setDialogType] = useState<"delete" | "share" |"rename"| null>(null);
-  const user = useSelector((state: RootState) => state.auth.user);
+  const [dialogType, setDialogType] = useState<
+    "delete" | "share" | "rename" | "publicLinkShare" | null
+  >(null);
+  const {user} = useSelector((state: RootState) => state.auth);
   const token = useSelector((state: RootState) => state.auth.token);
- const [renameFile,{isLoading:isRenameLoading}] = useRename_resorcefileMutation()
-  
-  const { refetch } = useGetAssetsOfFolderQuery({
-    folderId: folderId ?? "",
-    token: token || "",
-  }, { skip: !folderId });
+  const [renameFile, { isLoading: isRenameLoading }] =
+    useRename_resorcefileMutation();
+
+  const { refetch } = useGetAssetsOfFolderQuery(
+    {
+      folderId: folderId ?? "",
+      token: token || "",
+    },
+    { skip: !folderId }
+  );
 
   const form = useForm({
     defaultValues: {
-      newName: `${asset?.name?.split(".").slice(0, -1).join(".")}` || ''
-    }
+      newName: `${asset?.name?.split(".").slice(0, -1).join(".")}` || "",
+    },
   });
   const [deleteAsset, { isLoading, error }] = useDeleteAssetOfFolderMutation();
 
@@ -204,7 +231,7 @@ export default React.memo(function AssetActions({
         bucketId,
         folderId,
         assetId: asset.resourceId,
-        token :token|| '',
+        token: token || "",
       }).unwrap();
       toast.success("Asset deleted successfully");
       refetch();
@@ -212,12 +239,22 @@ export default React.memo(function AssetActions({
     } catch {
       toast.error("Failed to delete asset");
     }
-  }, [bucketId, folderId, asset.resourceId, token, deleteAsset, refetch, closeDialog]);
+  }, [
+    bucketId,
+    folderId,
+    asset.resourceId,
+    token,
+    deleteAsset,
+    refetch,
+    closeDialog,
+  ]);
 
   const handleCopyLink = useCallback(() => {
-    console.log(asset.path,"path")
+    console.log(asset.path, "path");
     navigator.clipboard.writeText(
-     `${import.meta.env.VITE_API_URL_V1}/resource/${user?.accountId || '????'}-original/image/upload/${asset.path.replace("/original/default/", "")}`
+      `${import.meta.env.VITE_API_URL_V1}/resource/${
+        user?.accountId || "????"
+      }-original/image/upload/${asset.path.replace("/original/default/", "")}`
     );
     toast.success("Link copied to clipboard");
     closeDialog();
@@ -229,53 +266,71 @@ export default React.memo(function AssetActions({
     closeDialog();
   }, [asset.resourceId, onShare, closeDialog]);
 
-  const dropdownActions = useMemo(() => [
-    {
-      label: "Share",
-      icon: <Share2 color="green" size={14} />,
-      onClick: () => setDialogType("share"),
-      disabled: false
-    },
-    {
-      label: "Delete",
-      icon: <Trash2 color="red" size={14} />,
-      onClick: () => setDialogType("delete"),
-      disabled: false
-    },
-    {
-      label: "Rename",
-      icon: <Pencil color="yellow" size={14} />,
-      onClick: () => setDialogType('rename'),
-      disabled: false
-    }
-  ], []);
+  const dropdownActions = useMemo(
+    () => [
+      {
+        label: "Share",
+        icon: <Share2 color="green" size={14} />,
+        onClick: () => setDialogType("share"),
+        disabled: false,
+      },
+      {
+        label: "Delete",
+        icon: <Trash2 color="red" size={14} />,
+        onClick: () => setDialogType("delete"),
+        disabled: false,
+      },
+      {
+        label: "Rename",
+        icon: <Pencil color="yellow" size={14} />,
+        onClick: () => setDialogType("rename"),
+        disabled: false,
+      },
+      {
+        label: "Public Share Link",
+        icon: <Share2Icon color="blue" size={14} />,
+        onClick: () => setDialogType("publicLinkShare"),
+        disabled: false,
+      },
+    ],
+    []
+  );
 
-
-
-  const handleRenameSubmit = async ({newName}:  {newName: string;}) => {
+  const handleRenameSubmit = async ({ newName }: { newName: string }) => {
     try {
-      console.log('rename value sub',newName)
+      console.log("rename value sub", newName);
 
-      await renameFile({ resourceId: asset.resourceId, newName,token:token??'',bucketName:asset.accountId+'-original' });
-      refetch()
+      await renameFile({
+        resourceId: asset.resourceId,
+        newName,
+        token: token ?? "",
+        bucketName: asset.accountId + "-original",
+      });
+      refetch();
       toast.success("File renamed!");
       closeDialog();
     } catch (error) {
       toast.error("File Rename failed.");
-    } 
+    }
   };
-  
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8 cursor-pointer">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 cursor-pointer"
+          >
             <MoreHorizontal className="h-4 w-4" />
             <span className="sr-only">Open menu</span>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="border-slate-500 dark:bg-zinc-800 ">
+        <DropdownMenuContent
+          align="end"
+          className="border-slate-500 dark:bg-zinc-800 "
+        >
           {dropdownActions.map((action) => (
             <DropdownMenuItem
               key={action.label}
@@ -295,7 +350,7 @@ export default React.memo(function AssetActions({
           <DialogContent
             onCloseAutoFocus={(event) => {
               event.preventDefault();
-              document.body.style.pointerEvents = '';
+              document.body.style.pointerEvents = "";
             }}
           >
             <DialogHeader>
@@ -305,7 +360,11 @@ export default React.memo(function AssetActions({
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={closeDialog} disabled={isLoading}>
+              <Button
+                variant="outline"
+                onClick={closeDialog}
+                disabled={isLoading}
+              >
                 Cancel
               </Button>
               <Button
@@ -323,10 +382,10 @@ export default React.memo(function AssetActions({
       {dialogType === "share" && (
         <Dialog open onOpenChange={closeDialog}>
           <DialogContent
-              onCloseAutoFocus={(event) => {
-                event.preventDefault();
-                document.body.style.pointerEvents = ''
-              }}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              document.body.style.pointerEvents = "";
+            }}
           >
             <DialogHeader>
               <DialogTitle>Share Asset</DialogTitle>
@@ -335,97 +394,141 @@ export default React.memo(function AssetActions({
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-2 mt-4">
-              <Button variant="outline" className="w-full" onClick={handleCopyLink}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleCopyLink}
+              >
                 Copy Link
               </Button>
-              <Button variant="outline" className="w-full" onClick={handleShareEmail}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleShareEmail}
+              >
                 Share via Email
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       )}
-
-{dialogType === "rename" && (
-  <Dialog  open={true}
-  onOpenChange={(open) => {
-    if (!open) {
-      closeDialog();
-      form.reset({
-        newName: asset?.name?.split(".").slice(0, -1).join(".") || "",
-      });
-    }
-  }}>
-    <DialogContent
-    className="border-2 dark:border-gray-500"
-     onInteractOutside={(e) => e.preventDefault()}
-      onCloseAutoFocus={(event) => {
-        event.preventDefault();
-        
-        document.body.style.pointerEvents = '';
-      }}
-    >
-      <DialogHeader>
-        <DialogTitle>Rename File</DialogTitle>
-        <DialogDescription>
-          Rename  <strong>{asset?.name?.split(".").slice(0, -1).join(".")}</strong> to a new name:
-        </DialogDescription>
-      </DialogHeader>
-
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleRenameSubmit)} className="space-y-4 mt-4">
-          <FormField
-            control={form.control}
-            name="newName"
-            rules={{
-              validate: (value) => {
-                const trimmed = value.trim();
-                if (trimmed.length < 3) return "Name must be at least 3 characters long.";
-                if (/[\/\\:\*\?"<>\|]/.test(trimmed)) return "Name contains invalid characters like / \\ : * ? \" < > |";
-                if (/\.\w+$/.test(trimmed)) return "Do not include file extensions liek (.abc)";
-                return true;
-              }
+      {dialogType === "publicLinkShare" && (
+        <Dialog open onOpenChange={closeDialog}>
+          <DialogContent
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              document.body.style.pointerEvents = "";
             }}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>New Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter new file name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          >
+            <DialogHeader>
+              <DialogTitle>Share Asset</DialogTitle>
+              <DialogDescription>
+                Share <strong>{asset.name}</strong> using one of the methods:
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 mt-4">
+              <ShareButtonOrLink
+                previousPopupClose={closeDialog}
+                imageData={{ name: asset.name, id: asset.resourceId }}
+              />
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
-<div className="flex justify-end gap-2">
-  <Button
-    type="button"
-    className="cursor-pointer"
-    variant="outline"
-    onClick={() => {
-      closeDialog();
-      form.reset({
-        newName: asset?.name?.split(".").slice(0, -1).join(".") || "",
-      });
-    }}
-  >
-    Cancel
-  </Button>
-  <Button
-    type="submit"
-    className="bg-blue-500 text-white hover:bg-blue-600 transition-colors cursor-pointer"
-    disabled={isRenameLoading || form.watch("newName") === asset.name}
-  >
-    {isRenameLoading ? "Renaming..." : "Rename"}
-  </Button>
-</div>
+      {dialogType === "rename" && (
+        <Dialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              closeDialog();
+              form.reset({
+                newName: asset?.name?.split(".").slice(0, -1).join(".") || "",
+              });
+            }
+          }}
+        >
+          <DialogContent
+            className="border-2 dark:border-gray-500"
+            onInteractOutside={(e) => e.preventDefault()}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
 
-        </form>
-      </Form>
-    </DialogContent>
-  </Dialog>
-)}
+              document.body.style.pointerEvents = "";
+            }}
+          >
+            <DialogHeader>
+              <DialogTitle>Rename File</DialogTitle>
+              <DialogDescription>
+                Rename{" "}
+                <strong>
+                  {asset?.name?.split(".").slice(0, -1).join(".")}
+                </strong>{" "}
+                to a new name:
+              </DialogDescription>
+            </DialogHeader>
 
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleRenameSubmit)}
+                className="space-y-4 mt-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="newName"
+                  rules={{
+                    validate: (value) => {
+                      const trimmed = value.trim();
+                      if (trimmed.length < 3)
+                        return "Name must be at least 3 characters long.";
+                      if (/[\/\\:\*\?"<>\|]/.test(trimmed))
+                        return 'Name contains invalid characters like / \\ : * ? " < > |';
+                      if (/\.\w+$/.test(trimmed))
+                        return "Do not include file extensions liek (.abc)";
+                      return true;
+                    },
+                  }}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>New Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter new file name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    className="cursor-pointer"
+                    variant="outline"
+                    onClick={() => {
+                      closeDialog();
+                      form.reset({
+                        newName:
+                          asset?.name?.split(".").slice(0, -1).join(".") || "",
+                      });
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-blue-500 text-white hover:bg-blue-600 transition-colors cursor-pointer"
+                    disabled={
+                      isRenameLoading || form.watch("newName") === asset.name
+                    }
+                  >
+                    {isRenameLoading ? "Renaming..." : "Rename"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 });
