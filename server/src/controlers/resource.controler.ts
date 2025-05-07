@@ -2352,27 +2352,40 @@ export const getSharePublicLink = async (
   next: NextFunction
 ): Promise<any> => {
   try {
-    const { sharePublicLinkId } = req.params;
-    if (!sharePublicLinkId) {
+    const { accountId, userId } = req.user;
+    const { resourceId } = req.params;
+
+    if (!resourceId) {
       return res.status(400).json({
-        message: "Share public Id required",
+        message: "Resource ID is required",
         success: false
-      })
+      });
     }
 
+
+
+    // Find share links for the specific resource, user and account
     const shareLinks = await db
       .select()
       .from(assetsPublicShare)
       .where(
         and(
-          eq(assetsPublicShare.assetShareId, sharePublicLinkId),
+          eq(assetsPublicShare.resourceId, resourceId),
+          eq(assetsPublicShare.shareByUserId, userId),
+          eq(assetsPublicShare.assetAccountId, accountId)
         )
       );
 
+    if (!shareLinks.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No share links found for this resource"
+      });
+    }
+
     return res.status(200).json({
       success: true,
-      data:
-        shareLinks
+      data: shareLinks[0]
     });
 
   } catch (error) {
@@ -2388,7 +2401,9 @@ export const AddSharePublicLink = async (
 ): Promise<any> => {
   try {
     const { accountId, userId } = req.user;
-    const { resourceId, startDate, endDate, url } = req.body;
+    const { resourceId, startDate, endDate } = req.body;
+
+    console.log(req.body)
 
     if (!resourceId) {
       return res.status(400).json({
@@ -2428,7 +2443,7 @@ export const AddSharePublicLink = async (
           eq(assetsPublicShare.assetAccountId, accountId),
         )
       );
-    if (sharePublicLink) {
+    if (sharePublicLink.length > 0) {
       return res.status(400).json({
         success: false,
         message: "Share link already exists for this resource"
@@ -2453,7 +2468,7 @@ export const AddSharePublicLink = async (
       });
     }
 
-
+    const url = (resource.path).replace(/^\/original\/default\//, '');
     // Create share link
     const [shareLink] = await db
       .insert(assetsPublicShare)
@@ -2461,8 +2476,8 @@ export const AddSharePublicLink = async (
         resourceId: resourceId,
         shareByUserId: userId,
         assetAccountId: accountId,
-        assetAbsolutrURL: `${process.env.SERVER_BASE_URL}/public/${url}`,
-        assetRelativeURL: url,
+        assetAbsoluteURL: `${process.env.SERVER_BASE_URL}/api/v1/resource/${req.user.accountId + '-original'}/image/upload/${url}`,
+        assetRelativeURL: `/api/v1/resource/${req.user.accountId + '-original'}/image/upload/${url}`,
         startDate: start,
         endDate: end
       })
@@ -2486,7 +2501,7 @@ export const deletePublicShareLink = async (
 ): Promise<any> => {
   try {
     const { accountId, userId } = req.user;
-    const { assetShareId } = req.query;
+    const { assetShareId } = req.params;
 
     if (!assetShareId) {
       return res.status(400).json({
@@ -2521,5 +2536,135 @@ export const deletePublicShareLink = async (
   } catch (error) {
     console.error("Error removing share link:", error);
     next(new AppError("Failed to remove share link", 500));
+  }
+};
+
+export const UpdateSharePublicLink = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { accountId, userId } = req.user;
+    const { assetShareId } = req.params;
+    const { startDate, endDate } = req.body;
+
+    if (!assetShareId) {
+      return res.status(400).json({
+        success: false,
+        message: "Asset share ID is required"
+      });
+    }
+
+    // Verify the share link exists and belongs to the user
+    const [existingShare] = await db
+      .select()
+      .from(assetsPublicShare)
+      .where(
+        and(
+          eq(assetsPublicShare.assetShareId, assetShareId),
+          eq(assetsPublicShare.shareByUserId, userId),
+          eq(assetsPublicShare.assetAccountId, accountId)
+        )
+      )
+      .limit(1);
+
+    if (!existingShare) {
+      return res.status(404).json({
+        success: false,
+        message: "Share link not found or you don't have permission to modify it"
+      });
+    }
+
+    // Validate and parse dates
+    const start = startDate ? new Date(startDate) : existingShare.startDate;
+    const end = endDate ? new Date(endDate) : existingShare.endDate;
+
+    // Validate that dates are valid and end is after start
+    if (!start || !end || end <= start) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid dates or end date must be after start date"
+      });
+    }
+
+    // Update the share link
+    const [updatedShare] = await db
+      .update(assetsPublicShare)
+      .set({
+        startDate: start,
+        endDate: end,
+      })
+      .where(
+        and(
+          eq(assetsPublicShare.assetShareId, assetShareId),
+          eq(assetsPublicShare.shareByUserId, userId),
+          eq(assetsPublicShare.assetAccountId, accountId)
+        )
+      )
+      .returning();
+
+    return res.status(200).json({
+      success: true,
+      data: updatedShare,
+      message: "Share link updated successfully"
+    });
+  } catch (error) {
+    console.error("Error updating share link:", error);
+    next(new AppError('Something went wrong during date update', 500));
+  }
+};
+
+export const getSharePublicLinkByAssetShareID = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<any> => {
+  try {
+    const { assetShareId } = req.params;
+
+    if (!assetShareId) {
+      return res.status(400).json({
+        success: false,
+        message: "Asset share ID is required"
+      });
+    }
+
+    // Find share link by ID
+    const [shareLink] = await db
+      .select()
+      .from(assetsPublicShare)
+      .where(eq(assetsPublicShare.assetShareId, assetShareId))
+      .limit(1);
+
+    if (!shareLink) {
+      return res.status(404).json({
+        success: false,
+        message: "Share link not found"
+      });
+    }
+
+    const [resourceData] =  await db
+    .select()
+    .from(resources)
+    .where(eq(resources.resourceId,shareLink.resourceId)).limit(1)
+
+    // Check if link has expired
+    const now = new Date();
+    if (now < shareLink.startDate || (shareLink.endDate && now > shareLink.endDate)) {
+      return res.status(403).json({
+        success: false,
+        message: "Share link has expired or is not yet valid"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {...shareLink,name:resourceData.name,metaData:resourceData.metadata,type:resourceData.type}
+    });
+
+  } catch (error) {
+    console.error("Error getting share link:", error);
+    next(new AppError("Failed to get share link", 500));
   }
 };

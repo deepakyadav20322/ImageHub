@@ -264,3 +264,46 @@ export const deleteAccount = async (
   }
 };
 
+export const updateUserProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.user?.userId || req.params?.userId
+    if (!userId) {
+      throw new AppError("User ID is required", 400);
+    }
+
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.userId, userId))
+      .limit(1);
+
+    if (!existingUser.length) {
+      throw new AppError("User not found", 404);
+    }
+
+    const updateData: Partial<{ firstName: string; lastName: string }> = {};
+    if (req.body.firstName) updateData.firstName = req.body.firstName;
+    if (req.body.lastName) updateData.lastName = req.body.lastName;
+
+    const updatedUser = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.userId, userId))
+      .returning();
+
+    if (!updatedUser.length) {
+      throw new AppError("User not found", 404);
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updatedUser[0]
+    });
+  } catch (error) {
+    new AppError('Something went wrong during user updation',500)
+  }
+};
