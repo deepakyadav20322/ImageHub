@@ -51,11 +51,11 @@ router.get('/get-apiKey', authMiddleware, getAllApiKeys);
 router.patch('/update-apiKey/:apiKeyId', authMiddleware, updateApiKeyName);
 router.patch('/rename_resourcefile/:bucketName', authMiddleware, renameFileResource);
 
-router.get('/share-public-link/:resourceId',authMiddleware,getSharePublicLink);
-router.post('/share-public-link',authMiddleware,AddSharePublicLink);
-router.patch('/share-public-link',authMiddleware,UpdateSharePublicLink);
-router.delete('/share-public-link/:assetShareId',authMiddleware,deletePublicShareLink)
-router.get('/getPublicLink/:assetShareId',getSharePublicLinkByAssetShareID);
+router.get('/share-public-link/:resourceId', authMiddleware, getSharePublicLink);
+router.post('/share-public-link', authMiddleware, AddSharePublicLink);
+router.patch('/share-public-link', authMiddleware, UpdateSharePublicLink);
+router.delete('/share-public-link/:assetShareId', authMiddleware, deletePublicShareLink)
+router.get('/getPublicLink/:assetShareId', getSharePublicLinkByAssetShareID);
 
 
 

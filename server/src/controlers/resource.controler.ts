@@ -2510,11 +2510,13 @@ export const deletePublicShareLink = async (
       });
     }
 
+    console.log(assetShareId,"idididiidiidi")
+
     const result = await db
       .delete(assetsPublicShare)
       .where(
         and(
-          eq(assetsPublicShare.assetShareId, assetShareId as string),
+          eq(assetsPublicShare.assetShareId, assetShareId),
           eq(assetsPublicShare.shareByUserId, userId),
           eq(assetsPublicShare.assetAccountId, accountId)
         )
@@ -2625,8 +2627,17 @@ export const getSharePublicLinkByAssetShareID = async (
 
     if (!assetShareId) {
       return res.status(400).json({
-        success: false,
-        message: "Asset share ID is required"
+      success: false, 
+      message: "Asset share ID is required"
+      });
+    }
+
+    // Validate that assetShareId is a valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(assetShareId)) {
+      return res.status(400).json({
+      success: false,
+      message: "No asset available"
       });
     }
 
@@ -2636,6 +2647,7 @@ export const getSharePublicLinkByAssetShareID = async (
       .from(assetsPublicShare)
       .where(eq(assetsPublicShare.assetShareId, assetShareId))
       .limit(1);
+      // console.log(shareLink,"00000000000000000000")
 
     if (!shareLink) {
       return res.status(404).json({
