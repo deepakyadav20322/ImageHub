@@ -295,7 +295,7 @@ const UploadDialog = ({
             Upload Files
           </DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-300">
-            Select files from your device or cloud storagessssss:
+            Select files from your device or cloud storage:
           </p>
           <DialogClose asChild>
             <button
@@ -434,7 +434,7 @@ const UploadDialog = ({
           </TabsContent> */}
 
 
-// Update the Google Drive tab content
+{/* // Update the Google Drive tab content */}
 <TabsContent value="google-drive" className="min-h-[300px]">
   <div className="flex h-[300px] flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-400 bg-gray-50 p-6 dark:bg-gray-600/20 dark:hover:bg-blue-600/10">
     <GoogleDrive className="mb-3 h-12 w-12 text-blue-500 opacity-70" />

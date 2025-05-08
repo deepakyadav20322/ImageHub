@@ -21,6 +21,7 @@ import AllAssetsManagerTable from "./components/AllAssetsTableComponents/AssetsT
 import Billing from "./Pages/private/Settings/Billing";
 import AssetsPublicSharedDownloadPage from "./Pages/AssetsPublicSharedPage";
 import PricingPage from "./Pages/PricingPage";
+import NotFoundPage from "./Pages/NotfoundPage";
 
 const App = () => {
   return (
@@ -60,11 +61,12 @@ const App = () => {
         <Route path="folders" element={<Folders2 />} />
         <Route path="assets" element={<AllAssetsManagerTable/>} />
         <Route path="folders/:folderId" element={<Folders />} />
-        <Route path="*" element={<GetStarted />} />
+       
       </Route>
     </Route>
         </Route>
       </Route>
+      <Route path="*" element={<NotFoundPage />} />
  
     </Routes>
   );

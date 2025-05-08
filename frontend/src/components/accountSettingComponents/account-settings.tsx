@@ -1,31 +1,36 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import { ProfileTab } from "./tabs/profile-tab"
-import { AccountTab } from "./tabs/account-tab"
-import { UserManagementTab } from "./tabs/user-management-tab"
-import { ProductEnvironmentTab } from "./tabs/product-environment-tab"
-import { Menu } from "lucide-react"
-import { Button } from "../../components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet"
+import { useState } from "react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
+import { ProfileTab } from "./tabs/profile-tab";
+import { AccountTab } from "./tabs/account-tab";
+import { UserManagementTab } from "./tabs/user-management-tab";
+import { ProductEnvironmentTab } from "./tabs/product-environment-tab";
+import { Menu } from "lucide-react";
+import { Button } from "../../components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "../../components/ui/sheet";
 
 export default function AccountSettings() {
-  const [activeTab, setActiveTab] = useState("profile")
+  const [activeTab, setActiveTab] = useState("profile");
 
-  // Tab configuration
+  // Tab configuration 
   const tabConfig = [
     { id: "profile", label: "My Profile" },
     { id: "account", label: "Account" },
     { id: "user-management", label: "User Management" },
-    { id: "product-environment", label: "Product Environment" }
-  ]
+    { id: "product-environment", label: "Product Environment" },
+  ];
 
   return (
     <div className="container mx-auto py-6 px-4 md:px-6">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Account Settings</h1>
-        
+
         {/* Mobile Menu Toggle */}
         <Sheet>
           <SheetTrigger asChild>
@@ -40,7 +45,9 @@ export default function AccountSettings() {
                 <Button
                   key={tab.id}
                   variant={activeTab === tab.id ? "default" : "ghost"}
-                  className={`justify-start ${activeTab === tab.id ? "bg-brand text-white" : ""}`}
+                  className={`justify-start  ${
+                    activeTab === tab.id ? "bg-brand text-white" : ""
+                  }`}
                   onClick={() => setActiveTab(tab.id)}
                 >
                   {tab.label}
@@ -55,19 +62,19 @@ export default function AccountSettings() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* TabsList only visible on desktop */}
         <div className="hidden md:block">
-          <TabsList className="grid grid-cols-4 w-full mb-8 bg-muted">
+          <TabsList className="grid grid-cols-4 w-full mb-8 bg-muted gap-0.5">
             {tabConfig.map((tab) => (
-              <TabsTrigger 
+              <TabsTrigger
                 key={tab.id}
-                value={tab.id} 
-                className="data-[state=active]:bg-brand data-[state=active]:text-white"
+                value={tab.id}
+                className="data-[state=active]:bg-brand data-[state=active]:text-white cursor-pointer"
               >
                 {tab.label}
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
-        
+
         {/* Tab content - shared between mobile and desktop */}
         <TabsContent value="profile">
           <ProfileTab />
@@ -83,5 +90,5 @@ export default function AccountSettings() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

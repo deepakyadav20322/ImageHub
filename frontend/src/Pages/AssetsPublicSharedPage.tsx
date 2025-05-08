@@ -7,9 +7,9 @@ import { toast } from "react-hot-toast";
 
 const AssetsPublicSharedDownloadPage = () => {
   const { assetShareId } = useParams<{ assetShareId: string }>();
-  const { data, isLoading, isError } = useGetPublicLinkShareByAssetShareIdQuery({
+  const { data, isLoading, isError, error } = useGetPublicLinkShareByAssetShareIdQuery({
     assetShareId: assetShareId || 'undefined'
-  });
+  }) as { data: any; isLoading: boolean; isError: boolean; error: { data: { success:boolean,message: string } } };
 
   const [isImage, setIsImage] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -78,13 +78,14 @@ const AssetsPublicSharedDownloadPage = () => {
   if (isError || !data?.data?.assetAbsoluteURL ) {
     return (
       <div className="h-screen w-full flex flex-col justify-center items-center gap-y-4 bg-slate-100">
+        
         <img 
           src="/download.svg" 
           alt="download img" 
           className="w-48 h-48 opacity-70" 
         />
         <p className="text-gray-600">
-          {isError ? "Failed to load asset" : "No asset available"}
+          {isError ? (error.data.message) :( "No asset available")}
         </p>
         <Button asChild variant="outline">
           <Link to="/">Go to Home</Link>

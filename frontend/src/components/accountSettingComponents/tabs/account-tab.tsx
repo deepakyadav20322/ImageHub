@@ -10,7 +10,7 @@ export function AccountTab() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Account Settings</CardTitle>
+          <CardTitle className="text-blue-500">Account Settings</CardTitle>
           <CardDescription>Manage your account preferences and security settings.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

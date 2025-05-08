@@ -22,7 +22,6 @@ import { DateRangePicker, type DateRangeValues } from "./DatePicker";
 import { useAddPublicShareLinkMutation, useDeletePublickShareLinkMutation, useGetPublicLinkShareQuery } from "@/redux/apiSlice/itemsApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
-import { data } from "react-router";
 
 interface ShareLinkModalProps {
   isOpen: boolean;
@@ -38,7 +37,7 @@ const ShareLinksModal = ({
   onClose,
   imageData,
 }: ShareLinkModalProps) => {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [link, setLink] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRangeValues>({
     startDate: new Date(),
@@ -49,65 +48,38 @@ const ShareLinksModal = ({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState("public");
 
-  const [createPublicLink] = useAddPublicShareLinkMutation();
-  const { data: shareLinkData,refetch: refetchShareLink  } = useGetPublicLinkShareQuery({ token: token ?? "", resourceId: imageData.id })
-const [deletePublicLink,{isLoading:deleteLoading}] = useDeletePublickShareLinkMutation()
-  console.log(shareLinkData)
+  const [createPublicLink, { isLoading: isCreatingLink }] = useAddPublicShareLinkMutation();
+  
+  const { 
+    data: shareLinkData, 
+    isLoading: isFetchingLink,
+    refetch: refetchShareLink 
+  } = useGetPublicLinkShareQuery(
+    { token: token ?? "", resourceId: imageData.id },
+    { skip: !isOpen } // Only fetch when modal is open
+  );
+  
+  const [deletePublicLink, { isLoading: deleteLoading }] = useDeletePublickShareLinkMutation();
 
+  // Update loading state to consider all loading states
   useEffect(() => {
-    if (isOpen) {
-      setIsLoading(true);
-      const fetchLink = async () => {
-        try {
-    
-          if (shareLinkData?.success) {
-            setLink(
-              `${import.meta.env.VITE_FRONTEND_URL}/assets/${shareLinkData?.data?.assetShareId
-             
-              }`
-            );
-            setDateRange({
-              startDate: shareLinkData?.data?.startDate,
-              endDate: shareLinkData?.data?.endDate,
-            });
-            await refetchShareLink();
-          } else {
-            setLink(null);
-          }
-          setIsLoading(false);
-        } catch (error) {
-          console.error("Error fetching link:", error);
-          setLink(null);
-          setIsLoading(false);
-        }
-      };
-      fetchLink();
+    setIsLoading(isFetchingLink || isCreatingLink || deleteLoading);
+  }, [isFetchingLink, isCreatingLink, deleteLoading]);
+
+  // Update link and date range when share link data changes
+  useEffect(() => {
+    if (shareLinkData?.success && shareLinkData?.data) {
+      setLink(
+        `${import.meta.env.VITE_FRONTEND_URL}/asset/${shareLinkData.data.assetShareId}`
+      );
+      setDateRange({
+        startDate: new Date(shareLinkData.data.startDate),
+        endDate: shareLinkData.data.endDate ? new Date(shareLinkData.data.endDate) : undefined,
+      });
+    } else {
+      setLink(null);
     }
-  }, [isOpen, imageData.id]);
-
-  // const handleSave = async (dates: DateRangeValues) => {
-  //   setDateRange(dates);
-
-  //   // Convert dates to ISO strings for the onSave prop
-  //   const dateStrings = {
-  //     startDate: dates.startDate.toISOString(),
-  //     endDate: dates.endDate?.toISOString(),
-  //   };
-
-  //   // If we have both dates and a link, automatically save the changes
-  //   if (dates.endDate && link) {
-  //     try {
-  //       setIsLoading(true);
-  //       // Simulate API call to save date changes
-  //       await new Promise((resolve) => setTimeout(resolve, 800));
-  //       setIsLoading(false);
-  //       console.log("Date range saved:", dateStrings);
-  //     } catch (error) {
-  //       console.error("Error saving date range:", error);
-  //       setIsLoading(false);
-  //     }
-  //   }
-  // };
+  }, [shareLinkData]);
 
   const handleSave = async (dates: { startDate: string; endDate?: string | undefined }) => {
     // Convert strings to Date objects
@@ -133,34 +105,25 @@ const [deletePublicLink,{isLoading:deleteLoading}] = useDeletePublickShareLinkMu
     }
   };
 
-
   const handleCreateLink = async () => {
-    setIsLoading(true);
     try {
-      // Simulate API call
       const response = await createPublicLink({
         token: token ?? "",
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
         resourceId: imageData?.id,
       }).unwrap();
-      if (response.data.success) {
-        console.log("link response", response);
+      
+      // After successfully creating the link, refetch to get updated data
+      if (response.success) {
+        // Manually update the link while waiting for the refetch
         setLink(
-          `${import.meta.env.VITE_FRONTEND_URL}/asset/${
-            response.data.assetShareId
-          }`
+          `${import.meta.env.VITE_FRONTEND_URL}/asset/${response.data.assetShareId}`
         );
-        setDateRange({
-          startDate: response.data.startDate,
-          endDate: response.data.endDate,
-        });
         await refetchShareLink();
       }
     } catch (error) {
       console.error("Error creating link:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -172,23 +135,32 @@ const [deletePublicLink,{isLoading:deleteLoading}] = useDeletePublickShareLinkMu
     }
   };
 
-  const handleDeleteLink = async (assetShareId:string) => {
-    setIsLoading(true);
+  const handleDeleteLink = async (assetShareId: string) => {
     try {
-     await deletePublicLink({token:token??'',assetShareId:assetShareId})
+      setIsLoading(true)
+      console.log(assetShareId,"assetshareId123")
+      setTimeout(async()=>{
+
+    
+      await deletePublicLink({ token: token ?? '', assetShareId: assetShareId });
       setLink(null);
       setDateRange({
         startDate: new Date(),
         endDate: undefined,
       });
-      setIsLoading(false);
+      // Refetch after deletion to ensure UI is synchronized with backend
+      await refetchShareLink();
+    },200)
     } catch (error) {
       console.error("Error deleting link:", error);
-      setIsLoading(false);
+    }finally{
+      setIsLoading(false)
     }
   };
 
   return (
+    <motion.div transition={{ duration: 0.3 }}>
+      <AnimatePresence>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader className="flex flex-row items-center justify-between">
@@ -264,7 +236,8 @@ const [deletePublicLink,{isLoading:deleteLoading}] = useDeletePublickShareLinkMu
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
                               className="text-red-500 focus:text-red-500"
-                              onClick={()=>handleDeleteLink(shareLinkData?.data?.assetShareId)}
+                              onClick={() => shareLinkData?.data?.assetShareId && 
+                                handleDeleteLink(shareLinkData.data.assetShareId)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Delete Link
@@ -300,7 +273,9 @@ const [deletePublicLink,{isLoading:deleteLoading}] = useDeletePublickShareLinkMu
                   <p className="text-muted-foreground">
                     No public links available for this image.
                   </p>
-                  <Button onClick={handleCreateLink}>Create Public Link</Button>
+                  <Button onClick={handleCreateLink} disabled={isCreatingLink}>
+                    {isCreatingLink ? "Creating..." : "Create Public Link"}
+                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>
@@ -320,6 +295,8 @@ const [deletePublicLink,{isLoading:deleteLoading}] = useDeletePublickShareLinkMu
         </Tabs>
       </DialogContent>
     </Dialog>
+    </AnimatePresence>
+    </motion.div>
   );
 };
 

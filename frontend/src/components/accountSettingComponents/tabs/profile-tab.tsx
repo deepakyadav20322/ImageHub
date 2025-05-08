@@ -73,9 +73,9 @@ export function ProfileTab() {
 
   return (
     <div className="space-y-6 ">
-      <Card className="">
+      <Card className="dark:bg-zinc-900">
         <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
+          <CardTitle className="text-blue-500">Personal Information</CardTitle>
           <CardDescription>
             Update your personal details and profile picture.
           </CardDescription>
@@ -93,7 +93,7 @@ export function ProfileTab() {
                 <Button
                   size="icon"
                   variant="outline"
-                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-brand hover:bg-brand hover:text-white"
+                  className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full border-brand hover:bg-brand hover:text-white disabled:cursor-not-allowed"
                   type="button"
                 >
                   <Camera className="h-4 w-4" />
@@ -107,6 +107,7 @@ export function ProfileTab() {
                     <Input
                       id="first-name"
                       placeholder="John"
+                      className="dark:border-gray-600"
                       {...register("firstName")}
                     />
                     {errors.firstName && (
@@ -120,6 +121,7 @@ export function ProfileTab() {
                     <Input
                       id="last-name"
                       placeholder="Doe"
+                       className="dark:border-gray-600"
                       {...register("lastName")}
                     />
                     {errors.lastName && (
@@ -135,6 +137,7 @@ export function ProfileTab() {
                     id="email"
                     type="email"
                     placeholder="john.doe@example.com"
+                     className="dark:border-gray-700 disabled:cursor-not-allowed"
                     {...register("email")}
                     disabled // If email shouldn't be editable
                     aria-disabled
@@ -161,7 +164,7 @@ export function ProfileTab() {
               <Textarea
                 id="bio"
                 placeholder="Tell us about yourself"
-                className="min-h-[120px]"
+                className="min-h-[120px] dark:bg-gray-900"
                 {...register("bio")}
                 disabled
                 aria-disabled

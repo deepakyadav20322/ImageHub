@@ -338,7 +338,7 @@ const folderApi = authApi.injectEndpoints({
       { assetShareId: string;  token: string; }
     >({
       query: ({ assetShareId, token }) => ({
-        url: `/resource/share-public-link`,
+        url: `/resource/share-public-link/${assetShareId}`,
         method: 'DELETE',
         body: {
           assetShareId
@@ -348,6 +348,7 @@ const folderApi = authApi.injectEndpoints({
           'Content-Type': 'application/json'
         }
       }),
+      invalidatesTags: (result, error, { assetShareId }) => ['publicLink'],
 
     }),
     // this is for when we show in popup
@@ -359,7 +360,10 @@ const folderApi = authApi.injectEndpoints({
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
-      })
+      }),
+      providesTags: (result, error, { resourceId }) => [
+       'publicLink'
+      ],
     }) ,
       //  this is for when we show in assets page for download ----
       getPublicLinkShareByAssetShareId: builder.query<any, { assetShareId: string; }>({
