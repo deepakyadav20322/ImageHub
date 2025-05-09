@@ -113,7 +113,9 @@ const Navbar = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem><Link className="cursor-pointer" to={'/dashboard/media'}>Dashboard</Link></DropdownMenuItem>
+              <Link className="cursor-pointer" to={'/dashboard/media'}>
+                <DropdownMenuItem className="cursor-pointer">Dashboard</DropdownMenuItem>
+                </Link>
             
                 <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                   Logout

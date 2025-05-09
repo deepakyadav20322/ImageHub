@@ -43,6 +43,7 @@ export default function AccountSettings() {
             <nav className="flex flex-col gap-2 mt-8">
               {tabConfig.map((tab) => (
                 <Button
+              
                   key={tab.id}
                   variant={activeTab === tab.id ? "default" : "ghost"}
                   className={`justify-start  ${

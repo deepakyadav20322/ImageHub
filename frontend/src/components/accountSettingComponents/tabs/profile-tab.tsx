@@ -83,9 +83,9 @@ export function ProfileTab() {
         <CardContent className="space-y-6">
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6">
-              <div className="relative">
+              <div className="relative border-2 rounded-full">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src="/placeholder.svg?height=96&width=96" alt="Profile" />
+                  <AvatarImage src="/profileImage.jpg" alt="Profile" className=" overflow-hidden" />
                   <AvatarFallback>
                     <User className="h-12 w-12" />
                   </AvatarFallback>
@@ -132,7 +132,7 @@ export function ProfileTab() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email{" "} <span className="text-gray-500">(not changeable)</span></Label>
                   <Input
                     id="email"
                     type="email"

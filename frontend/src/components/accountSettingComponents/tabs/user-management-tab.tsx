@@ -72,7 +72,7 @@ export function UserManagementTab() {
                           <div className="md:hidden mt-1 flex items-center gap-2 text-xs">
                             <span
                               className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                                user.role === "Admin"
+                                user.role === "super_admin"
                                   ? "bg-brand/10 text-brand"
                                   : user.role === "Editor"
                                     ? "bg-brand/10 text-brand"
