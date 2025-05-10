@@ -32,6 +32,48 @@ export const roles = pgTable("roles", {
     .notNull(),
 });
 
+// 🔹 Accounts Table
+export const accounts = pgTable("accounts", {
+  accountId: uuid("account_id").primaryKey().defaultRandom(),
+  accountStatus: text("account_status", {
+    enum: ["active", "inactive", "suspended"],
+  })
+    .notNull()
+    .default("active"),
+  invitedIds: uuid("invited_ids")
+    .array()
+    .notNull()
+    .default(sql`ARRAY[]::uuid[]`),
+  settings: json("settings")
+    .notNull()
+    .default({ theme: "light", language: "en" }),
+  preferences: json("preferences").default({
+    intrest: "",
+    companyName: "",
+    domain: "",
+  }),
+  provider: text("provider"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  twitterProfile: text("twitter_profile"),
+  facebookPage: text("facebook_page"),
+  companyName: text("company_name"),
+
+  planId: uuid('plan_id')
+    .references(() => plans.planId),
+  billingStart: timestamp('billing_start', { withTimezone: true }).defaultNow().notNull(),
+  nextBillingDate: timestamp('next_billing_date', { withTimezone: true }),
+
+  website: text("website"),
+  phone: text("phone"),
+  gettingStarted: boolean("getting_started").notNull().default(true), // according to preferences set or not
+  signupSource: text("signup_source").notNull().default("Unknown"),
+});
+
 // 🔹 Users Table
 export const users = pgTable("users", {
   userId: uuid("user_id").primaryKey().defaultRandom(),
@@ -114,47 +156,7 @@ export const PasswordResetToken = pgTable('password_reset_tokens', {
     }
   }
 );
-// 🔹 Accounts Table
-export const accounts = pgTable("accounts", {
-  accountId: uuid("account_id").primaryKey().defaultRandom(),
-  accountStatus: text("account_status", {
-    enum: ["active", "inactive", "suspended"],
-  })
-    .notNull()
-    .default("active"),
-  invitedIds: uuid("invited_ids")
-    .array()
-    .notNull()
-    .default(sql`ARRAY[]::uuid[]`),
-  settings: json("settings")
-    .notNull()
-    .default({ theme: "light", language: "en" }),
-  preferences: json("preferences").default({
-    intrest: "",
-    companyName: "",
-    domain: "",
-  }),
-  provider: text("provider"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  twitterProfile: text("twitter_profile"),
-  facebookPage: text("facebook_page"),
-  companyName: text("company_name"),
 
-  planId: uuid('plan_id')
-    .references(() => plans.planId),
-  billingStart: timestamp('billing_start', { withTimezone: true }).defaultNow().notNull(),
-  nextBillingDate: timestamp('next_billing_date', { withTimezone: true }),
-
-  website: text("website"),
-  phone: text("phone"),
-  gettingStarted: boolean("getting_started").notNull().default(true), // according to preferences set or not
-  signupSource: text("signup_source").notNull().default("Unknown"),
-});
 
 // 🔹 Invites Table
 export const invites = pgTable("invites", {

@@ -11,6 +11,7 @@ import {
   deleteAccount,
   updatePreference,
   updateUserProfile,
+  inviteUser,
 } from "../controlers/user.controler";
 import { authorize } from "../middlewares/authPermission.middleware";
 
@@ -30,5 +31,6 @@ route.patch("/welcome", authMiddleware, updatePreference);
 // route.post("/",authMiddleware, inviteUserCreation);
 route.patch("/profile-update/:userId",authMiddleware, updateUserProfile);
 // route.delete("/:id",authMiddleware, deleteUser);
+route.post('/invite-user',authMiddleware,inviteUser)
 
 export default route;

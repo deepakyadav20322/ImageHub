@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/db_connect";
-import { accounts, resources, users } from "../db/schema";
+import { accounts, invites, resources, users } from "../db/schema";
 import AppError from "../utils/AppError";
 import { S3Client, ListObjectsV2Command, DeleteObjectCommand, DeleteBucketCommand } from "@aws-sdk/client-s3";
 
@@ -305,5 +305,49 @@ export const updateUserProfile = async (
     });
   } catch (error) {
     new AppError('Something went wrong during user updation',500)
+  }
+};
+
+
+export const inviteUser = async (req: Request, res: Response):Promise<any> => {
+  try {
+    const { email, roleId, inviterId, expiresInDays = 7 } = req.body;
+
+    if (!email || !roleId || !inviterId) {
+      return res.status(400).json({ message: "Missing required fields." });
+    }
+
+    // Check if the user is already invited
+    const existing = await db
+      .select()
+      .from(invites)
+      .where(eq(invites.email, email));
+
+    if (existing.length > 0) {
+      return res.status(409).json({ message: "User already invited." });
+    }
+
+    const token = 'sdkhfkjsdhfkjhsdkjfhjkdsf'; // generate random token
+    const inviteId = req.user.userId;
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+    await db.insert(invites).values({
+      inviteId,
+      email,
+      token,
+      inviterId,
+      roleId,
+      expiresAt,
+      status: "pending",
+    });
+
+    // Optionally send email------------------------------------
+    // await sendInviteEmail(email, token);
+
+    return res.status(201).json({ message: "Invitation sent successfully." });
+  } catch (error) {
+    console.error("Invite error:", error);
+    return res.status(500).json({ message: "Internal server error." });
   }
 };
