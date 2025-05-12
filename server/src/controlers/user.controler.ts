@@ -1,9 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/db_connect";
-import { accounts, invites, resources, users } from "../db/schema";
+import { accounts, invites, resources, roles, users } from "../db/schema";
 import AppError from "../utils/AppError";
 import { S3Client, ListObjectsV2Command, DeleteObjectCommand, DeleteBucketCommand } from "@aws-sdk/client-s3";
+import { sendMail } from "../utils/mailer";
+import { inviteUserEmailTemplate } from "../utils/inviteUserEmailTemplate";
+import bcrypt from 'bcrypt';
 
 
 export const getAllUsers = async (
@@ -53,7 +56,7 @@ export const inviteUserCreation = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {};
+) => { };
 
 export const updateUser = async (
   req: Request,
@@ -150,23 +153,23 @@ export const updatePreference = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  const { interest, organization=''} = req.body;
-  
+  const { interest, organization = '' } = req.body;
+
   try {
     const accountId = req.user?.accountId;
     if (!accountId) {
       throw new AppError("AccountId is required", 400);
-    }console.log(interest,organization)
+    } console.log(interest, organization)
 
     const result = await db
       .update(accounts)
       .set({
         preferences: {
           interest,
-          companyName:organization,
-          domain:"",
+          companyName: organization,
+          domain: "",
         },
-        gettingStarted:false
+        gettingStarted: false
       })
       .where(eq(accounts.accountId, accountId))
       .returning();
@@ -304,14 +307,16 @@ export const updateUserProfile = async (
       data: updatedUser[0]
     });
   } catch (error) {
-    new AppError('Something went wrong during user updation',500)
+    new AppError('Something went wrong during user updation', 500)
   }
 };
 
 
-export const inviteUser = async (req: Request, res: Response):Promise<any> => {
+export const inviteUser = async (req: Request, res: Response): Promise<any> => {
   try {
-    const { email, roleId, inviterId, expiresInDays = 7 } = req.body;
+    const { email, roleId, expiresInDays = 7 } = req.body;
+ console.log(req.body)
+    const inviterId = req.user.userId;
 
     if (!email || !roleId || !inviterId) {
       return res.status(400).json({ message: "Missing required fields." });
@@ -327,13 +332,12 @@ export const inviteUser = async (req: Request, res: Response):Promise<any> => {
       return res.status(409).json({ message: "User already invited." });
     }
 
-    const token = 'sdkhfkjsdhfkjhsdkjfhjkdsf'; // generate random token
-    const inviteId = req.user.userId;
+    const token = Math.random().toString(36).substring(2, 15); // 13 character random alphanumeric token
+
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiresInDays);
 
     await db.insert(invites).values({
-      inviteId,
       email,
       token,
       inviterId,
@@ -342,12 +346,144 @@ export const inviteUser = async (req: Request, res: Response):Promise<any> => {
       status: "pending",
     });
 
-    // Optionally send email------------------------------------
-    // await sendInviteEmail(email, token);
 
-    return res.status(201).json({ message: "Invitation sent successfully." });
+    let firstName = req.user.firstName ;
+    let lastName=  req.user.lastName
+    await sendMail({
+      to: email,
+      subject: 'Invite user email',
+      html: inviteUserEmailTemplate({firstName,lastName,tokenId:token}),
+    });
+
+
+    return res.status(201).json({ message: "Invitation sent successfully.", success: true });
   } catch (error) {
     console.error("Invite error:", error);
-    return res.status(500).json({ message: "Internal server error." });
+    return res.status(500).json({ message: "Internal server error.", success: false });
   }
 };
+
+
+export const confirmUserInvite = async (req: Request, res: Response):Promise<any> => {
+  try {
+    const {  token,email, password, firstName, lastName } = req.body;
+    const {inviteId} = req.params;
+
+    if (!token || !email || !password) { 
+      return res.status(400).json({
+        success: false,
+        message: "Token, email and password are required."
+      });
+    }
+
+    // Find and verify the invitation
+    const invitation = await db
+      .select()
+      .from(invites)
+      .where(
+        and(
+          eq(invites.token, token),
+          eq(invites.email, email),
+          eq(invites.status, "pending")
+        )
+      )
+      .limit(1);
+
+    if (!invitation.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Invalid or expired invitation."
+      });
+    }
+
+    const invite = invitation[0];
+
+    // Check if invitation has expired
+    if (new Date() > invite.expiresAt) {
+      await db
+        .update(invites)
+        .set({ status: "expired" })
+        .where(eq(invites.token, token));
+
+      return res.status(400).json({
+        success: false,
+        message: "Invitation has expired."
+      });
+    }
+
+    // Check if user already exists with this email
+    const existingUser = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    if (existingUser.length) {
+      return res.status(400).json({
+        success: false,
+        message: "User with this email already exists."
+      });
+    }
+
+    // Get inviter's accountId
+    const inviter = await db
+      .select({ accountId: users.accountId })
+      .from(users)
+      .where(eq(users.userId, invite.inviterId))
+      .limit(1);
+
+    if (!inviter.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Inviter not found."
+      });
+    }
+
+    const inviterAccountId = inviter[0].accountId;
+
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create the new user
+    const [newUser] = await db
+      .insert(users)
+      .values({
+        firstName: firstName, 
+        lastName: lastName, 
+        email,
+        password: hashedPassword,
+        emailVerified: true,
+        accountId: inviterAccountId, 
+        roleId: invite.roleId,
+        invitedBy: invite.inviterId,
+        userType: "inviteOnly", 
+        userStatus: "active"
+      })
+      .returning();
+
+    // Update invitation status
+    await db
+      .update(invites)
+      .set({ status: "accepted" })
+      .where(eq(invites.token, token));
+
+    return res.status(200).json({
+      success: true,
+      message: "User created successfully from invitation.",
+      data: {
+        userId: newUser.userId,
+        email: newUser.email,
+        roleId: newUser.roleId
+      }
+    });
+
+  } catch (error) {
+    console.error("Confirmation error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error."
+    });
+  }
+};
+

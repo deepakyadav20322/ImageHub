@@ -97,8 +97,8 @@ export const users = pgTable("users", {
   }).default(sql`null`),
   product_environments: text("product_environments").array(), // ??this have the environment value which is cloud name/cloud display name
   userType: text("user_type", {
-    enum: ["orgnization", "inviteOnly"],
-  }).default("orgnization"), //?? when user directally signup then it is choosen as organization
+    enum: ["organization", "inviteOnly"],
+  }).default("organization"), //?? when user directally signup then it is choosen as organization
   userStatus: text("user_status", { enum: ["active", "suspended"] }).default(
     "active"
   ),
@@ -165,7 +165,7 @@ export const invites = pgTable("invites", {
   token: text("token").notNull().unique(),
   inviterId: uuid("inviter_id")
     .notNull()
-    .references(() => users.userId, { onDelete: "cascade" }),
+    .references(() => users.userId, { onDelete: "cascade" }), // who sent the invitation.id
   roleId: uuid("role_id")
     .notNull()
     .references(() => roles.roleId, { onDelete: "cascade" }),
@@ -396,9 +396,9 @@ export const storage = pgTable('storage', {
 
 export const assetsPublicShare = pgTable('assets_public_share', {
   assetShareId: uuid('assetShareId').primaryKey().defaultRandom(),
-  shareByUserId:uuid('user_id')
-  .references(() => users.userId, { onDelete: 'cascade' }),
-  assetAccountId:uuid('account_id').references(()=> accounts.accountId, { onDelete: 'cascade' }),
+  shareByUserId: uuid('user_id')
+    .references(() => users.userId, { onDelete: 'cascade' }),
+  assetAccountId: uuid('account_id').references(() => accounts.accountId, { onDelete: 'cascade' }),
   assetAbsoluteURL: text('assetAbsolutrURL').notNull(),
   assetRelativeURL: text('assetRelativeURL').notNull(),
   resourceId: uuid("resource_id")

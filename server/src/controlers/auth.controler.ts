@@ -657,3 +657,54 @@ export const resetPassword = async (
     });
   }
 };
+
+
+export const checkEmailAvailability = async (
+  req: Request, 
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return next(new AppError("Email is required", 400));
+    }
+
+    const existingUser = await db
+      .select({ 
+        email: users.email 
+      })
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        isAvailable: existingUser.length === 0
+      }
+    });
+
+  } catch (error) {
+    return next(new AppError("Something went wrong", 500));
+  }
+};
+
+
+export const getAllRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const allRoles = await db.select().from(roles);
+
+    res.status(200).json({
+      success: true,
+      data: allRoles,
+    });
+  } catch (error) {
+    next(new AppError("Error fetching roles", 500));
+  }
+};
