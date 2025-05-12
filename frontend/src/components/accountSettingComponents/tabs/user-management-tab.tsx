@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { MoreHorizontal, Plus, Search, User } from "lucide-react"
+import InviteUser from "../inviteUser"
 
 export function UserManagementTab() {
   const users = [
@@ -31,10 +32,11 @@ export function UserManagementTab() {
               <CardTitle>User Management</CardTitle>
               <CardDescription>Manage users and their permissions.</CardDescription>
             </div>
-            <Button className="sm:w-auto w-full bg-brand hover:bg-brand/90 text-white">
+            {/* <Button className="sm:w-auto w-full bg-brand hover:bg-brand/90 text-white">
               <Plus className="mr-2 h-4 w-4" />
-              Add User
-            </Button>
+             
+            </Button> */}
+            <InviteUser/>
           </div>
         </CardHeader>
         <CardContent>

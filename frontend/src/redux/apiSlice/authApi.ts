@@ -139,9 +139,58 @@ baseQuery:customBaseQuery,
         return response.data;
       }
     })
+    ,
+    getAllRoles: builder.query({
+  query: ({token}) => ({
+  url: '/auth/get-all-role',
+  method: 'GET',
+  credentials: 'include',
+  headers: {
+    Authorization: token,
+    'Content-Type': 'application/json'
+  }
+  }),
+  transformErrorResponse: (response: any) => {
+  return response.data;
+  }
+}),
+
+checkEmail: builder.mutation({
+  query: ({email,token}:{email:string,token:string}) => ({
+    url: '/auth/check-email-availability',
+    method: 'POST',
+    body: { email },
+    credentials: 'include',
+    headers: {
+      Authorization:token,
+      'Content-Type': 'application/json'
+    }
+  }),
+  transformErrorResponse: (response: any) => {
+    return response.data;
+  }
+})
+
+,
+inviteUser: builder.mutation({
+  query: ({ email, role, token }) => ({
+    url: '/user/invite-user',
+    method: 'POST',
+    body: { email, roleId:role },
+    credentials: 'include',
+    headers: {
+      Authorization: token,
+      'Content-Type': 'application/json'
+    }
+  }),
+  transformErrorResponse: (response: any) => {
+    return response.data;
+  }
+})
     
   }),
 });
 
-export const { useLoginMutation,useSignUpMutation,useForgetPasswordMutation,useResetPasswordMutation ,useWelcomeOnboardingMutation,useUserProfileUpdateMutation} = authApi;
+
+export const { useLoginMutation,useSignUpMutation,useForgetPasswordMutation,useResetPasswordMutation ,useWelcomeOnboardingMutation,useUserProfileUpdateMutation,useGetAllRolesQuery,useCheckEmailMutation,useInviteUserMutation} = authApi;
 export default authApi;

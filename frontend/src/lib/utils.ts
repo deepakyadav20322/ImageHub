@@ -81,3 +81,21 @@ export function formatBytesToMbAndGb(
     ? `${mbValue}MB`
     : `${mbValue.toFixed(precision)}MB`;
 }
+
+
+
+
+// debounce
+export const DebounceFunction = <F extends (...args: any[]) => any>(
+  func: F,
+  wait: number
+): ((...args: Parameters<F>) => void) => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  return (...args: Parameters<F>) => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    timeoutId = setTimeout(() => func(...args), wait);
+  };
+};
