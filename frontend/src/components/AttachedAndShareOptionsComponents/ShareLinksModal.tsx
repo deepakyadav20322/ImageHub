@@ -70,7 +70,7 @@ const ShareLinksModal = ({
   useEffect(() => {
     if (shareLinkData?.success && shareLinkData?.data) {
       setLink(
-        `${import.meta.env.VITE_FRONTEND_URL}/asset/${shareLinkData.data.assetShareId}`
+        `${import.meta.env.VITE_FRONTEND_URL}/assets/${shareLinkData.data.assetShareId}`
       );
       setDateRange({
         startDate: new Date(shareLinkData.data.startDate),
