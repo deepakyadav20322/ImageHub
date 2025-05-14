@@ -13,6 +13,7 @@ import {
   updateUserProfile,
   inviteUser,
   confirmUserInvite,
+  getInviteUserInfo,
   
 } from "../controlers/user.controler";
 import { authorize } from "../middlewares/authPermission.middleware";
@@ -34,7 +35,8 @@ route.patch("/welcome", authMiddleware, updatePreference);
 route.patch("/profile-update/:userId",authMiddleware, updateUserProfile);
 // route.delete("/:id",authMiddleware, deleteUser);
 route.post('/invite-user',authMiddleware,inviteUser)
-route.post('/invite-user-registered/:inviteId',confirmUserInvite);
+route.post('/invite-user-registered',confirmUserInvite);
+route.get('/get-inviteUser-info/:token',getInviteUserInfo);
 
 
 export default route;

@@ -41,36 +41,7 @@ export const userLogin = async (
     if (!email || !password) {
       return next(new AppError("Email and password required", 400));
     }
-    // here user return as array => user[0]
-    // const user = await db
-    //   .select({
-    //     userId: users.userId,
-    //     firstName: users.firstName,
-    //     lastName: users.lastName,
-    //     email: users.email,
-    //     password: users.password,
-    //     emailVerified: users.emailVerified,
-    //     googleId: users.googleId,
-    //     accountId: users.accountId,
-    //     invitedBy: users.invitedBy,
-    //     product_environment: users.product_environments,
-    //     refresh_token: users.refresh_token,
-    //     userType: users.userType,
-    //     userStatus: users.userStatus,
-    //     createdAt: users.createdAt,
-    //     updatedAt: users.updatedAt,
-    //     lastLogin: users.lastLogin,
-    //     role: {
-    //       roleId: roles.roleId,
-    //       roleName: roles.name,
-    //       // roleDescription: roles.description,
-    //     },
-    //   })
-    //   .from(users)
-    //   .leftJoin(roles, eq(roles.roleId, users.roleId))
-    //   .where(sql`${users.email} = ${email}`)
-    //   .limit(1);
-
+  
     const user = await db
       .select({
         userId: users.userId,
@@ -129,9 +100,9 @@ export const userLogin = async (
       return next(new AppError("Invalid email or password", 401));
     }
 
-    if (user[0].emailVerified) {
-      return next(new AppError("Email not verified", 401));
-    }
+    // if (!user[0].emailVerified) {
+    //   return next(new AppError("Email not verified", 401));
+    // }
 
     // remove password from user object
     const { password: _, googleId, refresh_token, ...safeUser } = user[0];

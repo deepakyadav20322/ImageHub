@@ -1168,9 +1168,6 @@ export const getAllFoldersDataByAccountId = async (req: Request, res: Response, 
 // ------------------------------------
 
 
-
-
-
 export const getAssetsOfParticularFolder = async (
   req: Request,
   res: Response,

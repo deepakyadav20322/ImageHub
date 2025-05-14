@@ -315,7 +315,7 @@ export const updateUserProfile = async (
 export const inviteUser = async (req: Request, res: Response): Promise<any> => {
   try {
     const { email, roleId, expiresInDays = 7 } = req.body;
- console.log(req.body)
+    console.log(req.body)
     const inviterId = req.user.userId;
 
     if (!email || !roleId || !inviterId) {
@@ -347,12 +347,12 @@ export const inviteUser = async (req: Request, res: Response): Promise<any> => {
     });
 
 
-    let firstName = req.user.firstName ;
-    let lastName=  req.user.lastName
+    let firstName = req.user.firstName;
+    let lastName = req.user.lastName
     await sendMail({
       to: email,
       subject: 'Invite user email',
-      html: inviteUserEmailTemplate({firstName,lastName,tokenId:token}),
+      html: inviteUserEmailTemplate({ firstName, lastName, tokenId: token }),
     });
 
 
@@ -364,12 +364,12 @@ export const inviteUser = async (req: Request, res: Response): Promise<any> => {
 };
 
 
-export const confirmUserInvite = async (req: Request, res: Response):Promise<any> => {
+export const confirmUserInvite = async (req: Request, res: Response): Promise<any> => {
   try {
-    const {  token,email, password, firstName, lastName } = req.body;
-    const {inviteId} = req.params;
+    const { inviteToken, email, password, firstName, lastName } = req.body;
+    console.log(req.body);
 
-    if (!token || !email || !password) { 
+    if (!inviteToken || !email || !password) {
       return res.status(400).json({
         success: false,
         message: "Token, email and password are required."
@@ -382,7 +382,7 @@ export const confirmUserInvite = async (req: Request, res: Response):Promise<any
       .from(invites)
       .where(
         and(
-          eq(invites.token, token),
+          eq(invites.token, inviteToken),
           eq(invites.email, email),
           eq(invites.status, "pending")
         )
@@ -403,7 +403,7 @@ export const confirmUserInvite = async (req: Request, res: Response):Promise<any
       await db
         .update(invites)
         .set({ status: "expired" })
-        .where(eq(invites.token, token));
+        .where(eq(invites.token, inviteToken));
 
       return res.status(400).json({
         success: false,
@@ -427,7 +427,7 @@ export const confirmUserInvite = async (req: Request, res: Response):Promise<any
 
     // Get inviter's accountId
     const inviter = await db
-      .select({ accountId: users.accountId })
+      .select({ accountId: users.accountId, product_environments: users.product_environments })
       .from(users)
       .where(eq(users.userId, invite.inviterId))
       .limit(1);
@@ -449,16 +449,17 @@ export const confirmUserInvite = async (req: Request, res: Response):Promise<any
     const [newUser] = await db
       .insert(users)
       .values({
-        firstName: firstName, 
-        lastName: lastName, 
+        firstName: firstName,
+        lastName: lastName,
         email,
         password: hashedPassword,
         emailVerified: true,
-        accountId: inviterAccountId, 
+        accountId: inviterAccountId,
         roleId: invite.roleId,
         invitedBy: invite.inviterId,
-        userType: "inviteOnly", 
-        userStatus: "active"
+        userType: "inviteOnly",
+        userStatus: "active",
+        product_environments: inviter[0].product_environments
       })
       .returning();
 
@@ -466,7 +467,7 @@ export const confirmUserInvite = async (req: Request, res: Response):Promise<any
     await db
       .update(invites)
       .set({ status: "accepted" })
-      .where(eq(invites.token, token));
+      .where(eq(invites.token, inviteToken));
 
     return res.status(200).json({
       success: true,
@@ -487,3 +488,71 @@ export const confirmUserInvite = async (req: Request, res: Response):Promise<any
   }
 };
 
+
+export const getInviteUserInfo = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "Token is required"
+      });
+    }
+
+    const invitation = await db
+      .select()
+      .from(invites)
+      .where(eq(invites.token, token))
+      .limit(1);
+
+    if (!invitation.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Invitation not found"
+      });
+    }
+    const invite = invitation[0];
+
+    // Get inviter details
+    const inviter = await db
+      .select({
+        firstName: users.firstName,
+        lastName: users.lastName,
+      })
+      .from(users)
+      .where(eq(users.userId, invite.inviterId))
+      .limit(1);
+
+    if (!inviter.length) {
+      return res.status(404).json({
+        success: false,
+        message: "Inviter not found"
+      });
+    }
+
+    // Get role details
+    const role = await db
+      .select()
+      .from(roles)
+      .where(eq(roles.roleId, invite.roleId))
+      .limit(1);
+
+    const responseData = {
+      ...invite,
+      inviter: inviter[0],
+      role: role[0]
+    };
+    return res.status(200).json({
+      success: true,
+      data: responseData
+    });
+
+  } catch (error) {
+    console.error("Error getting invite info:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
