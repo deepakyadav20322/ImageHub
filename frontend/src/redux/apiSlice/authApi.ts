@@ -1,13 +1,13 @@
 import { loginSchema } from "@/lib/ZodSchema";
 import { BaseQueryFn, createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import {z} from "zod";
-import {LoginResponse} from "@/lib/types"
+import { z } from "zod";
+import { LoginResponse } from "@/lib/types"
 import { logout } from "../features/authSlice";
 type LoginCredentials = z.infer<typeof loginSchema>
 
 // here we create cutome base query that itersept error that if that error is jwt expirs then it logout and send to login ------------
 
-const baseQuery =  fetchBaseQuery({ 
+const baseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_URL_V1,
   credentials: 'include', // Handles cookies if needed
   prepareHeaders: (headers) => {
@@ -27,15 +27,15 @@ const customBaseQuery: BaseQueryFn<any, unknown, unknown> = async (
   //   // Log the detailed error structure HERE
   //   console.error('Error received in customBaseQuery:', JSON.stringify(result.error, null, 2));
   // }
-  
+
 
 
   if (result.error && result.error.status === 401) {
     const message = (result.error.data as any)?.message || "";
 
     if (
-      message.includes("Authorization token is required") || 
-      message.includes("Session expired. Please log in again.") || 
+      message.includes("Authorization token is required") ||
+      message.includes("Session expired. Please log in again.") ||
       message.includes("Session expired") ||
       message.includes("Unauthorized")
     ) {
@@ -49,8 +49,8 @@ const customBaseQuery: BaseQueryFn<any, unknown, unknown> = async (
 // ----------------------------------------------------
 export const authApi = createApi({
   reducerPath: "authSlice",
-baseQuery:customBaseQuery,
-  tagTypes: ['Auth','Resources','Folder', 'Asset','AllAssets','Tags','BillingPlan','publicLink'], // For cache invalidation
+  baseQuery: customBaseQuery,
+  tagTypes: ['Auth', 'Resources', 'Folder', 'Asset', 'AllAssets', 'Tags', 'BillingPlan', 'publicLink'], // For cache invalidation
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginCredentials>({
       query: (credentials) => ({
@@ -59,26 +59,27 @@ baseQuery:customBaseQuery,
         body: credentials,
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        
+
       }),
-      transformErrorResponse: (response:any) => {
+      transformErrorResponse: (response: any) => {
         // Handle error responses
         console.log(response);
         return response.data;
       },
     }),
-    signUp:builder.mutation({
-      query:(credential)=>({
-        url:'/auth/register',
-        method:"POST",
-        body:credential,
-        credentials:"include",
-        headers:{'Content-Type':'application/json',
-          'Access-Control-Allow-Origin':'*'
+    signUp: builder.mutation({
+      query: (credential) => ({
+        url: '/auth/register',
+        method: "POST",
+        body: credential,
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
         }
 
       }),
-      transformErrorResponse:(response: { success:string ; data: any })=>{
+      transformErrorResponse: (response: { success: string; data: any }) => {
         // handle error data
         return response.data
       }
@@ -91,7 +92,7 @@ baseQuery:customBaseQuery,
         body: data, // RTK will serialize this to JSON
         credentials: 'include',
       }),
-      transformErrorResponse: (response:any) => {
+      transformErrorResponse: (response: any) => {
         return response.data;
       }
     }),
@@ -108,13 +109,13 @@ baseQuery:customBaseQuery,
     }),
 
     welcomeOnboarding: builder.mutation({
-      query: ({ interest='', organization,token }) => ({
+      query: ({ interest = '', organization, token }) => ({
         url: '/user/welcome',
         method: 'PATCH',
         body: { interest, organization },
         credentials: 'include',
         headers: {
-          Authorization:token,
+          Authorization: token,
           'Content-Type': 'application/json'
         }
       }),
@@ -122,16 +123,16 @@ baseQuery:customBaseQuery,
         return response.data;
       }
     }),
-    
+
     userProfileUpdate: builder.mutation({
-      query: ({firstName,lastName,userId,token}) => ({
+      query: ({ firstName, lastName, userId, token }) => ({
         url: `/user/profile-update/${userId}`,
         method: 'PATCH',
-        body: {firstName,lastName},
+        body: { firstName, lastName },
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          Authorization:token
+          Authorization: token
         }
       }),
       invalidatesTags: ['Auth'],
@@ -141,56 +142,83 @@ baseQuery:customBaseQuery,
     })
     ,
     getAllRoles: builder.query({
-  query: ({token}) => ({
-  url: '/auth/get-all-role',
-  method: 'GET',
-  credentials: 'include',
-  headers: {
-    Authorization: token,
-    'Content-Type': 'application/json'
-  }
-  }),
-  transformErrorResponse: (response: any) => {
-  return response.data;
-  }
-}),
+      query: ({ token }) => ({
+        url: '/auth/get-all-role',
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      }),
+      transformErrorResponse: (response: any) => {
+        return response.data;
+      }
+    }),
 
-checkEmail: builder.mutation({
-  query: ({email,token}:{email:string,token:string}) => ({
-    url: '/auth/check-email-availability',
-    method: 'POST',
-    body: { email },
-    credentials: 'include',
-    headers: {
-      Authorization:token,
-      'Content-Type': 'application/json'
-    }
-  }),
-  transformErrorResponse: (response: any) => {
-    return response.data;
-  }
-})
+    checkEmail: builder.mutation({
+      query: ({ email, token }: { email: string, token: string }) => ({
+        url: '/auth/check-email-availability',
+        method: 'POST',
+        body: { email },
+        credentials: 'include',
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      }),
+      transformErrorResponse: (response: any) => {
+        return response.data;
+      }
+    })
 
-,
-inviteUser: builder.mutation({
-  query: ({ email, role, token }) => ({
-    url: '/user/invite-user',
-    method: 'POST',
-    body: { email, roleId:role },
-    credentials: 'include',
-    headers: {
-      Authorization: token,
-      'Content-Type': 'application/json'
-    }
-  }),
-  transformErrorResponse: (response: any) => {
-    return response.data;
-  }
-})
-    
+    ,
+    inviteUser: builder.mutation({
+      query: ({ email, role, token }) => ({
+        url: '/user/invite-user',
+        method: 'POST',
+        body: { email, roleId: role },
+        credentials: 'include',
+        headers: {
+          Authorization: token,
+          'Content-Type': 'application/json'
+        }
+      }),
+      transformErrorResponse: (response: any) => {
+        return response.data;
+      }
+    }),
+    getInviteUserInfo: builder.query({
+      query: ({ inviteToken }) => ({
+        url: `/user/get-inviteUser-info/${inviteToken}`,
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }),
+      transformErrorResponse: (response: any) => {
+        return response.data;
+      }
+    }),
+    registerInviteUser: builder.mutation({
+      query: ({ firstName, lastName, email, password, inviteToken }) => ({
+        url: '/user/invite-user-registered',
+        method: 'POST',
+        body: { firstName, lastName, email, password, inviteToken: inviteToken },
+        credentials: 'include',
+        headers: {
+
+          'Content-Type': 'application/json'
+        }
+      }),
+      transformErrorResponse: (response: any) => {
+        return response.data;
+      }
+    })
   }),
 });
 
 
-export const { useLoginMutation,useSignUpMutation,useForgetPasswordMutation,useResetPasswordMutation ,useWelcomeOnboardingMutation,useUserProfileUpdateMutation,useGetAllRolesQuery,useCheckEmailMutation,useInviteUserMutation} = authApi;
+export const { useLoginMutation, useSignUpMutation, useForgetPasswordMutation, useResetPasswordMutation, useWelcomeOnboardingMutation, useUserProfileUpdateMutation, useGetAllRolesQuery, useCheckEmailMutation, useInviteUserMutation, useGetInviteUserInfoQuery, useRegisterInviteUserMutation } = authApi;
 export default authApi;

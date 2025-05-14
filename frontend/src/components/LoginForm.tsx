@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { loginSchema } from "@/lib/ZodSchema";
-import {z} from "zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,14 +20,12 @@ import { useLoginMutation } from "@/redux/apiSlice/authApi";
 import { setAuth } from "@/redux/features/authSlice";
 import { useDispatch } from "react-redux";
 
-
 // types
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-
 const LoginForm = () => {
   const navigate = useNavigate();
-  const dispatch   = useDispatch()
+  const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,10 +36,10 @@ const LoginForm = () => {
       password: "",
     },
   });
-  
-  const [login,{isSuccess}] = useLoginMutation()
 
-  const onSubmit = async(data: LoginFormValues)=> {
+  const [login, { isSuccess }] = useLoginMutation();
+
+  const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     setError(null);
 
@@ -49,28 +47,30 @@ const LoginForm = () => {
       // This is where you would call your authentication API
       console.log("Login data:", data);
       const response = await login(data).unwrap();
-      console.log("login data",response);
-      if(response && response.data){
-      dispatch(setAuth({
-        user: response.data.user,
-        token: response.data.token,
-        permissions:response.data.permissions
-      }));
-    }
+      console.log("login data", response);
+      if (response && response.data) {
+        dispatch(
+          setAuth({
+            user: response.data.user,
+            token: response.data.token,
+            permissions: response.data.permissions,
+          })
+        );
+      }
       // On success, redirect to welcome if(not submited prefrece previousaly)
- if(response.data?.welcome){
-      navigate("/welcome");
- }else{
-  navigate("/dashboard")
- }
-    } catch (error:any) {
+      if (response.data?.welcome) {
+        navigate("/welcome");
+      } else {
+        navigate("/dashboard");
+      }
+    } catch (error: any) {
       // setError("Invalid email or password. Please try again.");
       setError(error.message);
       console.error(error);
     } finally {
       setIsLoading(false);
     }
-  }
+  };
 
   async function handleGoogleSignIn() {
     setIsLoading(true);
@@ -80,15 +80,13 @@ const LoginForm = () => {
       // This is where you would implement Google Sign In
       console.log("Google Sign In");
 
-
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // On success, redirect to dashboard
       navigate("/dashboard/welcome");
     } catch (err) {
       setError("Failed to sign in with Google. Please try again.");
-      console.error('❌ Login error:', err);
-    
+      console.error("❌ Login error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -123,23 +121,22 @@ const LoginForm = () => {
               </FormItem>
             )}
           />
-       
+
           <FormField
             control={form.control}
             name="password"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>
-                <div className="flex items-center justify-between w-full">
-      <FormLabel>Password</FormLabel>
-      <Link
-        to="/forgot-password"
-        className="text-sm text-muted-foreground hover:text-primary"
-      >
-        Forgot password?
-      </Link>
-    </div>
-
+                  <div className="flex items-center justify-between w-full">
+                    <FormLabel>Password</FormLabel>
+                    <Link
+                      to="/forgot-password"
+                      className="text-sm text-muted-foreground hover:text-primary"
+                    >
+                      Forgot password?
+                    </Link>
+                  </div>
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -154,8 +151,12 @@ const LoginForm = () => {
               </FormItem>
             )}
           />
-         
-          <Button type="submit" className="w-full text-white hover:bg-blue-700 bg-blue-600 dark:bg-black hover:border-blue-800" disabled={isLoading}>
+
+          <Button
+            type="submit"
+            className="w-full text-white hover:bg-blue-700 bg-blue-600 dark:bg-black hover:border-blue-800 cursor-pointer"
+            disabled={isLoading}
+          >
             {isLoading ? (
               <>
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />

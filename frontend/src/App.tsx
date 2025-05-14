@@ -22,19 +22,16 @@ import Billing from "./Pages/private/Settings/Billing";
 import AssetsPublicSharedDownloadPage from "./Pages/AssetsPublicSharedPage";
 import PricingPage from "./Pages/PricingPage";
 import NotFoundPage from "./Pages/NotfoundPage";
+import InviteRegistration from "./components/InviteUserSignupPage";
 
 const App = () => {
   return (
     <Routes>
       <Route path="/" index element={<Home />} />
       <Route path="/pricing" index element={<PricingPage />} />
+      <Route path="/invite/:inviteToken"  element={<InviteRegistration />} />
       <Route path="/assets/:assetShareId" index element={<AssetsPublicSharedDownloadPage />} />
-
-      {/* <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignUpPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} /> */}
-
+      
       {/* {here we define the sidebar layout for all dashboard pages} */}
       <Route element={<AuthLayout />}>
       {/* ****************- Here we attach auth pages in authlayout because it is not accessible after login-- */}

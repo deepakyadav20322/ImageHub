@@ -47,8 +47,8 @@ const Navbar = () => {
         {/* Logo */}
         <div className="flex items-center gap-2">
           <Link to="/" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-lg bg-secondary flex items-center justify-center border-2 ">
-              <span className="dark:text-primary-foreground text-blue-600  font-bold">MH</span>
+            <div className="h-9 w-9 rounded-full dark:border-gray-600 bg-secondary dark:bg-zinc-800 flex items-center justify-center border-2 p-1">
+              <span className="dark:text-white text-blue-600  font-bold">MH</span>
             </div>
             <span className="font-bold text-xl hidden sm:inline-block">
              <span className="dark:text-white text-blue-600"> Media Hub</span>
