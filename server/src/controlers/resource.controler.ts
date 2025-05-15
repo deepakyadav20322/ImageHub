@@ -1250,7 +1250,7 @@ export const getAssetsOfParticularFolder = async (
           eq(resources.type, "file"),
           eq(resources.parentResourceId, folderId)
         )
-      );
+      ).orderBy(desc(resources.createdAt));;
 
     res.status(200).json({
       success: true,
