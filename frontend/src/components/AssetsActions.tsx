@@ -161,6 +161,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   useDeleteAssetOfFolderMutation,
+  useGetAllAssetsOfParticularAccountQuery,
   useGetAssetsOfFolderQuery,
   useRename_resorcefileMutation,
 } from "@/redux/apiSlice/itemsApi";
@@ -205,6 +206,7 @@ export default React.memo(function AssetActions({
   >(null);
   const {user} = useSelector((state: RootState) => state.auth);
   const token = useSelector((state: RootState) => state.auth.token);
+  const { activeBucket } = useSelector((state: RootState) => state.resource);
   const [renameFile, { isLoading: isRenameLoading }] =
     useRename_resorcefileMutation();
 
@@ -215,6 +217,8 @@ export default React.memo(function AssetActions({
     },
     { skip: !folderId }
   );
+
+  const {refetch:AllassetOfAccontRefetch} = useGetAllAssetsOfParticularAccountQuery({accountId:user?.accountId??"",token:token??"",bucketId:activeBucket})
 
   const form = useForm({
     defaultValues: {
@@ -235,6 +239,7 @@ export default React.memo(function AssetActions({
       }).unwrap();
       toast.success("Asset deleted successfully");
       refetch();
+      AllassetOfAccontRefetch()
       closeDialog();
     } catch {
       toast.error("Failed to delete asset");
@@ -305,8 +310,10 @@ export default React.memo(function AssetActions({
         newName,
         token: token ?? "",
         bucketName: asset.accountId + "-original",
+        bucketId:activeBucket
       });
       refetch();
+      AllassetOfAccontRefetch()
       toast.success("File renamed!");
       closeDialog();
     } catch (error) {

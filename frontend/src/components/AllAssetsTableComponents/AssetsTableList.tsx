@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Download, Trash2, Share2, Search, X } from "lucide-react";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import { RootState } from "@/redux/store";
 import { useSelector } from "react-redux";
 import {
@@ -73,7 +73,7 @@ const AssetsManagerTable = () => {
   const [getAllAssets, { isLoading }] =
     useLazyGetAllAssetsOfParticularAccountQuery();
 
-  const fetchAssets = async () => {
+  const fetchAssets = useCallback(async () => {
     try {
       const response = await getAllAssets({
         accountId: user?.accountId,
@@ -84,14 +84,12 @@ const AssetsManagerTable = () => {
         sort_by: sortBy,
       }).unwrap();
 
-      if (response) {
-        setAllAssets(response);
-      }
+      setAllAssets(response);
     } catch (error) {
       console.error("Error fetching assets:", error);
       setAllAssets([]);
     }
-  };
+  }, [user?.accountId, token, activeBucket, search, selectedTags, sortBy]);
 
   const clearSearch = () => {
     setSearch("");
@@ -227,11 +225,12 @@ const AssetsManagerTable = () => {
                     setSelectedTags={setSelectedTags}
                   />
                   <Button
-                    onClick={() => fetchAssets()}
+                    onClick={fetchAssets}
                     size="sm"
+                    disabled={isLoading}
                     className="hover:bg-brand bg-blue-600 transition-colors text-white px-4 py-1 rounded cursor-pointer"
                   >
-                    Apply
+                    {isLoading ? "Loading..." : "Apply"}
                   </Button>
                 </div>
                 <div className="mx-2">

@@ -296,11 +296,11 @@ const folderApi = authApi.injectEndpoints({
 
     }),
 
-    rename_resorcefile:builder.mutation<
+    rename_resorcefile: builder.mutation<
       { success: boolean; message: string },
-      { resourceId: string, bucketName: string, newName: string, token: string }
+      { resourceId: string, bucketName: string, bucketId: string, newName: string, token: string }
     >({
-      query: ({ resourceId, bucketName, newName, token }) => ({
+      query: ({ resourceId, bucketName, bucketId, newName, token }) => ({
         url: `/resource/rename_resourcefile/${bucketName}`,
         method: 'PATCH',
         body: {
@@ -310,7 +310,10 @@ const folderApi = authApi.injectEndpoints({
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
-        }
+        },
+        invalidatesTags: (result: any, error: any, { bucketId }: { bucketId: string }) => [
+          { type: "AllAssets", id: bucketId }
+        ],
       }),
 
     }),
@@ -335,7 +338,7 @@ const folderApi = authApi.injectEndpoints({
     }),
 
     deletePublickShareLink: builder.mutation<any,
-      { assetShareId: string;  token: string; }
+      { assetShareId: string; token: string; }
     >({
       query: ({ assetShareId, token }) => ({
         url: `/resource/share-public-link/${assetShareId}`,
@@ -362,22 +365,22 @@ const folderApi = authApi.injectEndpoints({
         }
       }),
       providesTags: (result, error, { resourceId }) => [
-       'publicLink'
+        'publicLink'
       ],
-    }) ,
-      //  this is for when we show in assets page for download ----
-      getPublicLinkShareByAssetShareId: builder.query<any, { assetShareId: string; }>({
-        query: ({ assetShareId }) => ({
-          url: `/resource/getPublicLink/${assetShareId}`,
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
+    }),
+    //  this is for when we show in assets page for download ----
+    getPublicLinkShareByAssetShareId: builder.query<any, { assetShareId: string; }>({
+      query: ({ assetShareId }) => ({
+        url: `/resource/getPublicLink/${assetShareId}`,
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
+    })
 
   }),
-  
+
 
 });
 

@@ -29,49 +29,53 @@ const App = () => {
     <Routes>
       <Route path="/" index element={<Home />} />
       <Route path="/pricing" index element={<PricingPage />} />
-      <Route path="/invite/:inviteToken"  element={<InviteRegistration />} />
-      <Route path="/assets/:assetShareId" index element={<AssetsPublicSharedDownloadPage />} />
-      
+      <Route path="/invite/:inviteToken" element={<InviteRegistration />} />
+      <Route
+        path="/assets/:assetShareId"
+        index
+        element={<AssetsPublicSharedDownloadPage />}
+      />
+
       {/* {here we define the sidebar layout for all dashboard pages} */}
       <Route element={<AuthLayout />}>
-      {/* ****************- Here we attach auth pages in authlayout because it is not accessible after login-- */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/edit-vizulization" element={<TransformationVisulizationPage />} />
+        {/* ****************- Here we attach auth pages in authlayout because it is not accessible after login-- */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/edit-vizulization"
+          element={<TransformationVisulizationPage />}
+        />
 
-      <Route path="/signup" element={<SignUpPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
-      {/* -***************------------------------------------- */}
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        
+        {/* -***************------------------------------------- */}
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/dashboard" element={<SidebarLayout />}>
-        <Route index element={<Navigate to="media" replace />} />
-          <Route path="settings/product" element={<ProductEnvironmentSetting />} />
+          <Route index element={<Navigate to="media" replace />} />
+          <Route
+            path="settings/product"
+            element={<ProductEnvironmentSetting />}
+          />
           <Route path="settings/product/billing" element={<Billing />} />
           <Route path="settings/account" element={<AccountSetting />} />
           <Route path="getting-started" element={<GetStarted />} />
 
           <Route element={<MediaTopNavLayout />}>
-      <Route path="media">
-      <Route index element={<Navigate to="home" replace />} />
-        <Route path="home" element={<MediaHome />} />
-        <Route path="folders" element={<Folders2 />} />
-        <Route path="assets" element={<AllAssetsManagerTable/>} />
-        <Route path="folders/:folderId" element={<Folders />} />
-       
-      </Route>
-    </Route>
+            <Route path="media">
+              <Route index element={<Navigate to="home" replace />} />
+              <Route path="home" element={<MediaHome />} />
+              <Route path="folders" element={<Folders2 />} />
+              <Route path="assets" element={<AllAssetsManagerTable />} />
+              <Route path="folders/:folderId" element={<Folders />} />
+            </Route>
+          </Route>
         </Route>
       </Route>
       <Route path="*" element={<NotFoundPage />} />
- 
     </Routes>
   );
 };
 
 export default App;
-
-
-
-
-
