@@ -409,6 +409,40 @@ export const assetsPublicShare = pgTable('assets_public_share', {
   createdAt: timestamp('createdAt', { withTimezone: true }).defaultNow().notNull(),
 });
 
+export const collections = pgTable("collections", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  accountId: uuid("account_id")
+    .references(() => accounts.accountId, { onDelete: "cascade" })
+    .notNull(),
+  creatorId: uuid("creator_id")
+    .references(() => users.userId, { onDelete: "set null" }),
+
+  name: text("name").notNull(),
+  description: text("description"),
+
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const collectionItems = pgTable("collection_items", {
+  collectionId: uuid("collection_id")
+    .notNull()
+    .references(() => collections.id, { onDelete: "cascade" }),
+  
+  resourceId: uuid("resource_id")
+    .notNull()
+    .references(() => resources.resourceId, { onDelete: "cascade" }),
+  
+  addedAt: timestamp("added_at", { withTimezone: true }).defaultNow(),
+  addedBy: uuid("added_by")
+    .references(() => users.userId, { onDelete: "set null" }),
+}, (table) => {
+  return {
+    pk: primaryKey({ columns: [table.collectionId, table.resourceId] }),
+    resourceIdx: index("collection_items_resource_idx").on(table.resourceId),
+  };
+});
+
 
 
 // <<<===================Below thing use when we want to apply individula file/resource permission provide when it public =================>>>>
