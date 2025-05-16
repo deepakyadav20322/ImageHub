@@ -53,3 +53,17 @@ export const createCollection = async (req: Request, res: Response):Promise<any>
   }
 };
 
+export const deleteCollection = async (req: Request, res: Response) => {
+  try {
+    const collectionId = req.params.collectionId;
+
+    await db
+      .delete(collections)
+      .where(eq(collections.id, collectionId));
+
+    res.status(204).end();
+  } catch (error) {
+    console.error('Error deleting collection:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
