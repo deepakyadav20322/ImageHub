@@ -1,0 +1,55 @@
+import { eq } from "drizzle-orm";
+import { db } from "../db/db_connect";
+import { collectionItems, collections } from "../db/schema";
+import { Request,Response,NextFunction } from "express";
+
+export const getAllCollections = async (req: Request, res: Response):Promise<any> => {
+  try {
+    // Assuming accountId is passed as a query parameter or in the JWT
+    const accountId = req.query.accountId as string;
+    
+    if (!accountId) {
+      return res.status(400).json({ error: 'Account ID is required' });
+    }
+
+    const allCollections = await db
+      .select()
+      .from(collections)
+      .where(eq(collections.accountId, accountId));
+
+    res.status(200).json(allCollections);
+  } catch (error) {
+    console.error('Error fetching collections:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+export const createCollection = async (req: Request, res: Response):Promise<any> => {
+  try {
+    const { accountId, creatorId, name, description } = req.body;
+
+    if (!accountId || !name) {
+      return res.status(400).json({ 
+        error: 'Account ID and name are required' 
+      });
+    }
+
+    const [newCollection] = await db
+      .insert(collections)
+      .values({
+        accountId,
+        creatorId,
+        name,
+        description,
+        // createdAt and updatedAt will be set by default
+      })
+      .returning();
+
+    res.status(201).json(newCollection);
+  } catch (error) {
+    console.error('Error creating collection:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
