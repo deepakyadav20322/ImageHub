@@ -23,6 +23,8 @@ import AssetsPublicSharedDownloadPage from "./Pages/AssetsPublicSharedPage";
 import PricingPage from "./Pages/PricingPage";
 import NotFoundPage from "./Pages/NotfoundPage";
 import InviteRegistration from "./components/InviteUserSignupPage";
+import CollectionsPage from "./components/Collections/Collections";
+import CollectionDataTable from "./components/Collections/CollectionDataTable";
 
 const App = () => {
   return (
@@ -62,12 +64,16 @@ const App = () => {
           <Route path="settings/account" element={<AccountSetting />} />
           <Route path="getting-started" element={<GetStarted />} />
 
+   {/*  All media tabs pages-- */}
           <Route element={<MediaTopNavLayout />}>
             <Route path="media">
               <Route index element={<Navigate to="home" replace />} />
               <Route path="home" element={<MediaHome />} />
               <Route path="folders" element={<Folders2 />} />
               <Route path="assets" element={<AllAssetsManagerTable />} />
+              <Route path="collections" element={<CollectionsPage />} />
+              <Route path="collections" element={<CollectionsPage />} />
+              <Route path="collections/:collectionId" element={<CollectionDataTable/>} />
               <Route path="folders/:folderId" element={<Folders />} />
             </Route>
           </Route>

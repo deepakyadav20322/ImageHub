@@ -136,15 +136,7 @@ const AssetList = ({
             className="flex flex-col items-center gap-4 p-6 dark:bg-black bg-slate-100 rounded-lg w-full max-w-lg mx-auto"
             transition={{ duration: 0.3, delay: 0.1 }}
           >
-            {/* <motion.div className="border-2 border-dashed border-muted hover:border-primary transition-colors  rounded-lg p-10 flex flex-col items-center gap-4 bg-muted/40 dark:bg-muted/10 min-w-[28rem]">
-              <div>🚫 No assets available</div>
-              <div className="flex justify-center items-center flex-col">
-                <p className="text-lg font-medium text-gray-900 dark:text-gray-100">
-                  Upload Assets to This Folder
-                </p>
-                <div className="text-2xl text-blue-500">+</div>
-              </div>
-            </motion.div> */}
+           
             <img src="/Empty_State_Illustration_1.svg" alt="" />
             <h2 className="text-lg font-semibold dark:text-slte-100">
               Upload assets to this folder
@@ -185,7 +177,6 @@ const AssetList = ({
         style={{
           height: `calc(100vh - 220px)`, // Changed to fixed height
 
-          // minHeight: `${Math.min(assets.length * 60 + 56, 400)}px`,
         }}
       >
         <Table className="relatve ">
