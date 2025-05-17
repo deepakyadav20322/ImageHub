@@ -15,15 +15,16 @@ const collectionApi = authApi.injectEndpoints({
             
             providesTags: ['Collection'],
         }),
-        getCollection: builder.query({
-            query: (id) => `/collections/${id}`,
-            providesTags: ['Collection'],
-        }),
+    
         createCollection: builder.mutation({
-            query: (body) => ({
-                url: '/collections',
+            query: ({name,token}) => ({
+                url: '/collection/create-collection',
                 method: 'POST',
-                body,
+                body:{name},
+                headers:{
+                   Authorization:token,
+                    'Content-Type':'application/json',
+                }
             }),
             invalidatesTags: ['Collection'],
         }),
@@ -47,7 +48,6 @@ const collectionApi = authApi.injectEndpoints({
 
 export const {
     useGetAllCollectionsQuery,
-    useGetCollectionQuery,
     useCreateCollectionMutation,
     useUpdateCollectionMutation,
     useDeleteCollectionMutation,

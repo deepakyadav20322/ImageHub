@@ -8,41 +8,50 @@ import CollectionDialog from "@/components/Collections/CollectionDialog";
 import { toast } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
-import { useGetAllCollectionsQuery } from "@/redux/apiSlice/collectionApi";
+import {
+  useCreateCollectionMutation,
+  useGetAllCollectionsQuery,
+} from "@/redux/apiSlice/collectionApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 
-// This would typically come from your API or database
-const collections: any[] | (() => any[]) = [
-  // Uncomment to add more collections for testing
-  {
-    id: "2",
-    name: "Product Photos",
-    thumbnail: "/placeholder.svg?height=200&width=300",
-    assetCount: 12,
-    owner: {
-      initials: "JD",
-      color: "#3366ff"
-    }
-  },
-];
+// // This would typically come from your API or database
+// const collections: any[] | (() => any[]) = [
+//   // Uncomment to add more collections for testing
+//   {
+//     id: "2",
+//     name: "Product Photos",
+//     thumbnail: "/placeholder.svg?height=200&width=300",
+//     assetCount: 12,
+//     owner: {
+//       initials: "JD",
+//       color: "#3366ff",
+//     },
+//   },
+// ];
 
 const CollectionsPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const token  = useSelector((state:RootState)=>state.auth.token)
- const {data:collectionsData,isLoading} = useGetAllCollectionsQuery({token});
-  
+  const token = useSelector((state: RootState) => state.auth.token);
+  const { data: collectionsData, isLoading } = useGetAllCollectionsQuery({
+    token,
+  });
+  const [createCollection,{isLoading:creationLoading}] = useCreateCollectionMutation();
 
-  const handleCreateCollection = (data: { name: string }) => {
-  //   // In a real app, this would be an API call
+  const handleCreateCollection = async ({ name }: { name: string }) => {
+    try {
+      const res = await createCollection({ name, token }).unwrap();
+      if (res?.data?.success) {
+        console.log("response", res);
+        toast.success("Collection created");
+      }
+    } catch (error) {
+      console.log(error);
+      toast.error("Error in creating collection");
+    }
 
-
-    
-
-  //   toast.success("Collection created");
-
-  //   return Promise.resolve();
+    //   return Promise.resolve();
   };
 
   return (
@@ -55,51 +64,49 @@ const CollectionsPage = () => {
         </Button>
       </div>
 
-      {collectionsData?.length>0 ? (
-        <motion.div 
-           initial={{ y:20}}
-                  animate={{ y:0}}
-                  exit={{ y:0 }}
-                  transition={{ duration: 0.4 }}
-        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            <AnimatePresence>
-          {collectionsData.map((collection:any) => (
-            <div key={collection.id} className="block group ">
-              <div className="rounded-lg overflow-hidden border border-border bg-card transition-all hover:shadow-md">
-                <Link
-                  to={`/dashboard/media/collections/${collection.id}`}
-                 
-                >
+      {collectionsData?.length > 0 ? (
+        <motion.div
+          initial={{ y: 20 }}
+          animate={{ y: 0 }}
+          exit={{ y: 0 }}
+          transition={{ duration: 0.4 }}
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+        >
+          <AnimatePresence>
+            {collectionsData.map((collection: any) => (
+              <div key={collection.id} className="block group ">
+                <div className="rounded-lg overflow-hidden border border-border bg-card transition-all hover:shadow-md">
+                  <Link to={`/dashboard/media/collections/${collection.id}`}>
                     <div className="relative aspect-video w-full overflow-hidden">
-                  <img
-                    src={collection.thumbnail || "/placeholder.svg"}
-                    alt={collection.name}
-                    className="object-cover"
-                  />
-                  <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 text-xs rounded backdrop-blur-sm">
-                    {collection.name}
-                  </div>
-                  </div>
-                </Link>
-                <div className="p-3 flex items-center justify-between dark:bg-accent ">
-                  <div className="flex items-center gap-2 ">
-                    <div
-                      className="w-8 h-8  rounded-full flex items-center justify-center text-white text-sm font-medium"
-                      style={{ backgroundColor: collection.owner.color }}
-                    >
-                      {collection.owner.initials}
+                      <img
+                        src={collection.thumbnail || "/placeholder.svg"}
+                        alt={collection.name}
+                        className="object-cover"
+                      />
+                      <div className="absolute top-2 left-2 bg-black/50 text-white px-2 py-1 text-xs rounded backdrop-blur-sm">
+                        {collection.name}
+                      </div>
                     </div>
-                    <span className="text-sm">
-                      {collection.assetCount} Assets
-                    </span>
+                  </Link>
+                  <div className="p-3 flex items-center justify-between dark:bg-accent ">
+                    <div className="flex items-center gap-2 ">
+                      <div
+                        className="w-8 h-8  rounded-full flex items-center justify-center text-white text-sm font-medium"
+                        style={{ backgroundColor: collection.owner.color }}
+                      >
+                        {collection.owner.initials}
+                      </div>
+                      <span className="text-sm">
+                        {collection.assetCount} Assets
+                      </span>
+                    </div>
+                    <button className="p-1 rounded-full hover:bg-muted">
+                      <MoreVertical className="h-5 w-5" />
+                    </button>
                   </div>
-                  <button className="p-1 rounded-full hover:bg-muted">
-                    <MoreVertical className="h-5 w-5" />
-                  </button>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
           </AnimatePresence>
         </motion.div>
       ) : (
@@ -142,7 +149,6 @@ const CollectionsPage = () => {
       />
     </div>
   );
-}
+};
 
-
-export default CollectionsPage
+export default CollectionsPage;

@@ -28,10 +28,11 @@ type FormValues = z.infer<typeof formSchema>
 interface CollectionDialog {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onCreateCollection: (data: FormValues) => void
+  onCreateCollection: (data: FormValues) => void,
+
 }
 
-const CollectionDialog = ({ open, onOpenChange, onCreateCollection }: CollectionDialog)=> {
+const CollectionDialog = ({ open, onOpenChange, onCreateCollection}: CollectionDialog)=> {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Initialize the form with React Hook Form and Zod validation
