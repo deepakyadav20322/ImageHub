@@ -8,6 +8,9 @@ import CollectionDialog from "@/components/Collections/CollectionDialog";
 import { toast } from "react-hot-toast";
 import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
+import { useGetAllCollectionsQuery } from "@/redux/apiSlice/collectionApi";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 // This would typically come from your API or database
 const collections: any[] | (() => any[]) = [
@@ -24,31 +27,22 @@ const collections: any[] | (() => any[]) = [
   },
 ];
 
-export default function CollectionsPage() {
+const CollectionsPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [collectionsData, setCollectionsData] = useState(collections);
 
-  // If you want to test the empty state, set this to an empty array
-  const hasCollections = collectionsData.length > 0;
+  const token  = useSelector((state:RootState)=>state.auth.token)
+ const {data:collectionsData,isLoading} = useGetAllCollectionsQuery({token});
+  
 
   const handleCreateCollection = (data: { name: string }) => {
-    // In a real app, this would be an API call
-    const newCollection = {
-      id: Math.random().toString(36).substring(2, 9),
-      name: data.name,
-      thumbnail: "/placeholder.svg?height=200&width=300",
-      assetCount: 0,
-      owner: {
-        initials: "ME", // This would come from the user's profile
-        color: "#ff3366", // This could be randomly generated or from user settings
-      },
-    };
+  //   // In a real app, this would be an API call
 
-    setCollectionsData([...collectionsData, newCollection]);
 
-    toast.success("Collection created");
+    
 
-    return Promise.resolve();
+  //   toast.success("Collection created");
+
+  //   return Promise.resolve();
   };
 
   return (
@@ -61,7 +55,7 @@ export default function CollectionsPage() {
         </Button>
       </div>
 
-      {hasCollections ? (
+      {collectionsData?.length>0 ? (
         <motion.div 
            initial={{ y:20}}
                   animate={{ y:0}}
@@ -69,7 +63,7 @@ export default function CollectionsPage() {
                   transition={{ duration: 0.4 }}
         className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             <AnimatePresence>
-          {collectionsData.map((collection) => (
+          {collectionsData.map((collection:any) => (
             <div key={collection.id} className="block group ">
               <div className="rounded-lg overflow-hidden border border-border bg-card transition-all hover:shadow-md">
                 <Link
@@ -149,3 +143,6 @@ export default function CollectionsPage() {
     </div>
   );
 }
+
+
+export default CollectionsPage
