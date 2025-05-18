@@ -1,14 +1,14 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/db_connect";
 import { collectionItems, collections } from "../db/schema";
-import { Request,Response,NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 
-export const getAllCollections = async (req: Request, res: Response):Promise<any> => {
+export const getAllCollections = async (req: Request, res: Response): Promise<any> => {
   try {
     // Assuming accountId is passed as a query parameter or in the JWT
     const accountId = (req.user.accountId);
     const userId = req.user.userId;
-    
+
     if (!accountId || !userId) {
       return res.status(400).json({ error: 'Account or USER  ID is required' });
     }
@@ -16,9 +16,9 @@ export const getAllCollections = async (req: Request, res: Response):Promise<any
     const allCollections = await db
       .select()
       .from(collections)
-      .where(and(eq(collections.accountId, accountId),eq(collections.creatorId,userId)));
+      .where(and(eq(collections.accountId, accountId), eq(collections.creatorId, userId)));
 
-    res.status(200).json({success:true,data:allCollections});
+    res.status(200).json({ success: true, data: allCollections });
   } catch (error) {
     console.error('Error fetching collections:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -26,15 +26,15 @@ export const getAllCollections = async (req: Request, res: Response):Promise<any
 };
 
 
-export const createCollection = async (req: Request, res: Response):Promise<any> => {
+export const createCollection = async (req: Request, res: Response): Promise<any> => {
   try {
     const { name } = req.body;
-    const creatorId  =req.user.userId ;
+    const creatorId = req.user.userId;
     const accountId = req.user.accountId
-console.log(accountId,creatorId)
+    console.log(accountId, creatorId)
     if (!accountId || !name) {
-      return res.status(400).json({ 
-        error: 'Account ID and name are required' 
+      return res.status(400).json({
+        error: 'Account ID and name are required'
       });
     }
 
@@ -44,7 +44,7 @@ console.log(accountId,creatorId)
         accountId,
         creatorId,
         name,
-        description:'',
+        description: '',
         // createdAt and updatedAt will be set by default
       })
       .returning();
@@ -64,9 +64,40 @@ export const deleteCollection = async (req: Request, res: Response) => {
       .delete(collections)
       .where(eq(collections.id, collectionId));
 
-    res.status(200).json({success:true,message:'Collection deleted successfully'});
+    res.status(200).json({ success: true, message: 'Collection deleted successfully' });
   } catch (error) {
     console.error('Error deleting collection:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const updateCollection = async (req: Request, res: Response):Promise<any> => {
+  try {
+    const collectionId = req.params.collectionId;
+    const { name, description } = req.body;
+  console.log(req.body)
+
+    if (!collectionId) {
+      return res.status(400).json({ error: 'Collection ID is required' });
+    }
+
+    const updateData: Partial<typeof collections.$inferSelect> = {};
+    if (name) updateData.name = name;
+    if (description) updateData.description = description;
+
+    const [updatedCollection] = await db
+      .update(collections)
+      .set(updateData)
+      .where(eq(collections.id, collectionId))
+      .returning();
+
+    if (!updatedCollection) {
+      return res.status(404).json({ error: 'Collection not found' });
+    }
+
+    res.status(200).json({ success: true, data: updatedCollection });
+  } catch (error) {
+    console.error('Error updating collection:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

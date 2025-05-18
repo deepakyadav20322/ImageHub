@@ -1,5 +1,5 @@
 import express from "express";
-import { createCollection, deleteCollection, getAllCollections } from "../controlers/collection.controler";
+import { createCollection, deleteCollection, getAllCollections, updateCollection } from "../controlers/collection.controler";
 import authMiddleware from "../middlewares/auth.middleware";
 
  const route = express.Router();
@@ -8,6 +8,7 @@ import authMiddleware from "../middlewares/auth.middleware";
 route.get('/get-all-collection',authMiddleware,getAllCollections);
 route.post('/create-collection',authMiddleware,createCollection);
 route.delete('/delete-collection/:collectionId',authMiddleware,deleteCollection);
+route.patch('/update-collection/:collectionId',authMiddleware,updateCollection);
 
 
 
