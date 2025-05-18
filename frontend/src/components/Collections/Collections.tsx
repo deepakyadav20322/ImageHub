@@ -1,8 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MoreVertical, Plus } from "lucide-react";
+import {
+  MoreHorizontal,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Share2,
+  Share2Icon,
+  Trash2,
+} from "lucide-react";
 import { Link } from "react-router";
 import CollectionDialog from "@/components/Collections/CollectionDialog";
 import { toast } from "react-hot-toast";
@@ -10,10 +18,25 @@ import { AnimatePresence } from "framer-motion";
 import { motion } from "framer-motion";
 import {
   useCreateCollectionMutation,
+  useDeleteCollectionMutation,
   useGetAllCollectionsQuery,
 } from "@/redux/apiSlice/collectionApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
 
 // // This would typically come from your API or database
 // const collections: any[] | (() => any[]) = [
@@ -32,12 +55,44 @@ import { RootState } from "@/redux/store";
 
 const CollectionsPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<
+    "delete" | "share" | "rename" | null
+  >(null);
 
   const token = useSelector((state: RootState) => state.auth.token);
   const { data: collectionsData, isLoading } = useGetAllCollectionsQuery({
     token,
   });
-  const [createCollection,{isLoading:creationLoading}] = useCreateCollectionMutation();
+  const closeDialog = useCallback(() => setDialogType(null), []);
+  console.log(collectionsData ,"787878787878")
+  const [createCollection, { isLoading: creationLoading }] =
+    useCreateCollectionMutation();
+
+  const dropdownCollectionActions = useMemo(
+    () => [
+      {
+        label: "Share",
+        icon: <Share2 color="green" size={14} />,
+        onClick: () => setDialogType("share"),
+        disabled: false,
+      },
+      {
+        label: "Delete",
+        icon: <Trash2 color="red" size={14} />,
+        onClick: () => setDialogType("delete"),
+        disabled: false,
+      },
+      {
+        label: "Rename",
+        icon: <Pencil color="yellow" size={14} />,
+        onClick: () => setDialogType("rename"),
+        disabled: false,
+      },
+    ],
+    []
+  );
+
+  const [deleteCollection,{isLoading:isDeleting}] = useDeleteCollectionMutation()
 
   const handleCreateCollection = async ({ name }: { name: string }) => {
     try {
@@ -50,9 +105,33 @@ const CollectionsPage = () => {
       console.log(error);
       toast.error("Error in creating collection");
     }
-
-    //   return Promise.resolve();
   };
+
+  const handleDelete = async ({collectionId}:{collectionId:string}) => {
+    try {
+      const res = await deleteCollection({collectionId,token}).unwrap();
+      console.log(res,"hjjjjjjjjjjjj")
+      if(res?.success){
+      toast.success('Collection deleted Successfully!')
+      }
+      console.log("collection delete");
+      closeDialog();
+    } catch (error) {
+      toast.error("Something went wrong during collection deletion")
+      console.log(error);
+    }finally{
+       closeDialog();
+    }
+  };
+  
+
+  if(isLoading){
+    return (
+      <div className="flex justify-center items-center h-[calc(100vh-62px)]">
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8 mt-8">
@@ -64,7 +143,7 @@ const CollectionsPage = () => {
         </Button>
       </div>
 
-      {collectionsData?.length > 0 ? (
+      {collectionsData?.data?.length > 0 ? (
         <motion.div
           initial={{ y: 20 }}
           animate={{ y: 0 }}
@@ -73,13 +152,13 @@ const CollectionsPage = () => {
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
         >
           <AnimatePresence>
-            {collectionsData.map((collection: any) => (
+            {collectionsData?.data.map((collection: any) => (
               <div key={collection.id} className="block group ">
                 <div className="rounded-lg overflow-hidden border border-border bg-card transition-all hover:shadow-md">
                   <Link to={`/dashboard/media/collections/${collection.id}`}>
                     <div className="relative aspect-video w-full overflow-hidden">
                       <img
-                        src={collection.thumbnail || "/placeholder.svg"}
+                        src={collection?.thumbnail || "/placeholder.svg"}
                         alt={collection.name}
                         className="object-cover"
                       />
@@ -92,19 +171,88 @@ const CollectionsPage = () => {
                     <div className="flex items-center gap-2 ">
                       <div
                         className="w-8 h-8  rounded-full flex items-center justify-center text-white text-sm font-medium"
-                        style={{ backgroundColor: collection.owner.color }}
+                        style={{
+                          backgroundColor:
+                            collection?.owner?.color ?? "#3366ff",
+                        }}
                       >
-                        {collection.owner.initials}
+                        {collection?.owner?.initials || "IN"}
                       </div>
                       <span className="text-sm">
                         {collection.assetCount} Assets
                       </span>
                     </div>
-                    <button className="p-1 rounded-full hover:bg-muted">
+                    {/* <button className="p-1 rounded-full hover:bg-muted">
                       <MoreVertical className="h-5 w-5" />
-                    </button>
+                    </button> */}
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 cursor-pointer"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="border-slate-500 dark:bg-zinc-800 "
+                      >
+                        {dropdownCollectionActions.map((action) => (
+                          <DropdownMenuItem
+                            key={action.label}
+                            onClick={action.onClick}
+                            className={`${action.disabled} ? "cursor-not-allowed" : "cursor-pointer" dark:hover:bg-black cursor-pointer`}
+                            disabled={action.disabled}
+                          >
+                            {action.icon}
+                            {action.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
+                {dialogType === "delete" && (
+                  <Dialog open onOpenChange={closeDialog}>
+                    <DialogContent
+                      onCloseAutoFocus={(event) => {
+                        event.preventDefault();
+                        document.body.style.pointerEvents = "";
+                      }}
+                    >
+                      <DialogHeader>
+                        <DialogTitle>Delete Collection</DialogTitle>
+                        <DialogDescription>
+                          Are you sure you want to delete{" "}
+                          <strong className="text-red-600">
+                            {collection?.name}
+                          </strong>{" "}
+                          collection?
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button
+                          variant="outline"
+                          onClick={closeDialog}
+                          disabled={isDeleting}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          className="bg-red-600 text-white hover:bg-red-700"
+                          onClick={()=>handleDelete({collectionId:collection.id})}
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "Deleting..." : "Delete"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                )}
               </div>
             ))}
           </AnimatePresence>

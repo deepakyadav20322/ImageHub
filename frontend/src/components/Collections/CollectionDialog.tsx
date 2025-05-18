@@ -47,7 +47,9 @@ const CollectionDialog = ({ open, onOpenChange, onCreateCollection}: CollectionD
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true)
     try {
+      console.log(data,"data")
       await onCreateCollection(data)
+
       form.reset()
       onOpenChange(false)
     } catch (error) {

@@ -37,9 +37,12 @@ const collectionApi = authApi.injectEndpoints({
             invalidatesTags: ['Collection'],
         }),
         deleteCollection: builder.mutation({
-            query: (id) => ({
-                url: `/collections/${id}`,
+            query: ({collectionId,token}) => ({
+                url: `/collection/delete-collection/${collectionId}`,
                 method: 'DELETE',
+                headers:{
+                    Authorization:token,
+                }
             }),
             invalidatesTags: ['Collection'],
         }),
