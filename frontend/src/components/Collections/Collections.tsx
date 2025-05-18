@@ -20,6 +20,7 @@ import {
   useCreateCollectionMutation,
   useDeleteCollectionMutation,
   useGetAllCollectionsQuery,
+  useUpdateCollectionMutation,
 } from "@/redux/apiSlice/collectionApi";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
@@ -37,37 +38,37 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../ui/dialog";
+import { useForm } from "react-hook-form";
 
-// // This would typically come from your API or database
-// const collections: any[] | (() => any[]) = [
-//   // Uncomment to add more collections for testing
-//   {
-//     id: "2",
-//     name: "Product Photos",
-//     thumbnail: "/placeholder.svg?height=200&width=300",
-//     assetCount: 12,
-//     owner: {
-//       initials: "JD",
-//       color: "#3366ff",
-//     },
-//   },
-// ];
+type FormData = {
+  name: string;
+  description: string;
+};
 
 const CollectionsPage = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState<
-    "delete" | "share" | "rename" | null
+    "delete" | "share" | "update" | null
   >(null);
-
   const token = useSelector((state: RootState) => state.auth.token);
+
   const { data: collectionsData, isLoading } = useGetAllCollectionsQuery({
     token,
   });
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+  } = useForm<FormData>();
+
   const closeDialog = useCallback(() => setDialogType(null), []);
-  console.log(collectionsData ,"787878787878")
+  // console.log(collectionsData, "787878787878");
   const [createCollection, { isLoading: creationLoading }] =
     useCreateCollectionMutation();
-
+  const [updateCollection, { isLoading: isUpdating }] =
+    useUpdateCollectionMutation();
   const dropdownCollectionActions = useMemo(
     () => [
       {
@@ -83,16 +84,19 @@ const CollectionsPage = () => {
         disabled: false,
       },
       {
-        label: "Rename",
+        label: "Update",
         icon: <Pencil color="yellow" size={14} />,
-        onClick: () => setDialogType("rename"),
+        onClick: () => {
+          setDialogType("update");
+        },
         disabled: false,
       },
     ],
     []
   );
 
-  const [deleteCollection,{isLoading:isDeleting}] = useDeleteCollectionMutation()
+  const [deleteCollection, { isLoading: isDeleting }] =
+    useDeleteCollectionMutation();
 
   const handleCreateCollection = async ({ name }: { name: string }) => {
     try {
@@ -107,25 +111,48 @@ const CollectionsPage = () => {
     }
   };
 
-  const handleDelete = async ({collectionId}:{collectionId:string}) => {
+  const handleDelete = async ({ collectionId }: { collectionId: string }) => {
     try {
-      const res = await deleteCollection({collectionId,token}).unwrap();
-      console.log(res,"hjjjjjjjjjjjj")
-      if(res?.success){
-      toast.success('Collection deleted Successfully!')
+      const res = await deleteCollection({ collectionId, token }).unwrap();
+      // console.log(/res,"hjjjjjjjjjjjj")
+      if (res?.success) {
+        toast.success("Collection deleted Successfully!");
       }
       console.log("collection delete");
       closeDialog();
     } catch (error) {
-      toast.error("Something went wrong during collection deletion")
+      toast.error("Something went wrong during collection deletion");
       console.log(error);
-    }finally{
-       closeDialog();
+    } finally {
+      closeDialog();
     }
   };
-  
 
-  if(isLoading){
+  const handleUpdate = async ({
+    name,
+    description,
+    collectionId,
+  }: {
+    name: string;
+    description: string;
+    collectionId: string;
+  }) => {
+    try {
+      const res = await updateCollection({
+        token,
+        name,
+        description,
+        collectionId,
+      }).unwrap();
+      if (res?.success) {
+        toast.success("Collection updated successfully");
+      }
+    } catch (error) {
+      toast.error("Error during updation of collection data");
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center h-[calc(100vh-62px)]">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
@@ -244,12 +271,88 @@ const CollectionsPage = () => {
                         </Button>
                         <Button
                           className="bg-red-600 text-white hover:bg-red-700"
-                          onClick={()=>handleDelete({collectionId:collection.id})}
+                          onClick={() =>
+                            handleDelete({ collectionId: collection.id })
+                          }
                           disabled={isDeleting}
                         >
                           {isDeleting ? "Deleting..." : "Delete"}
                         </Button>
                       </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                {dialogType === "update" && (
+                  <Dialog open onOpenChange={closeDialog}>
+                    <DialogContent
+                      onCloseAutoFocus={(event) => {
+                        event.preventDefault();
+                        document.body.style.pointerEvents = "";
+                      }}
+                    >
+                      <form
+                        key={collection.id + collection.name}
+                        onSubmit={handleSubmit(async (formData) => {
+                          await handleUpdate({
+                            name: formData.name,
+                            description: formData.description,
+                            collectionId: collection.id,
+                          });
+                          closeDialog();
+                        })}
+                        className="space-y-4"
+                      >
+                        <DialogHeader>
+                          <DialogTitle>Update Collection</DialogTitle>
+                          <DialogDescription>
+                            Update the details of{" "}
+                            <strong>{collection?.name}</strong>.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div>
+                          <label className="block text-sm font-medium">
+                            Name
+                          </label>
+                          <input
+                            {...register("name", {
+                              required: "Name is required",
+                            })}
+                            defaultValue={collection?.name}
+                            className="w-full border border-gray-300 dark:border-gray-700 rounded px-3 py-2 mt-1 bg-transparent"
+                          />
+                          {errors.name && (
+                            <p className="text-red-500 text-sm">
+                              {errors.name.message}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium">
+                            Description
+                          </label>
+                          <textarea
+                            {...register("description")}
+                            defaultValue={collection.description}
+                            className="w-full border border-gray-300 dark:border-gray-700 rounded px-3 py-2 mt-1 bg-transparent"
+                          />
+                        </div>
+
+                        <DialogFooter>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={closeDialog}
+                            disabled={isUpdating}
+                          >
+                            Cancel
+                          </Button>
+                          <Button type="submit" disabled={isUpdating}>
+                            {isUpdating ? "Updating..." : "Update"}
+                          </Button>
+                        </DialogFooter>
+                      </form>
                     </DialogContent>
                   </Dialog>
                 )}

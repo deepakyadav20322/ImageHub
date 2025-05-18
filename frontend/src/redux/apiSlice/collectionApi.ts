@@ -29,10 +29,13 @@ const collectionApi = authApi.injectEndpoints({
             invalidatesTags: ['Collection'],
         }),
         updateCollection: builder.mutation({
-            query: ({ id, ...body }) => ({
-                url: `/collections/${id}`,
-                method: 'PUT',
-                body,
+            query: ({ collectionId,token,name,description }) => ({
+                url: `/collection/update-collection/${collectionId}`,
+                method: 'PATCH',
+                body:{name,description},
+                headers:{
+                    Authorization:token
+                }
             }),
             invalidatesTags: ['Collection'],
         }),
