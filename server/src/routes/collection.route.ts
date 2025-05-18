@@ -7,7 +7,7 @@ import authMiddleware from "../middlewares/auth.middleware";
 
 route.get('/get-all-collection',authMiddleware,getAllCollections);
 route.post('/create-collection',authMiddleware,createCollection);
-route.post('/delete-collection/:collectionId',authMiddleware,deleteCollection);
+route.delete('/delete-collection/:collectionId',authMiddleware,deleteCollection);
 
 
 

@@ -18,7 +18,7 @@ export const getAllCollections = async (req: Request, res: Response):Promise<any
       .from(collections)
       .where(and(eq(collections.accountId, accountId),eq(collections.creatorId,userId)));
 
-    res.status(200).json({success:true,data:allCollections[0]});
+    res.status(200).json({success:true,data:allCollections});
   } catch (error) {
     console.error('Error fetching collections:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -28,8 +28,10 @@ export const getAllCollections = async (req: Request, res: Response):Promise<any
 
 export const createCollection = async (req: Request, res: Response):Promise<any> => {
   try {
-    const { accountId, creatorId, name, description } = req.body;
-
+    const { name } = req.body;
+    const creatorId  =req.user.userId ;
+    const accountId = req.user.accountId
+console.log(accountId,creatorId)
     if (!accountId || !name) {
       return res.status(400).json({ 
         error: 'Account ID and name are required' 
@@ -42,7 +44,7 @@ export const createCollection = async (req: Request, res: Response):Promise<any>
         accountId,
         creatorId,
         name,
-        description,
+        description:'',
         // createdAt and updatedAt will be set by default
       })
       .returning();
@@ -62,7 +64,7 @@ export const deleteCollection = async (req: Request, res: Response) => {
       .delete(collections)
       .where(eq(collections.id, collectionId));
 
-    res.status(204).end();
+    res.status(200).json({success:true,message:'Collection deleted successfully'});
   } catch (error) {
     console.error('Error deleting collection:', error);
     res.status(500).json({ error: 'Internal server error' });
