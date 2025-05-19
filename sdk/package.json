@@ -1,0 +1,27 @@
+{
+  "name": "mediahub-sdk",
+  "version": "1.0.0",
+  "description": "SDK for mediaHub asset management application.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "sdk",
+    "mediahub",
+    "assets",
+    "image",
+    "cloud"
+  ],
+  "author": "deepak yadav",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.15.19",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "axios": "^1.9.0"
+  }
+}
