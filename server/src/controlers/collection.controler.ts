@@ -71,11 +71,11 @@ export const deleteCollection = async (req: Request, res: Response) => {
   }
 };
 
-export const updateCollection = async (req: Request, res: Response):Promise<any> => {
+export const updateCollection = async (req: Request, res: Response): Promise<any> => {
   try {
     const collectionId = req.params.collectionId;
     const { name, description } = req.body;
-  console.log(req.body)
+    console.log(req.body)
 
     if (!collectionId) {
       return res.status(400).json({ error: 'Collection ID is required' });
@@ -98,6 +98,74 @@ export const updateCollection = async (req: Request, res: Response):Promise<any>
     res.status(200).json({ success: true, data: updatedCollection });
   } catch (error) {
     console.error('Error updating collection:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+
+export const addItemToCollection = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { collectionId, resourceId } = req.body;
+
+    if (!collectionId || !resourceId) {
+      return res.status(400).json({ error: 'Collection ID and resource ID are required' });
+    }
+
+    const [newCollectionItem] = await db
+      .insert(collectionItems)
+      .values({
+        collectionId,
+        resourceId,
+      })
+      .returning();
+
+    res.status(201).json({ success: true, data: newCollectionItem });
+  } catch (error) {
+    console.error('Error adding item to collection:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const getItemsOfCollection = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const collectionId = req.params.collectionId;
+
+    if (!collectionId) {
+      return res.status(400).json({ error: 'Collection ID is required' });
+    }
+
+    const items = await db
+      .select()
+      .from(collectionItems)
+      .where(eq(collectionItems.collectionId, collectionId));
+
+    res.status(200).json({ success: true, data: items });
+  } catch (error) {
+    console.error('Error fetching collection items:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const deleteItemFromCollection = async (req: Request, res: Response): Promise<any> => {
+  try {
+    const { collectionId, resourceId } = req.params;
+
+    if (!collectionId || !resourceId) {
+      return res.status(400).json({ error: 'Collection ID and resource ID are required' });
+    }
+
+    await db
+      .delete(collectionItems)
+      .where(
+        and(
+          eq(collectionItems.collectionId, collectionId),
+          eq(collectionItems.resourceId, resourceId)
+        )
+      );
+
+    res.status(200).json({ success: true, message: 'Item removed from collection successfully' });
+  } catch (error) {
+    console.error('Error removing item from collection:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 };
