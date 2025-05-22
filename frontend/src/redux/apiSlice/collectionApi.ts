@@ -49,10 +49,40 @@ const collectionApi = authApi.injectEndpoints({
             }),
             invalidatesTags: ['Collection'],
         }),
+
+
+        addItemToCollection: builder.mutation({
+            query: ({ collectionId, resourceId, token }) => ({
+                url: `/collection/collection/add-item`,
+                method: 'POST',
+                body:{
+                    collectionId,
+                    resourceId
+                },
+                headers: {
+                    Authorization: token,
+                    'Content-Type': 'application/json'
+                }
+            }),
+            invalidatesTags: ['Collection'],
+        }),
+
+        getItemsOfCollection: builder.query({
+            query: ({collectionId, token}) => ({
+                url: `/collection/get-itemOf-collection/${collectionId}`,
+                method: 'GET',
+                headers: {
+                    Authorization: token,
+                    'Content-Type': 'application/json'
+                }
+            }),
+            providesTags: ['Collection']
+        }),
     }),
 })
 
 export const {
+    useGetItemsOfCollectionQuery,
     useGetAllCollectionsQuery,
     useCreateCollectionMutation,
     useUpdateCollectionMutation,

@@ -26,6 +26,7 @@ import InviteRegistration from "./components/InviteUserSignupPage";
 import CollectionsPage from "./components/Collections/Collections";
 import CollectionDataTable from "./components/Collections/CollectionDataTable";
 
+
 const App = () => {
   return (
     <Routes>
