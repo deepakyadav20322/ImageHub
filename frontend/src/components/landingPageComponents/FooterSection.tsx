@@ -137,7 +137,7 @@ export default function FooterSection() {
 
         <div className="mt-12 border-t border-gray-200 dark:border-gray-800 pt-8 text-center">
           <p className="text-sm text-gray-700 dark:text-gray-400">
-            © {new Date().getFullYear()} ImageHub. All rights reserved.
+            © {new Date().getFullYear()} ImageHub. All rights reserved 2025.
           </p>
         </div>
       </div>
