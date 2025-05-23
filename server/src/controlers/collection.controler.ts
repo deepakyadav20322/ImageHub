@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "../db/db_connect";
 import { collectionItems, collections } from "../db/schema";
-import { Request, Response, NextFunction } from "express";
+import { Request, Response } from "express";
 
 export const getAllCollections = async (req: Request, res: Response): Promise<any> => {
   try {
