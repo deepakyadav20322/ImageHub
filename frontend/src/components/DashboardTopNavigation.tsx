@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useLocation, useNavigate, useOutletContext, useParams } from "react-router";
 import { Link } from "react-router";
 // import UploadDialog from "./UploadDialog";
@@ -10,6 +10,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { Resource } from "@/lib/types";
 import { useGetAssetsOfFolderQuery, useUploadAssetsMutation } from "@/redux/apiSlice/itemsApi";
+import { AddAssetToCollection } from "./Collections/AddAssetToCollectionDialog";
+import { Plus } from "lucide-react";
 
 const tabs = ["home", "assets", "folders", "collections", "moderation"];
 
@@ -59,6 +61,10 @@ const Navbar = () => {
       console.error("Upload failed:", error);
       throw error;
     }
+  }
+    const handleAddToCollection = (collectionId: string, assetId: string) => {
+    console.log(`Adding asset ${assetId} to collection ${collectionId}`)
+    // Here you would typically make an API call to add the asset to the collection
   }
   
 console.log("iserror",isError);
@@ -117,10 +123,44 @@ console.log("iserror",isError);
 
           {/* Search & Upload */}
           <div className="ml-auto flex items-end gap-4">
-           
-            <Button onClick={()=>setUploadOpen(!uploadOpen)}  className="bg-blue-600 hover:bg-blue-700 cursor-pointer flex items-center gap-2 text-white dark:bg-blue-600 dark:hover:bg-blue-700">
-              <UploadIcon className="w-4 h-4" /> Upload
-            </Button>
+             <AnimatePresence mode="wait" initial={false}>
+  { (/^\/dashboard\/media\/collections\/[^/]+$/).test(location?.pathname)? (
+    <motion.div
+      key="add"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+    >
+      <AddAssetToCollection
+        assetId="demo-asset"
+        onAddToCollection={handleAddToCollection}
+        trigger={
+          <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white px-4 py-2">
+            <Plus className="w-5 h-5" />
+            Add assets
+          </Button>
+        }
+      />
+    </motion.div>
+  ) : (
+    <motion.div
+      key="upload"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+    >
+      <Button
+        onClick={() => setUploadOpen(!uploadOpen)}
+        className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white px-4 py-2"
+      >
+        <UploadIcon className="w-4 h-4" />
+        Upload
+      </Button>
+    </motion.div>
+  )}
+</AnimatePresence>
           </div>
         
         </div>
@@ -135,7 +175,9 @@ console.log("iserror",isError);
         maxFiles={5}
       /> */}
 
-     <UploadDialog
+
+
+           <UploadDialog
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}
         onUpload={handleUpload}
@@ -144,7 +186,7 @@ console.log("iserror",isError);
         multiple={true}
         maxFiles={5}
       />
-
+    
     </div>
   );
 };
