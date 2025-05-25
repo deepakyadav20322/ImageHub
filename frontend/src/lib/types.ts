@@ -39,6 +39,16 @@ export interface Resource {
 }
 
 
+export interface Collection {
+  id: string;
+  accountId: string;
+  creatorId: string | null;
+  name: string;
+  description: string | null;
+  owner?:string;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 
 export type {LoginResponse}

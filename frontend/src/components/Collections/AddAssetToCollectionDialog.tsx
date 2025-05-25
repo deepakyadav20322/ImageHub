@@ -19,7 +19,11 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-
+import { useGetAllCollectionsQuery } from "@/redux/apiSlice/collectionApi"
+import { useSearchParams } from "react-router"
+import { useSelector } from "react-redux"
+import { RootState } from "@/redux/store"
+import { Collection } from "@/lib/types"
 // Mock data for collections
 const mockCollections = [
   {
@@ -59,13 +63,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>
 
-interface Collection {
-  id: string
-  name: string
-  assetCount: number
-  owner: string
-  createdAt: Date
-}
+
 
 interface AddAssetToCollectionProps {
   assetId?: string
@@ -75,10 +73,12 @@ interface AddAssetToCollectionProps {
 
 export function AddAssetToCollection({ assetId, onAddToCollection, trigger }: AddAssetToCollectionProps) {
   const [open, setOpen] = React.useState(false)
-  const [collections, setCollections] = React.useState<Collection[]>(mockCollections)
-  const [filteredCollections, setFilteredCollections] = React.useState<Collection[]>(mockCollections)
   const [selectedCollection, setSelectedCollection] = React.useState<string>("")
-
+  const {token} = useSelector((state:RootState)=>state.auth)
+  const {data,isLoading} = useGetAllCollectionsQuery({token}); 
+  const [filteredCollections, setFilteredCollections] = React.useState<Collection[]>(data?.data)
+  const [collections, setCollections] = React.useState<Collection[]>(data?.data)
+   console.log(data)
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -94,10 +94,10 @@ export function AddAssetToCollection({ assetId, onAddToCollection, trigger }: Ad
     if (!searchQuery) {
       setFilteredCollections(collections)
     } else {
-      const filtered = collections.filter(
+      const filtered = collections?.filter(
         (collection) =>
-          collection.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          collection.owner.toLowerCase().includes(searchQuery.toLowerCase()),
+          collection.name?.toLowerCase().includes(searchQuery?.toLowerCase()) ||
+          collection?.owner?.toLowerCase().includes(searchQuery?.toLowerCase()),
       )
       setFilteredCollections(filtered)
     }
@@ -111,6 +111,15 @@ export function AddAssetToCollection({ assetId, onAddToCollection, trigger }: Ad
     form.reset()
     setSelectedCollection("")
   }
+
+  // Update state when data is available(because data load asynchronasly when add(data?.data) in collection state above)
+React.useEffect(() => {
+  if (data?.data) {
+    setCollections(data.data)
+    setFilteredCollections(data.data)
+  }
+}, [data])
+
 
   const handleCollectionSelect = (collectionId: string) => {
     setSelectedCollection(collectionId)
@@ -133,13 +142,13 @@ export function AddAssetToCollection({ assetId, onAddToCollection, trigger }: Ad
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[500px] p-0 gap-0 overflow-hidden dark:border-gray-500">
         <DialogHeader className="px-6 py-4 border-b">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold">Add to Collection</DialogTitle>
-            <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8 rounded-full">
+            {/* <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8 rounded-full">
               <X className="w-4 h-4" />
-            </Button>
+            </Button> */}
           </div>
           <DialogDescription className="sr-only">Select a collection to add your asset to</DialogDescription>
         </DialogHeader>
@@ -175,8 +184,14 @@ export function AddAssetToCollection({ assetId, onAddToCollection, trigger }: Ad
                     <FormControl>
                       <ScrollArea className="h-[280px] w-full">
                         <div className="space-y-2 pr-4">
-                          {filteredCollections.length > 0 ? (
-                            filteredCollections.map((collection) => (
+                            {isLoading ? (
+  <div className="text-center py-8 text-muted-foreground">
+    <p className="text-sm">Loading collections...</p>
+  </div>
+) : (<>
+                          {filteredCollections?.length > 0 ? (
+                            
+                            filteredCollections?.map((collection) => (
                               <div
                                 key={collection.id}
                                 className={`
@@ -204,9 +219,9 @@ export function AddAssetToCollection({ assetId, onAddToCollection, trigger }: Ad
                                       </Badge>
                                     )}
                                   </div>
-                                  <p className="text-xs text-muted-foreground">
-                                    {collection.assetCount} assets | {collection.owner}
-                                  </p>
+                                  {/* <p className="text-xs text-muted-foreground">
+                                    {collection?.assetCount} assets | {collection.owner}
+                                  </p> */}
                                 </div>
                               </div>
                             ))
@@ -216,7 +231,7 @@ export function AddAssetToCollection({ assetId, onAddToCollection, trigger }: Ad
                               <p className="text-sm">No collections found</p>
                               <p className="text-xs">Try adjusting your search</p>
                             </div>
-                          )}
+                          )}</>)}
                         </div>
                       </ScrollArea>
                     </FormControl>

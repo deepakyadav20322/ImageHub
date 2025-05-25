@@ -82,6 +82,7 @@ const collectionApi = authApi.injectEndpoints({
 })
 
 export const {
+    useAddItemToCollectionMutation,
     useGetItemsOfCollectionQuery,
     useGetAllCollectionsQuery,
     useCreateCollectionMutation,
