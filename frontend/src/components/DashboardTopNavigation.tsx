@@ -133,7 +133,7 @@ console.log("iserror",isError);
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
       <AddAssetToCollection
-        assetId="demo-asset"
+        asset={undefined}
         onAddToCollection={handleAddToCollection}
         trigger={
           <Button className="bg-blue-600 hover:bg-blue-700 flex items-center gap-2 text-white px-4 py-2">

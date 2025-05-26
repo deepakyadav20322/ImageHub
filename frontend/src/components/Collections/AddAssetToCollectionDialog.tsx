@@ -23,7 +23,7 @@ import { useGetAllCollectionsQuery } from "@/redux/apiSlice/collectionApi"
 import { useSearchParams } from "react-router"
 import { useSelector } from "react-redux"
 import { RootState } from "@/redux/store"
-import { Collection } from "@/lib/types"
+import { Collection, Resource } from "@/lib/types"
 // Mock data for collections
 const mockCollections = [
   {
@@ -66,12 +66,11 @@ type FormData = z.infer<typeof formSchema>
 
 
 interface AddAssetToCollectionProps {
-  assetId?: string
+  asset?: Resource;
   onAddToCollection?: (collectionId: string, assetId: string) => void
-  trigger?: React.ReactNode
-}
+  trigger?: React.ReactNode}
 
-export function AddAssetToCollection({ assetId, onAddToCollection, trigger }: AddAssetToCollectionProps) {
+export function AddAssetToCollection({ asset, onAddToCollection, trigger }: AddAssetToCollectionProps) {
   const [open, setOpen] = React.useState(false)
   const [selectedCollection, setSelectedCollection] = React.useState<string>("")
   const {token} = useSelector((state:RootState)=>state.auth)
@@ -104,8 +103,8 @@ export function AddAssetToCollection({ assetId, onAddToCollection, trigger }: Ad
   }, [searchQuery, collections])
 
   const onSubmit = (data: FormData) => {
-    if (onAddToCollection && assetId) {
-      onAddToCollection(data.selectedCollectionId, assetId)
+    if (onAddToCollection && asset?.resourceId) {
+      onAddToCollection(data.selectedCollectionId, asset.resourceId)
     }
     setOpen(false)
     form.reset()
@@ -131,6 +130,7 @@ React.useEffect(() => {
     form.reset()
     setSelectedCollection("")
   }
+
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

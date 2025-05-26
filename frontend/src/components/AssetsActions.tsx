@@ -187,6 +187,8 @@ import { Input } from "./ui/input";
 import { useForm } from "react-hook-form";
 import ShareLinksModal from "./AttachedAndShareOptionsComponents/ShareLinksModal";
 import ShareButtonOrLink from "./AttachedAndShareOptionsComponents/ShareButtonOrLink";
+import { AddAssetToCollection } from "./Collections/AddAssetToCollectionDialog";
+
 
 interface AssetActionsProps {
   asset: Resource;
@@ -202,7 +204,7 @@ export default React.memo(function AssetActions({
   folderId,
 }: AssetActionsProps) {
   const [dialogType, setDialogType] = useState<
-    "delete" | "share" | "rename" | "publicLinkShare" | null
+    "delete" | "share" | "rename" | "publicLinkShare" | "addToCollection" | null
   >(null);
   const {user} = useSelector((state: RootState) => state.auth);
   const token = useSelector((state: RootState) => state.auth.token);
@@ -271,6 +273,13 @@ export default React.memo(function AssetActions({
     closeDialog();
   }, [asset.resourceId, onShare, closeDialog]);
 
+  const [showAddToCollection, setShowAddToCollection] = useState(false);
+  const handleAddToCollection = (collectionId: string) => {
+console.log("Added to:", collectionId);
+};
+
+
+
   const dropdownActions = useMemo(
     () => [
       {
@@ -295,6 +304,12 @@ export default React.memo(function AssetActions({
         label: "Public Share Link",
         icon: <Share2Icon color="blue" size={14} />,
         onClick: () => setDialogType("publicLinkShare"),
+        disabled: false,
+      },
+      {
+        label: "Add to collection",
+        icon: <Share2Icon color="black" size={14} />,
+        onClick: () => setShowAddToCollection(true),
         disabled: false,
       },
     ],
@@ -536,6 +551,26 @@ export default React.memo(function AssetActions({
           </DialogContent>
         </Dialog>
       )}
-    </>
+
+      {/* This modal is used for collection section modal */}
+          {showAddToCollection && (
+  <AddAssetToCollection
+    asset={asset}
+    trigger={
+    <span
+      style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}
+      onClick={(e) => e.preventDefault()} // Prevent default if needed
+    >
+      Add to Collection
+    </span>
+  }
+    onAddToCollection={(collectionId, assetId) => {
+    // Optional: handle after adding to collection
+    setShowAddToCollection(false); // close modal
+  }}
+  />
+)}
+
+         </>
   );
 });
