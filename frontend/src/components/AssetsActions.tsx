@@ -150,6 +150,7 @@ import {
   Share2,
   Pencil,
   Share2Icon,
+  Briefcase
 } from "lucide-react";
 import {
   Dialog,
@@ -188,6 +189,7 @@ import { useForm } from "react-hook-form";
 import ShareLinksModal from "./AttachedAndShareOptionsComponents/ShareLinksModal";
 import ShareButtonOrLink from "./AttachedAndShareOptionsComponents/ShareButtonOrLink";
 import { AddAssetToCollection } from "./Collections/AddAssetToCollectionDialog";
+import CustomTrigger from "./Collections/CustomeTrigerUI";
 
 
 interface AssetActionsProps {
@@ -208,6 +210,7 @@ export default React.memo(function AssetActions({
   >(null);
   const {user} = useSelector((state: RootState) => state.auth);
   const token = useSelector((state: RootState) => state.auth.token);
+ 
   const { activeBucket } = useSelector((state: RootState) => state.resource);
   const [renameFile, { isLoading: isRenameLoading }] =
     useRename_resorcefileMutation();
@@ -275,6 +278,7 @@ export default React.memo(function AssetActions({
 
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const handleAddToCollection = (collectionId: string) => {
+    
 console.log("Added to:", collectionId);
 };
 
@@ -306,12 +310,12 @@ console.log("Added to:", collectionId);
         onClick: () => setDialogType("publicLinkShare"),
         disabled: false,
       },
-      {
-        label: "Add to collection",
-        icon: <Share2Icon color="black" size={14} />,
-        onClick: () => setShowAddToCollection(true),
-        disabled: false,
-      },
+      // {
+      //   label: "Add to collection",
+      //   icon: <Share2Icon color="black" size={14} />,
+      //   onClick: () => setShowAddToCollection(true),
+      //   disabled: false,
+      // },
     ],
     []
   );
@@ -338,7 +342,7 @@ console.log("Added to:", collectionId);
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu >
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -364,8 +368,30 @@ console.log("Added to:", collectionId);
               {action.label}
             </DropdownMenuItem>
           ))}
+           {/* Add to Collection as a custom trigger */}
+          <AddAssetToCollection
+            asset={asset}
+            onAddToCollection={handleAddToCollection}
+            trigger={
+              <DropdownMenuItem
+                className="dark:hover:bg-black cursor-pointer"
+                onSelect={(e) => {
+                  e.preventDefault();
+                 
+                  setShowAddToCollection(true);
+                    
+                }}
+              >
+                <Briefcase color="black" size={14} />
+                Add to collection
+              </DropdownMenuItem>
+            }
+          />
+        
         </DropdownMenuContent>
       </DropdownMenu>
+
+      
 
       {dialogType === "delete" && (
         <Dialog open onOpenChange={closeDialog}>
@@ -553,24 +579,7 @@ console.log("Added to:", collectionId);
       )}
 
       {/* This modal is used for collection section modal */}
-          {showAddToCollection && (
-  <AddAssetToCollection
-    asset={asset}
-    trigger={
-    <span
-      style={{ cursor: "pointer", color: "blue", textDecoration: "underline" }}
-      onClick={(e) => e.preventDefault()} // Prevent default if needed
-    >
-      Add to Collection
-    </span>
-  }
-    onAddToCollection={(collectionId, assetId) => {
-    // Optional: handle after adding to collection
-    setShowAddToCollection(false); // close modal
-  }}
-  />
-)}
-
+     
          </>
   );
 });
