@@ -73,7 +73,7 @@ export default function TransformationSection() {
     setTimeout(() => {
       setActiveIndex(index)
       setIsTransitioning(false)
-    }, 300)
+    }, 500)
   }
 
   return (
@@ -165,7 +165,7 @@ export default function TransformationSection() {
             </AnimatePresence>
 
             <div className="mt-8">
-              <Button className="bg-[#155dfc] text-white hover:bg-[#0e4ad0]">Explore API Documentation</Button>
+              <Button className="bg-[#155dfc] text-white hover:bg-[#0e4ad0] cursor-pointer">Explore API Documentation</Button>
             </div>
           </motion.div>
 
@@ -187,14 +187,14 @@ export default function TransformationSection() {
                                           exit={{ opacity: 0, scale: 1.1 }}
                                           transition={{ duration: 0.4 }}
                                           className={cn(
-                                            "relative overflow-hidden w-full h-full max-w-[300px] max-h-[300px]",
+                                            "relative overflow-hidden w-full h-full max-w-[300px] max-h-[300px] border-blue-500 border",
                                             activeTransformation.shape,
                                           )}
                                         >
                                           <img
                                             src={activeTransformation.url || "/placeholder.svg"}
                                             alt="Image transformation example"
-                                            className="object-cover w-full h-full"
+                                            className="object-contain w-full h-full bg-gray-50"
                                           />
                                         </motion.div>
                   </AnimatePresence>
